@@ -7,7 +7,9 @@
     "cause": "Died in a merge",
     "epitaph": "Merge pull request #14",
     "description": "48 commits over 4 days. Died in a merge. The paperwork was impeccable. Survived by useagent, born 27 days later. The Society notes the timing. It burned fast. Its 48 commits say it was more than an idea. The Society notes what replaced it.",
-    "tech": [],
+    "tech": [
+      "TypeScript"
+    ],
     "commits": 48,
     "died_full": "2026-05-12",
     "silence_days": 193,
@@ -27,8 +29,7 @@
     "epitaph": "docs: readme",
     "description": "1567 commits over 11 months. Died writing the manual. The last thing it did was explain itself. Survived by useagent, born 22 days later. The Society notes the timing. It had a real season. Its 1567 commits say it was loved. The Society notes what replaced it.",
     "tech": [
-      "TypeScript",
-      "Rust"
+      "TypeScript"
     ],
     "commits": 1567,
     "died_full": "2026-05-17",

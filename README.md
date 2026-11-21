@@ -99,6 +99,11 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   verdict with its reasons, all from the record alone.
 - `--certificates DIR` issues a formal **Certificate of Death** (or of
   Completion, for the finished) for every project that earned one.
+- `--badge FILE` writes a shields-style badge with the state of your
+  grounds, for a README.
+- `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
+  card, and post-ready text covering everything of yours that ended in
+  the year (`--year` picks which).
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,
@@ -107,9 +112,10 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 ## How it reads a life
 
 Only git metadata: commit dates, messages, author count, whether a README
-or a remote exists. **Your code is never opened.** Everything runs locally,
-read-only, with zero dependencies and no network. Pure Python standard
-library, Python 3.9+.
+or a remote exists, and file *names* (counted by extension to name a
+project's language, never opened). **Your code is never read.** Everything
+runs locally, read-only, with zero dependencies and no network. Pure
+Python standard library, Python 3.9+.
 
 Causes of death are determined by a small, very judgmental coroner:
 one-commit wonders, weekend flings, projects that died mid-sentence on a

@@ -1019,7 +1019,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=17");
+    const res = await fetch("wards.json?v=18");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1167,7 +1167,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=17");
+    const res = await fetch("projects.json?v=18");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1228,7 +1228,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=17");
+    const res = await fetch("honors.json?v=18");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1260,7 +1260,7 @@ loadHonors();
 
 async function loadInfamy() {
   try {
-    const res = await fetch("infamy.json?v=17");
+    const res = await fetch("infamy.json?v=18");
     if (!res.ok) return;
     const infamy = await res.json();
     if (!Array.isArray(infamy) || !infamy.length) return;
@@ -1296,7 +1296,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=17");
+    const res = await fetch("public.json?v=18");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {

@@ -665,3 +665,49 @@ class TestBadge(FixtureBase):
         self.assertEqual(rc, 0)
         with open(out) as fh:
             self.assertIn("1 buried", fh.read())
+
+
+class TestLanguageAndWrapped(FixtureBase):
+    """v0.11.0: language from file names, the wrapped kit."""
+
+    def test_language_detected_from_file_names(self):
+        path = os.path.join(self.tmp, "poly")
+        make_repo(path, [("2025-02-01T09:00:00", "a"),
+                         ("2025-02-03T09:00:00", "b")])
+        for name in ("a.py", "b.py", "c.py", "d.js"):
+            with open(os.path.join(path, name), "w") as fh:
+                fh.write("x")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(cem.projects[0].language, "Python")
+        data = dps.cemetery_dict(cem)
+        self.assertEqual(data["projects"][0]["language"], "Python")
+
+    def test_wrapped_kit_writes_three_files(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+            ("2025-02-05T09:00:00", "c"),
+        ])
+        kit = os.path.join(self.tmp, "kit")
+        rc = dps.main([self.tmp, "--wrapped-kit", kit, "--year", "2025"])
+        self.assertEqual(rc, 0)
+        self.assertEqual(sorted(os.listdir(kit)),
+                         ["wrapped-card.svg", "wrapped.html", "wrapped.txt"])
+        with open(os.path.join(kit, "wrapped.html")) as fh:
+            html = fh.read()
+        self.assertIn("2025 IN THE GROUNDS", html)
+        self.assertIn("gone", html)
+        with open(os.path.join(kit, "wrapped.txt")) as fh:
+            text = fh.read()
+        self.assertIn("My 2025, formally buried", text)
+        self.assertIn("1 buried", text)
+
+    def test_wrapped_empty_year_is_honest(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+        ])
+        html = None
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        html = dps.render_wrapped(cem, 1999)
+        self.assertIn("Nothing of yours ended in 1999", html)

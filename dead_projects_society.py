@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.10.0"
+VERSION = "0.11.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -60,6 +60,7 @@ class Project:
     resurrections: int = 0      # flatlines >= the death line, then a commit
     longest_flatline: int = 0   # longest mid-life silence, in days
     activity: list = field(default_factory=list)  # commits per month
+    language: str = ""          # top language, from file names only
     will_status: str = ""       # from PROJECT_WILL.md: complete | adoptable
     will_successor: str = ""    # named in the will, if anyone was
     will_note: str = ""         # a line from the will, in the author's words
@@ -209,6 +210,7 @@ def read_project(path, now):
                 y, m = y + 1, 1
 
     will_status, will_successor, will_note = _read_will(path)
+    language = _detect_language(path)
     authors_raw = _git(path, "log", "--format=%an")
     authors = len({a for a in (authors_raw or "").splitlines() if a.strip()})
     remotes = _git(path, "remote")
@@ -232,10 +234,49 @@ def read_project(path, now):
         silence_days=max(0, (now - died).days),
         gaps=gaps,
         activity=activity,
+        language=language,
         will_status=will_status,
         will_successor=will_successor,
         will_note=will_note,
     )
+
+
+_LANG_BY_EXT = {
+    ".py": "Python", ".js": "JavaScript", ".jsx": "JavaScript",
+    ".ts": "TypeScript", ".tsx": "TypeScript", ".rs": "Rust",
+    ".go": "Go", ".rb": "Ruby", ".java": "Java", ".c": "C", ".h": "C",
+    ".cpp": "C++", ".cc": "C++", ".cs": "C#", ".php": "PHP",
+    ".swift": "Swift", ".kt": "Kotlin", ".sh": "Shell", ".lua": "Lua",
+    ".pl": "Perl", ".r": "R", ".scala": "Scala", ".ex": "Elixir",
+    ".hs": "Haskell", ".dart": "Dart", ".vue": "Vue",
+    ".svelte": "Svelte", ".m": "Objective-C", ".ml": "OCaml",
+}
+_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv",
+              "dist", "build", "target", ".next", ".tox"}
+
+
+def _detect_language(path):
+    """The top language of a repo, from file names alone.
+
+    File contents are never opened; this counts extensions the way
+    the Society already checks whether a README exists.
+    """
+    counts = {}
+    scanned = 0
+    for root, dirs, files in os.walk(path):
+        dirs[:] = [d for d in dirs if d not in _SKIP_DIRS]
+        for f in files:
+            scanned += 1
+            if scanned > 4000:
+                break
+            lang = _LANG_BY_EXT.get(os.path.splitext(f)[1].lower())
+            if lang:
+                counts[lang] = counts.get(lang, 0) + 1
+        if scanned > 4000:
+            break
+    if not counts:
+        return ""
+    return max(counts, key=counts.get)
 
 
 _WILL_FILES = ("PROJECT_WILL.md", "PROJECT_WILL", "project_will.md")
@@ -802,6 +843,7 @@ def cemetery_dict(cem):
             "autopsy": autopsy(p) if p.status in ("deceased", "resting")
                        else None,
             "activity_monthly": p.activity,
+            "language": p.language or None,
         }
     return {
         "tool": "dead-projects-society",
@@ -1244,7 +1286,7 @@ def site_projects(cem):
             "cause": _site_cause_tag(p.cause),
             "epitaph": p.last_words or "",
             "description": desc,
-            "tech": [],
+            "tech": [p.language] if p.language else [],
             "commits": p.commits,
             "died_full": p.died.date().isoformat(),
             "silence_days": p.silence_days,
@@ -1352,6 +1394,97 @@ def render_badge(cem):
            color, lw, color, lw // 2, esc(label), lw + mw // 2, esc(msg)))
 
 
+_WRAPPED = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Projects Society — {year} in the Grounds</title>
+<style>
+  body {{ background:#101418; color:#cfd6dd; font-family:Georgia, serif;
+         margin:0; padding:2.5rem 1rem 4rem; text-align:center; }}
+  .wrap {{ max-width:820px; margin:0 auto; }}
+  h1 {{ font-weight:normal; letter-spacing:.12em; color:#e8edf1; }}
+  .sub {{ color:#8b96a0; font-style:italic; margin-bottom:2.2rem; }}
+  .big {{ display:flex; flex-wrap:wrap; gap:1rem; justify-content:center;
+         margin-bottom:2.4rem; }}
+  .stat {{ background:#171d24; border:1px solid #333d46; border-radius:10px;
+          padding:1.1rem 1.4rem; min-width:130px; }}
+  .stat .n {{ font-size:2.1rem; color:#eef2f5; }}
+  .stat .l {{ color:#8b96a0; font-size:.8rem; letter-spacing:.18em; }}
+  .stone {{ background:#171d24; border:1px solid #333d46; border-radius:10px;
+           padding:1rem 1.2rem; margin:.7rem auto; max-width:560px;
+           text-align:left; }}
+  .stone b {{ color:#eef2f5; }}
+  .cause {{ color:#b08d57; }}
+  .words {{ font-style:italic; color:#c3ccd4; }}
+  footer {{ color:#5f6a74; margin-top:2.6rem; font-size:.85rem; }}
+</style></head><body><div class="wrap">
+<h1>{year} IN THE GROUNDS</h1>
+<div class="sub">Dead Projects Society &middot; the year, formally buried</div>
+<div class="big">
+  <div class="stat"><div class="n">{buried}</div>
+  <div class="l">BURIED</div></div>
+  <div class="stat"><div class="n">{commits}</div>
+  <div class="l">COMMITS BURIED</div></div>
+  <div class="stat"><div class="n">{resting}</div>
+  <div class="l">FINISHED, AT REST</div></div>
+  <div class="stat"><div class="n">{risen}</div>
+  <div class="l">BACK FROM THE DEAD</div></div>
+</div>
+{stones}
+<footer>Judged locally from git history alone. No code was read.</footer>
+</div></body></html>
+"""
+
+
+def _year_cemetery(cem, year):
+    """The year's dead: projects whose story ended in YEAR."""
+    ended = [p for p in cem.projects
+             if p.status in ("deceased", "resting")
+             and p.died.year == year]
+    return Cemetery(root=cem.root, generated=cem.generated,
+                    dead_days=cem.dead_days, projects=ended)
+
+
+def render_wrapped(cem, year):
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    yc = _year_cemetery(cem, year)
+    stones = []
+    for p in sorted(yc.projects, key=lambda x: x.died):
+        stones.append(
+            '<div class="stone"><b>%s</b> &middot; %s<br>'
+            '<span class="cause">%s</span><br>'
+            '<span class="words">&ldquo;%s&rdquo;</span></div>'
+            % (esc(p.name), _lifespan_text(p), esc(p.cause),
+               esc(p.last_words or "(silence)")))
+    if not stones:
+        stones.append('<div class="stone">Nothing of yours ended in %d. '
+                      "The Society notes it, with suspicion.</div>" % year)
+    return _WRAPPED.format(
+        year=year,
+        buried=len(yc.deceased),
+        commits=sum(p.commits for p in yc.projects),
+        resting=len(yc.resting),
+        risen=sum(1 for p in yc.projects if p.resurrections >= 1),
+        stones="\n".join(stones))
+
+
+def wrapped_text(cem, year):
+    yc = _year_cemetery(cem, year)
+    lines = [
+        "My %d, formally buried by the Dead Projects Society:" % year,
+        "%d buried, %d commits interred, %d finished and at rest."
+        % (len(yc.deceased),
+           sum(p.commits for p in yc.projects), len(yc.resting)),
+    ]
+    for p in sorted(yc.projects, key=lambda x: x.died):
+        lines.append("%s: %s" % (p.name, p.cause.split(".")[0] + "."))
+    lines.append("Bury yours: https://github.com/littlestjames82-sys/"
+                 "dead-projects-society")
+    return "\n".join(lines) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1375,6 +1508,11 @@ def main(argv=None):
                     help="Write an SVG share card")
     ap.add_argument("--badge", metavar="FILE",
                     help="Write an SVG status badge for a README")
+    ap.add_argument("--wrapped-kit", metavar="DIR",
+                    help="Write the year-in-review kit (HTML page, SVG "
+                         "card, post text) into DIR")
+    ap.add_argument("--year", type=int, default=None,
+                    help="Year for the wrapped kit (default: this year)")
     ap.add_argument("--out", metavar="FILE",
                     help="Write Markdown obituaries")
     ap.add_argument("--json", action="store_true",
@@ -1431,6 +1569,20 @@ def main(argv=None):
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(render_markdown(cem))
         print("Obituaries written to %s" % args.out)
+    if args.wrapped_kit:
+        year = args.year or cem.generated.year
+        os.makedirs(args.wrapped_kit, exist_ok=True)
+        yc = _year_cemetery(cem, year)
+        with open(os.path.join(args.wrapped_kit, "wrapped.html"), "w",
+                  encoding="utf-8") as fh:
+            fh.write(render_wrapped(cem, year))
+        with open(os.path.join(args.wrapped_kit, "wrapped-card.svg"),
+                  "w", encoding="utf-8") as fh:
+            fh.write(render_card(yc))
+        with open(os.path.join(args.wrapped_kit, "wrapped.txt"), "w",
+                  encoding="utf-8") as fh:
+            fh.write(wrapped_text(cem, year))
+        print("Wrapped kit for %d written to %s" % (year, args.wrapped_kit))
     if args.site:
         os.makedirs(args.site, exist_ok=True)
         with open(os.path.join(args.site, "projects.json"), "w",
