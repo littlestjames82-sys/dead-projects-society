@@ -26,19 +26,23 @@ The CLI, the verdicts, the 3D cemetery.
 - [x] 3D cemetery: personal grounds, the Wards, Terminal mode
 - [x] The Public Grounds: famous graves (shipped Nov 21, 2026)
 - [x] Bury a GitHub user: web demo (shipped Nov 21, 2026)
-- [ ] Hall of Infamy: the Honors pointed the other way (site + CLI)
-- [ ] Death Certificates: the formal, frameable artifact
-- [ ] Cemetery sections by language and era
+- [x] Hall of Infamy: the Honors pointed the other way (site + CLI,
+      v0.8.0)
+- [x] Death Certificates: the formal, frameable artifact (v0.8.0)
+- [ ] Cemetery sections by language and era (language detection
+      shipped v0.11.0; the sections themselves are still to build)
 
 ### II. The Autopsy Department — NEXT
 Why did it die, and what would revival take? Evidence-based, and careful
 about the Society's oldest mistake: silence is not abandonment.
-- [ ] Finished, not dead: completion verdicts and At Rest (CLI v0.7.0)
-- [ ] The Project Will: an owner leaves a PROJECT_WILL.md; the Society
+- [x] Finished, not dead: completion verdicts and At Rest (CLI v0.7.0)
+- [x] The Project Will: an owner leaves a PROJECT_WILL.md; the Society
       honors it (CLI v0.7.0)
-- [ ] Autopsy report from metadata: patterns of decline, bus factor,
-      README and remote neglect, dependency-era signals
-- [ ] Opt-in deep autopsy (code-aware) as a separate mode, later
+- [x] Autopsy report from metadata: patterns of decline (peak month,
+      momentum), bus factor, README and remote neglect (v0.8.0,
+      deepened v0.12.0)
+- [ ] Dependency-era signals, and the opt-in deep autopsy (code-aware)
+      as a separate mode, later
 
 ### III. The Resurrection Department — LATER
 AI-assisted revival under governance: isolated workspace, autopsy first,

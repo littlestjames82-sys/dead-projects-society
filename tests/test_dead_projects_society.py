@@ -711,3 +711,60 @@ class TestLanguageAndWrapped(FixtureBase):
         cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
         html = dps.render_wrapped(cem, 1999)
         self.assertIn("Nothing of yours ended in 1999", html)
+
+
+class TestDeepAutopsy(unittest.TestCase):
+    """v0.12.0: the autopsy reads the shape of the life."""
+
+    def test_peak_and_front_loaded(self):
+        p = _proj("fader", "2026-01-01", "2026-12-01", 1567, authors=3)
+        p.activity = [406, 632, 152, 19, 0, 0, 2, 11, 86, 108, 130, 21]
+        a = dps.autopsy(p)
+        self.assertEqual(a["peak_month"], "Feb 2026")
+        self.assertEqual(a["peak_commits"], 632)
+        self.assertAlmostEqual(a["peak_share_percent"], 40.3, places=1)
+        self.assertTrue(a["momentum"].startswith("Front-loaded"))
+        self.assertTrue(any(f.startswith("Peak month: Feb 2026")
+                            for f in a["findings"]))
+
+    def test_one_bright_burst(self):
+        p = _proj("burst", "2025-01-01", "2025-06-01", 100)
+        p.activity = [5, 80, 5, 5, 3, 2]
+        a = dps.autopsy(p)
+        self.assertTrue(a["momentum"].startswith("One bright burst"))
+
+    def test_late_surge(self):
+        p = _proj("surge", "2025-01-01", "2025-06-01", 100)
+        p.activity = [5, 5, 10, 20, 25, 35]
+        a = dps.autopsy(p)
+        self.assertTrue(a["momentum"].startswith("Late surge"))
+
+    def test_neglect_findings(self):
+        p = _proj("neglected", "2025-01-01", "2025-05-01", 30,
+                  readme=False, remote=False, authors=1)
+        a = dps.autopsy(p)
+        joined = " ".join(a["findings"])
+        self.assertIn("No README", joined)
+        self.assertIn("No remote", joined)
+        self.assertIn("Bus factor one", joined)
+
+    def test_terminal_autopsy_prints_notes(self):
+        from datetime import datetime, timezone
+        p = _proj("gone", "2025-01-01", "2025-05-01", 30,
+                  readme=False, remote=False)
+        cem = dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90, projects=[p])
+        text = dps.render_terminal(cem, with_autopsy=True)
+        self.assertIn("Momentum:", text)
+        self.assertIn("Findings:", text)
+
+    def test_site_export_carries_autopsy(self):
+        from datetime import datetime, timezone
+        p = _proj("gone", "2025-01-01", "2025-05-01", 30)
+        p.cause = "Cause unknown. It simply stopped."
+        cem = dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90, projects=[p])
+        stones = dps.site_projects(cem)
+        self.assertIn("autopsy", stones[0])
+        self.assertIn("momentum", stones[0]["autopsy"])
+        self.assertIn("revival_verdict", stones[0]["autopsy"])

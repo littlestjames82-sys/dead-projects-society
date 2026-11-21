@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -577,6 +577,14 @@ def hall_of_infamy(cem):
 
 
 _SPARK = " \u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"
+_MONTH_ABBR = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+
+def _month_label(born, offset):
+    total = born.year * 12 + (born.month - 1) + offset
+    year, month0 = divmod(total, 12)
+    return "%s %d" % (_MONTH_ABBR[month0], year)
 
 
 def sparkline(activity):
@@ -607,6 +615,61 @@ def autopsy(p):
         end = "Ended mid-repair: one more fix, then silence."
     else:
         end = "Ended without ceremony: an ordinary commit, then silence."
+    activity = list(p.activity or [])
+    active_months = sum(1 for v in activity if v > 0)
+    peak_commits = max(activity) if activity else 0
+    peak_index = activity.index(peak_commits) if activity else -1
+    peak_month = (_month_label(p.born, peak_index)
+                  if peak_index >= 0 else None)
+    peak_share = (peak_commits / p.commits * 100.0
+                  if p.commits and peak_commits else 0.0)
+    half = len(activity) // 2
+    first_half = sum(activity[:half]) if half else 0
+    second_half = sum(activity[half:]) if half else 0
+    if not activity:
+        momentum = ("No monthly record survives; the Department will "
+                    "not invent a rhythm.")
+    elif len(activity) <= 1:
+        momentum = ("Too short to read: the whole life fits inside "
+                    "one month.")
+    elif peak_share >= 60:
+        momentum = ("One bright burst: %.0f%% of the life landed in %s."
+                    % (peak_share, peak_month))
+    elif half and first_half and second_half <= first_half * 0.35:
+        momentum = ("Front-loaded: the first half carried %d commits; "
+                    "the second half faded to %d."
+                    % (first_half, second_half))
+    elif half and first_half and second_half >= first_half * 1.5:
+        momentum = ("Late surge: the second half outpaced the first "
+                    "(%d against %d), which makes the silence harder "
+                    "to explain." % (second_half, first_half))
+    elif p.longest_flatline >= 30:
+        momentum = ("Interrupted life: it stopped for %d days at "
+                    "least once before the final silence."
+                    % p.longest_flatline)
+    else:
+        momentum = ("Steady burn: no single month owned the story; "
+                    "it wound down rather than falling off a cliff.")
+    findings = []
+    if activity and p.commits >= 10 and peak_commits:
+        findings.append("Peak month: %s, with %d commits (%.0f%% of "
+                        "the life)." % (peak_month, peak_commits,
+                                         peak_share))
+    if p.longest_flatline >= 30:
+        findings.append("Longest premortem silence: %d days."
+                        % p.longest_flatline)
+    if not p.has_readme:
+        findings.append("No README: a stranger arriving now gets no "
+                        "explanation.")
+    if not p.has_remote:
+        findings.append("No remote: the only copy lived on one "
+                        "machine.")
+    if p.authors <= 1:
+        findings.append("Bus factor one: a single pair of hands knew "
+                        "the whole story.")
+    elif p.authors >= 5:
+        findings.append("Bus factor %d: the knowledge was not trapped "
+                        "in one head." % p.authors)
     score = 0
     reasons = []
     if p.resurrections >= 1:
@@ -641,6 +704,12 @@ def autopsy(p):
     return {
         "pace_commits_per_month": round(pace, 1),
         "flatlines": len(p.gaps),
+        "active_months": active_months,
+        "peak_month": peak_month,
+        "peak_commits": peak_commits,
+        "peak_share_percent": round(peak_share, 1),
+        "momentum": momentum,
+        "findings": findings,
         "end_pattern": end,
         "revival_score": score,
         "revival_verdict": verdict,
@@ -796,6 +865,10 @@ def render_terminal(cem, with_autopsy=False):
                 if spark:
                     line += " Life: %s" % spark
                 out.append(line)
+                out.append("    Momentum: %s" % a["momentum"])
+                if a["findings"]:
+                    out.append("    Findings: %s"
+                               % " ".join(a["findings"][:4]))
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -1293,6 +1366,15 @@ def site_projects(cem):
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
             "activity": p.activity,
+        }
+        _a = autopsy(p)
+        stone["autopsy"] = {
+            "momentum": _a["momentum"],
+            "findings": _a["findings"],
+            "revival_verdict": _a["revival_verdict"],
+            "peak_month": _a["peak_month"],
+            "peak_commits": _a["peak_commits"],
+            "peak_share_percent": _a["peak_share_percent"],
         }
         url = _site_github_url(p.path)
         if url:

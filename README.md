@@ -96,7 +96,12 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   Crowd That Left, the Unknown Soldier, the Stutter.
 - `--autopsy` opens the **Autopsy Department**: for every buried or
   at-rest project, the pace it lived at, how it ended, and a revival
-  verdict with its reasons, all from the record alone.
+  verdict with its reasons, all from the record alone. The deepened
+  report reads the shape of the life: the peak month and its share of
+  all commits, the momentum (one bright burst, front-loaded, late
+  surge, interrupted, steady burn), the longest premortem silence, and
+  the neglect findings: no README, no remote, a bus factor of one. The
+  same notes appear on each grave in the 3D cemetery.
 - `--certificates DIR` issues a formal **Certificate of Death** (or of
   Completion, for the finished) for every project that earned one.
 - `--badge FILE` writes a shields-style badge with the state of your

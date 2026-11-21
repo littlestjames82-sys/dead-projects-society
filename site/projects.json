@@ -18,6 +18,16 @@
     "activity": [
       48
     ],
+    "autopsy": {
+      "momentum": "Too short to read: the whole life fits inside one month.",
+      "findings": [
+        "Peak month: May 2026, with 48 commits (100% of the life)."
+      ],
+      "revival_verdict": "Long odds, but not none.",
+      "peak_month": "May 2026",
+      "peak_commits": 48,
+      "peak_share_percent": 100.0
+    },
     "url": "https://github.com/gdev6145/Ghost-developer-studio"
   },
   {
@@ -50,6 +60,18 @@
       130,
       21
     ],
+    "autopsy": {
+      "momentum": "Front-loaded: the first half carried 1209 commits; the second half faded to 358.",
+      "findings": [
+        "Peak month: Jul 2025, with 632 commits (40% of the life).",
+        "Longest premortem silence: 68 days.",
+        "Bus factor 114: the knowledge was not trapped in one head."
+      ],
+      "revival_verdict": "Worth exhuming.",
+      "peak_month": "Jul 2025",
+      "peak_commits": 632,
+      "peak_share_percent": 40.3
+    },
     "url": "https://github.com/littlestjames82-sys/ghostcut"
   }
 ]
