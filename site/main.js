@@ -39,10 +39,10 @@ scene.fog = new THREE.FogExp2(0x0b0e12, 0.028);
 
 const camera = new THREE.PerspectiveCamera(
   55, window.innerWidth / window.innerHeight, 0.1, 300);
-camera.position.set(0, 3.2, 11);
+camera.position.set(0, 2.7, 11);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.1, 0);
+controls.target.set(0, 1.35, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 controls.maxPolarAngle = Math.PI * 0.52;
@@ -74,18 +74,18 @@ function makeMoonSprite() {
   const c = document.createElement("canvas");
   c.width = c.height = 256;
   const g = c.getContext("2d");
-  const grad = g.createRadialGradient(128, 128, 30, 128, 128, 128);
-  grad.addColorStop(0, "rgba(235,242,252,1)");
-  grad.addColorStop(0.25, "rgba(200,216,240,0.85)");
-  grad.addColorStop(0.6, "rgba(140,165,205,0.18)");
+  const grad = g.createRadialGradient(128, 128, 10, 128, 128, 128);
+  grad.addColorStop(0, "rgba(242,247,253,1)");
+  grad.addColorStop(0.32, "rgba(226,236,249,0.95)");
+  grad.addColorStop(0.5, "rgba(190,208,235,0.32)");
   grad.addColorStop(1, "rgba(140,165,205,0)");
   g.fillStyle = grad;
   g.fillRect(0, 0, 256, 256);
   const tex = new THREE.CanvasTexture(c);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({
     map: tex, transparent: true, depthWrite: false, fog: false }));
-  spr.scale.set(13, 13, 1);
-  spr.position.set(-7, 13, -42);
+  spr.scale.set(14, 14, 1);
+  spr.position.set(-6, 11, -36);
   return spr;
 }
 scene.add(makeMoonSprite());
@@ -406,8 +406,8 @@ function visitProject(project) {
   desiredTarget.copy(p).add(new THREE.Vector3(0, 0.9, 0));
   // Stand on the path side of the stone, close enough to read it.
   const toward = new THREE.Vector3(-Math.sign(p.x), 0, 0.35).normalize();
-  desiredCamPos = p.clone().add(toward.multiplyScalar(3.4));
-  desiredCamPos.y = 1.9;
+  desiredCamPos = p.clone().add(toward.multiplyScalar(4.8));
+  desiredCamPos.y = 2.2;
   userDrove = false;
   controls.autoRotate = false;
 }
@@ -565,7 +565,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json");
+    const res = await fetch("wards.json?v=5");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -658,7 +658,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json");
+    const res = await fetch("projects.json?v=5");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {

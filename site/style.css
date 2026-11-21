@@ -384,7 +384,13 @@ html, body {
     max-height: 55vh;
   }
 
-  .hint { bottom: auto; top: 6.2rem; }
+  .masthead .stats {
+    font-size: 0.78rem;
+    padding: 0 0.8rem;
+    line-height: 1.45;
+  }
+
+  .hint { bottom: auto; top: 10.5rem; font-size: 0.78rem; padding: 0 1rem; }
 
   .registry {
     top: auto;
