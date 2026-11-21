@@ -72,6 +72,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - A project silent **30 days or less** is alive. **31 to 90 days** puts it
   in intensive care. Past that, it gets a tombstone. `--days` moves the
   line.
+- Projects that flatlined past the death line and then committed again are
+  listed as **back from the dead**, with their longest flatline on record.
+  Even the buried ones confess their earlier resurrections.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

@@ -4,61 +4,81 @@
       "id": "jev-ultrafast",
       "name": "jev-ultrafast",
       "silence_days": 63,
-      "commits": 3
+      "commits": 3,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "decksmith-repo",
       "name": "decksmith-repo",
       "silence_days": 56,
-      "commits": 36
+      "commits": 36,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "ghostchat",
       "name": "ghostchat",
       "silence_days": 50,
-      "commits": 1
+      "commits": 1,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "voicestudio",
       "name": "voicestudio",
       "silence_days": 49,
-      "commits": 3686
+      "commits": 3686,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "storefront",
       "name": "storefront",
       "silence_days": 48,
-      "commits": 5
+      "commits": 5,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "openbot",
       "name": "openbot",
       "silence_days": 46,
-      "commits": 1
+      "commits": 1,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "after-hours-front-desk",
       "name": "after-hours-front-desk",
       "silence_days": 38,
-      "commits": 2
+      "commits": 2,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     },
     {
       "id": "useagent",
       "name": "useagent",
       "silence_days": 38,
-      "commits": 520
+      "commits": 520,
+      "resurrections": 0,
+      "longest_flatline_days": 80
     },
     {
       "id": "useagent-theme42",
       "name": "useagent-theme42",
       "silence_days": 38,
-      "commits": 521
+      "commits": 521,
+      "resurrections": 0,
+      "longest_flatline_days": 80
     },
     {
       "id": "ghostslice",
       "name": "ghostslice",
       "silence_days": 37,
-      "commits": 35
+      "commits": 35,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     }
   ],
   "still_breathing": [
@@ -66,7 +86,9 @@
       "id": "ghostide-shots-ws",
       "name": "ghostide-shots-ws",
       "silence_days": 17,
-      "commits": 1
+      "commits": 1,
+      "resurrections": 0,
+      "longest_flatline_days": 0
     }
   ]
 }

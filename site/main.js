@@ -286,6 +286,18 @@ function raiseStone(project, position, decorative) {
     plaque.position.set(0, 0.82, 0.098);
     group.add(plaque);
     group.userData.plaque = plaque;
+    group.userData.plaqueCanvas = plaque.material.map.image;
+    if (project.resurrections > 0) {
+      // A faint ring of light for the ones who came back at least once.
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.78, 0.98, 40),
+        new THREE.MeshBasicMaterial({
+          color: 0xd8c58f, transparent: true, opacity: 0.32,
+          side: THREE.DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.02;
+      group.add(ring);
+    }
     group.userData.body = body;
     group.userData.baseOpacity = plaque.material.opacity;
     body.userData.project = project;
@@ -349,6 +361,11 @@ function openPanel(project) {
   el("panel-silent").textContent = project.silence_days
     ? "Silent for " + project.silence_days + " days now."
     : "";
+  el("panel-rose").textContent = project.resurrections > 0
+    ? "Back from the dead " +
+      (project.resurrections === 1 ? "once" : project.resurrections + " times") +
+      ": flatlined for " + project.longest_flatline_days + " days, then returned."
+    : "";
   el("panel-cause").textContent = project.cause || "Cause unknown";
   el("panel-epitaph").textContent = project.epitaph || "";
   el("panel-epitaph").style.display = project.epitaph ? "" : "none";
@@ -402,6 +419,30 @@ el("panel-copy").addEventListener("click", async () => {
     btn.textContent = "Copy failed";
   }
   setTimeout(() => { btn.textContent = "Copy obituary"; }, 2200);
+});
+
+el("panel-download").addEventListener("click", () => {
+  const group = stoneGroups.get(selectedId);
+  if (!group || !group.userData.plaqueCanvas) return;
+  const src = group.userData.plaqueCanvas;
+  const card = document.createElement("canvas");
+  card.width = src.width;
+  card.height = src.height;
+  const g = card.getContext("2d");
+  const grad = g.createLinearGradient(0, 0, 0, card.height);
+  grad.addColorStop(0, "#59616a");
+  grad.addColorStop(1, "#363d44");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, card.width, card.height);
+  g.drawImage(src, 0, 0);
+  g.fillStyle = "rgba(207,214,221,0.75)";
+  g.font = "22px Georgia, serif";
+  g.textAlign = "center";
+  g.fillText("DEAD PROJECTS SOCIETY", card.width / 2, card.height - 26);
+  const a = document.createElement("a");
+  a.download = selectedId + "-tombstone.png";
+  a.href = card.toDataURL("image/png");
+  a.click();
 });
 
 el("panel-share").addEventListener("click", async () => {
@@ -654,7 +695,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=8");
+    const res = await fetch("wards.json?v=9");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -762,7 +803,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=8");
+    const res = await fetch("projects.json?v=9");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {

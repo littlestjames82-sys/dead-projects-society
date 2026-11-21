@@ -288,3 +288,43 @@ class TestSiteExport(FixtureBase):
         names_icu = [e["name"] for e in wards["intensive_care"]]
         names_alive = [e["name"] for e in wards["still_breathing"]]
         self.assertEqual(names_icu + names_alive, ["sleepy"])
+
+
+class TestResurrections(FixtureBase):
+    def test_deceased_with_a_past_resurrection(self):
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-01-10T10:00:00", "going strong"),
+            ("2025-06-01T10:00:00", "I am back"),   # 142-day flatline
+            ("2025-06-05T10:00:00", "final words"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        self.assertEqual(len(cem.deceased), 1)
+        p = cem.deceased[0]
+        self.assertEqual(p.resurrections, 1)
+        self.assertEqual(p.longest_flatline, 142)
+        self.assertIn("BACK FROM THE DEAD", dps.render_terminal(cem))
+        data = dps.cemetery_dict(cem)
+        self.assertEqual(data["summary"]["back_from_the_dead"], 1)
+        self.assertEqual(data["projects"][0]["resurrections"], 1)
+
+    def test_alive_project_that_came_back(self):
+        make_repo(os.path.join(self.tmp, "boomerang"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-05-20T10:00:00", "returned"),    # 139-day flatline
+            ("2026-11-15T10:00:00", "current work"),  # after a 544-day one
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        self.assertEqual(len(cem.alive), 1)
+        self.assertEqual(cem.alive[0].resurrections, 2)
+        self.assertEqual(cem.alive[0].longest_flatline, 544)
+
+    def test_short_gaps_do_not_count(self):
+        make_repo(os.path.join(self.tmp, "steady"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-01-20T10:00:00", "regular work"),
+            ("2025-02-10T10:00:00", "more work"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        self.assertEqual(cem.projects[0].resurrections, 0)
+        self.assertEqual(cem.projects[0].longest_flatline, 0)

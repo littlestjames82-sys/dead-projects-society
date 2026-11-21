@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -52,10 +52,13 @@ class Project:
     has_readme: bool
     has_remote: bool
     silence_days: int       # days from last commit to "now"
+    gaps: list = field(default_factory=list)  # silences > 30 days, in days
     status: str = ""        # alive | coma | deceased
     cause: str = ""
     factors: list = field(default_factory=list)
     survived_by: str = ""
+    resurrections: int = 0      # flatlines >= the death line, then a commit
+    longest_flatline: int = 0   # longest mid-life silence, in days
 
     @property
     def lifespan_days(self):
@@ -171,6 +174,20 @@ def read_project(path, now):
     died, last_words = newest
     born, first_words = oldest
 
+    # Mid-life silences: gaps between consecutive commits (log is
+    # newest-first). Only gaps past the coma line are worth recording.
+    gaps = []
+    prev = None
+    for line in lines:
+        when, _ = parse(line)
+        if when is None:
+            continue
+        if prev is not None:
+            gap = (prev - when).days
+            if gap > COMA_DAYS:
+                gaps.append(gap)
+        prev = when
+
     authors_raw = _git(path, "log", "--format=%an")
     authors = len({a for a in (authors_raw or "").splitlines() if a.strip()})
     remotes = _git(path, "remote")
@@ -192,6 +209,7 @@ def read_project(path, now):
         has_readme=has_readme,
         has_remote=has_remote,
         silence_days=max(0, (now - died).days),
+        gaps=gaps,
     )
 
 
@@ -298,6 +316,8 @@ def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
         if p is None:
             continue
         classify(p, dead_days)
+        p.longest_flatline = max(p.gaps, default=0)
+        p.resurrections = sum(1 for g in p.gaps if g >= dead_days)
         if p.status == "deceased":
             p.cause = cause_of_death(p)
             p.factors = contributing_factors(p)
@@ -353,6 +373,10 @@ def render_terminal(cem):
                       _lifespan_text(p), p.commits))
         out.append('  Last words: "%s"' % (p.last_words or "(silence)"))
         out.append("  Cause of death: %s" % p.cause)
+        if p.resurrections >= 1:
+            out.append("  Note: it had already flatlined for %d days once"
+                       " and come back. This time it did not."
+                       % p.longest_flatline)
         for f in p.factors:
             out.append("  Contributing: %s" % f)
         out.append("  %s" % p.survived_by)
@@ -370,6 +394,16 @@ def render_terminal(cem):
         for p in cem.alive:
             out.append("  + %s: active %d days ago"
                        % (p.name, p.silence_days))
+    risen = [p for p in cem.projects if p.resurrections >= 1]
+    if risen:
+        out.append("-" * 64)
+        out.append("  BACK FROM THE DEAD (flatlined past the death line,"
+                   " then committed again)")
+        for p in risen:
+            times = ("once" if p.resurrections == 1
+                     else "%d times" % p.resurrections)
+            out.append("  * %s: flatlined for %d days, rose again %s"
+                       % (p.name, p.longest_flatline, times))
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -404,6 +438,8 @@ def cemetery_dict(cem):
             "has_readme": p.has_readme,
             "has_remote": p.has_remote,
             "silence_days": p.silence_days,
+            "resurrections": p.resurrections,
+            "longest_flatline_days": p.longest_flatline,
             "status": p.status,
             "cause_of_death": p.cause or None,
             "contributing_factors": p.factors,
@@ -420,6 +456,8 @@ def cemetery_dict(cem):
             "alive": len(cem.alive),
             "buried_commits": cem.buried_commits,
             "average_lifespan_days": round(cem.avg_lifespan, 1),
+            "back_from_the_dead": sum(
+                1 for p in cem.projects if p.resurrections >= 1),
         },
         "projects": [pd(p) for p in cem.projects],
     }
@@ -450,6 +488,10 @@ def render_markdown(cem):
         out.append("")
         out.append("**Cause of death:** %s" % p.cause)
         out.append("")
+        if p.resurrections >= 1:
+            out.append("It had already flatlined for %d days once and come "
+                       "back. This time it did not." % p.longest_flatline)
+            out.append("")
         for f in p.factors:
             out.append("- Contributing: %s" % f)
         out.append("- %s" % p.survived_by)
@@ -677,6 +719,8 @@ def site_projects(cem):
             "commits": p.commits,
             "died_full": p.died.date().isoformat(),
             "silence_days": p.silence_days,
+            "resurrections": p.resurrections,
+            "longest_flatline_days": p.longest_flatline,
         }
         url = _site_github_url(p.path)
         if url:
@@ -692,6 +736,8 @@ def site_wards(cem):
             "name": p.name,
             "silence_days": p.silence_days,
             "commits": p.commits,
+            "resurrections": p.resurrections,
+            "longest_flatline_days": p.longest_flatline,
         }
     return {
         "intensive_care": [entry(p) for p in cem.coma],
