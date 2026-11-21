@@ -639,3 +639,29 @@ class TestTimelineAndNewVerdicts(FixtureBase):
         self.assertEqual(old.cause,
                          "Died of a sequel. The replacement was already "
                          "on the way.")
+
+
+class TestBadge(FixtureBase):
+    """v0.10.0: the README badge."""
+
+    def test_badge_counts(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        badge = dps.render_badge(cem)
+        self.assertIn("dead projects society", badge)
+        self.assertIn("1 buried", badge)
+        self.assertIn("<svg", badge)
+
+    def test_badge_flag_writes_file(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+        ])
+        out = os.path.join(self.tmp, "badge.svg")
+        rc = dps.main([self.tmp, "--badge", out])
+        self.assertEqual(rc, 0)
+        with open(out) as fh:
+            self.assertIn("1 buried", fh.read())

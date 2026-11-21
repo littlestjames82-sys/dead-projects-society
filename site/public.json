@@ -1,1 +1,362 @@
-[{"born":"2005","cause":"Killed by its own family","description":"The feed reader everyone actually used, shut down on July 1, 2013 despite a devoted cult and a petition signed by well over a hundred thousand readers. Google wanted the team on other things. It had a real season. Its readers say it was loved. The Society notes what replaced it: an algorithmic feed, forever.","died":"2013","epitaph":"A second spring of cleaning.","id":"google-reader","name":"Google Reader","silence_days":4890,"style":"cross","tech":["RSS","Web"]},{"born":"2020","cause":"Weekend fling, at scale","description":"Raised about 1.75 billion dollars to put ten-minute shows on phones, launched in April 2020, and was gone by December. It burned fast. Its backers say it was more than an idea. Nothing replaced it. The slot, and the money, are still open.","died":"2020","epitaph":"Quick bites. Big stories.","id":"quibi","name":"Quibi","silence_days":2180,"style":"tablet","tech":["Streaming","Mobile"]},{"born":"2013","cause":"Starved by its parent","description":"Six seconds at a time, Vine taught the internet a new grammar and launched a generation of creators. Twitter bought it before launch, never figured out how it made money, and shut it down in January 2017. Survived by TikTok, born the following year. The Society notes the timing.","died":"2017","epitaph":"Do it for the Vine.","id":"vine","name":"Vine","silence_days":3230,"style":"gothic","tech":["Video","Mobile"]},{"born":"2019","cause":"Died in a pivot","description":"Google's cloud gaming service streamed big games to any screen, then closed its own studios, then closed entirely in January 2023. To its credit, Google refunded the hardware and the games. The last thing ever released on it was a Snake clone the team had used for testing.","died":"2023","epitaph":"Worm Game.","id":"google-stadia","name":"Google Stadia","silence_days":1400,"style":"tablet","tech":["Cloud","Gaming"]},{"born":"1995","cause":"Faded away quietly","description":"Once carried roughly 95 percent of the web and came preinstalled on nearly every computer on Earth. Then came a decade of being the browser you used to download another browser. Retired June 15, 2022. It had a long life, by any standard. Nothing replaced it that was not already there.","died":"2022","epitaph":"It is time to move to Edge.","id":"internet-explorer","name":"Internet Explorer","silence_days":1620,"style":"gothic","tech":["Browser","Windows"]},{"born":"1996","cause":"Cold case, closed by the coroner","description":"Flash animated the early web: the games, the cartoons, the video players, the menus that should never have been menus. An open letter in 2010 began the end, phones refused to carry it, and support stopped on the last day of 2020. A whole era of the internet is archived in its file format.","died":"2020","epitaph":"No longer supported after December 2020.","id":"adobe-flash","name":"Adobe Flash","silence_days":2150,"style":"gothic","tech":["Plugin","Web"]},{"born":"2003","cause":"Died as it lived: one more call","description":"Skype made the world talk for free, carried a huge share of all international calls, and became a verb. Microsoft bought it for 8.5 billion dollars, slowly rebuilt it several times, and retired it in May 2025 in favor of Teams. Its ringtone is in a museum of the mind.","died":"2025","epitaph":"The whole world can talk for free.","id":"skype","name":"Skype","silence_days":565,"style":"tablet","tech":["VoIP","Messaging"]},{"born":"2001","cause":"Survived by its own successor","description":"A thousand songs in your pocket rewired the music industry and saved its company. Over 450 million were sold. Then the iPhone absorbed it whole, and the last model was discontinued in May 2022. It had a long life, by side-project standards. The Society notes what replaced it, because it is the same logo.","died":"2022","epitaph":"1,000 songs in your pocket.","id":"ipod","name":"iPod","silence_days":1655,"style":"gothic","tech":["Hardware","Music"]},{"born":"2011","cause":"One more fix, then the plug","description":"Google's fourth attempt at a social network was wired into everything its maker owned, which is exactly what people resented. A data exposure in 2018 moved the funeral up; the doors closed April 2, 2019. Its best ideas, circles and hangouts, were survived by everyone else's products.","died":"2019","epitaph":"Real-life sharing, rethought for the web.","id":"google-plus","name":"Google+","silence_days":2425,"style":"tablet","tech":["Social","Web"]},{"born":"1997","cause":"Away message: permanent","description":"AOL Instant Messenger was the social network before the word existed: screen names, buddy lists, away messages as literature, and a running man who meant your friends were home. It shut down on December 15, 2017. A generation's first audience is still out there, just on other services now.","died":"2017","epitaph":"Away message: gone forever.","id":"aim","name":"AIM","silence_days":3265,"style":"gothic","tech":["Messaging","Desktop"]},{"born":"2010","cause":"Died in a merge of strategies","description":"The most beautiful phone interface of its era, with an app store the world never moved into. Microsoft bought Nokia's phone business, wrote it down for 7.6 billion dollars, and confirmed the end in 2017; support finished in 2019. Reviewers loved it. There were simply never enough of them.","died":"2017","epitaph":"Put people first.","id":"windows-phone","name":"Windows Phone","silence_days":3330,"style":"tablet","tech":["Mobile","OS"]},{"born":"1994","cause":"Sudden cardiac arrest, browser war","description":"Netscape Navigator was the first web browser most people ever touched, and its maker helped invent JavaScript and the secure web along the way. The browser war was lost to a rival that shipped free with the operating system. Support ended in 2008. Survived, in spirit and in code, by Firefox.","died":"2008","epitaph":"Netscape Now!","id":"netscape","name":"Netscape","silence_days":6840,"style":"gothic","tech":["Browser","Web"]}]
+[
+ {
+  "born": "2005",
+  "cause": "Killed by its own family",
+  "description": "The feed reader everyone actually used, shut down on July 1, 2013 despite a devoted cult and a petition signed by well over a hundred thousand readers. Google wanted the team on other things. It had a real season. Its readers say it was loved. The Society notes what replaced it: an algorithmic feed, forever.",
+  "died": "2013",
+  "epitaph": "A second spring of cleaning.",
+  "id": "google-reader",
+  "name": "Google Reader",
+  "silence_days": 4890,
+  "style": "cross",
+  "tech": [
+   "RSS",
+   "Web"
+  ]
+ },
+ {
+  "born": "2020",
+  "cause": "Weekend fling, at scale",
+  "description": "Raised about 1.75 billion dollars to put ten-minute shows on phones, launched in April 2020, and was gone by December. It burned fast. Its backers say it was more than an idea. Nothing replaced it. The slot, and the money, are still open.",
+  "died": "2020",
+  "epitaph": "Quick bites. Big stories.",
+  "id": "quibi",
+  "name": "Quibi",
+  "silence_days": 2180,
+  "style": "tablet",
+  "tech": [
+   "Streaming",
+   "Mobile"
+  ]
+ },
+ {
+  "born": "2013",
+  "cause": "Starved by its parent",
+  "description": "Six seconds at a time, Vine taught the internet a new grammar and launched a generation of creators. Twitter bought it before launch, never figured out how it made money, and shut it down in January 2017. Survived by TikTok, born the following year. The Society notes the timing.",
+  "died": "2017",
+  "epitaph": "Do it for the Vine.",
+  "id": "vine",
+  "name": "Vine",
+  "silence_days": 3230,
+  "style": "gothic",
+  "tech": [
+   "Video",
+   "Mobile"
+  ]
+ },
+ {
+  "born": "2019",
+  "cause": "Died in a pivot",
+  "description": "Google's cloud gaming service streamed big games to any screen, then closed its own studios, then closed entirely in January 2023. To its credit, Google refunded the hardware and the games. The last thing ever released on it was a Snake clone the team had used for testing.",
+  "died": "2023",
+  "epitaph": "Worm Game.",
+  "id": "google-stadia",
+  "name": "Google Stadia",
+  "silence_days": 1400,
+  "style": "tablet",
+  "tech": [
+   "Cloud",
+   "Gaming"
+  ]
+ },
+ {
+  "born": "1995",
+  "cause": "Faded away quietly",
+  "description": "Once carried roughly 95 percent of the web and came preinstalled on nearly every computer on Earth. Then came a decade of being the browser you used to download another browser. Retired June 15, 2022. It had a long life, by any standard. Nothing replaced it that was not already there.",
+  "died": "2022",
+  "epitaph": "It is time to move to Edge.",
+  "id": "internet-explorer",
+  "name": "Internet Explorer",
+  "silence_days": 1620,
+  "style": "gothic",
+  "tech": [
+   "Browser",
+   "Windows"
+  ]
+ },
+ {
+  "born": "1996",
+  "cause": "Cold case, closed by the coroner",
+  "description": "Flash animated the early web: the games, the cartoons, the video players, the menus that should never have been menus. An open letter in 2010 began the end, phones refused to carry it, and support stopped on the last day of 2020. A whole era of the internet is archived in its file format.",
+  "died": "2020",
+  "epitaph": "No longer supported after December 2020.",
+  "id": "adobe-flash",
+  "name": "Adobe Flash",
+  "silence_days": 2150,
+  "style": "gothic",
+  "tech": [
+   "Plugin",
+   "Web"
+  ]
+ },
+ {
+  "born": "2003",
+  "cause": "Died as it lived: one more call",
+  "description": "Skype made the world talk for free, carried a huge share of all international calls, and became a verb. Microsoft bought it for 8.5 billion dollars, slowly rebuilt it several times, and retired it in May 2025 in favor of Teams. Its ringtone is in a museum of the mind.",
+  "died": "2025",
+  "epitaph": "The whole world can talk for free.",
+  "id": "skype",
+  "name": "Skype",
+  "silence_days": 565,
+  "style": "tablet",
+  "tech": [
+   "VoIP",
+   "Messaging"
+  ]
+ },
+ {
+  "born": "2001",
+  "cause": "Survived by its own successor",
+  "description": "A thousand songs in your pocket rewired the music industry and saved its company. Over 450 million were sold. Then the iPhone absorbed it whole, and the last model was discontinued in May 2022. It had a long life, by side-project standards. The Society notes what replaced it, because it is the same logo.",
+  "died": "2022",
+  "epitaph": "1,000 songs in your pocket.",
+  "id": "ipod",
+  "name": "iPod",
+  "silence_days": 1655,
+  "style": "gothic",
+  "tech": [
+   "Hardware",
+   "Music"
+  ]
+ },
+ {
+  "born": "2011",
+  "cause": "One more fix, then the plug",
+  "description": "Google's fourth attempt at a social network was wired into everything its maker owned, which is exactly what people resented. A data exposure in 2018 moved the funeral up; the doors closed April 2, 2019. Its best ideas, circles and hangouts, were survived by everyone else's products.",
+  "died": "2019",
+  "epitaph": "Real-life sharing, rethought for the web.",
+  "id": "google-plus",
+  "name": "Google+",
+  "silence_days": 2425,
+  "style": "tablet",
+  "tech": [
+   "Social",
+   "Web"
+  ]
+ },
+ {
+  "born": "1997",
+  "cause": "Away message: permanent",
+  "description": "AOL Instant Messenger was the social network before the word existed: screen names, buddy lists, away messages as literature, and a running man who meant your friends were home. It shut down on December 15, 2017. A generation's first audience is still out there, just on other services now.",
+  "died": "2017",
+  "epitaph": "Away message: gone forever.",
+  "id": "aim",
+  "name": "AIM",
+  "silence_days": 3265,
+  "style": "gothic",
+  "tech": [
+   "Messaging",
+   "Desktop"
+  ]
+ },
+ {
+  "born": "2010",
+  "cause": "Died in a merge of strategies",
+  "description": "The most beautiful phone interface of its era, with an app store the world never moved into. Microsoft bought Nokia's phone business, wrote it down for 7.6 billion dollars, and confirmed the end in 2017; support finished in 2019. Reviewers loved it. There were simply never enough of them.",
+  "died": "2017",
+  "epitaph": "Put people first.",
+  "id": "windows-phone",
+  "name": "Windows Phone",
+  "silence_days": 3330,
+  "style": "tablet",
+  "tech": [
+   "Mobile",
+   "OS"
+  ]
+ },
+ {
+  "born": "1994",
+  "cause": "Sudden cardiac arrest, browser war",
+  "description": "Netscape Navigator was the first web browser most people ever touched, and its maker helped invent JavaScript and the secure web along the way. The browser war was lost to a rival that shipped free with the operating system. Support ended in 2008. Survived, in spirit and in code, by Firefox.",
+  "died": "2008",
+  "epitaph": "Netscape Now!",
+  "id": "netscape",
+  "name": "Netscape",
+  "silence_days": 6840,
+  "style": "gothic",
+  "tech": [
+   "Browser",
+   "Web"
+  ]
+ },
+ {
+  "id": "geocities",
+  "name": "GeoCities",
+  "born": "1994",
+  "died": "2009",
+  "cause": "Neighborhood demolished",
+  "epitaph": "Under construction.",
+  "description": "A third of the early web lived here: neighborhoods of hand-built pages, guestbooks, MIDI, and glitter text. Yahoo bought it for billions and closed the US service in October 2009. Volunteers archived a million pages before the bulldozers. It had a real season, and the season was the whole early internet.",
+  "tech": [
+   "Web",
+   "Hosting"
+  ],
+  "silence_days": 6250,
+  "style": "gothic"
+ },
+ {
+  "id": "napster",
+  "name": "Napster",
+  "born": "1999",
+  "died": "2001",
+  "cause": "Died in court",
+  "epitaph": "Download complete.",
+  "description": "Sixty million people sharing music from their dorm rooms, and the entire recording industry in court over it. The original service was shut down in July 2001. It burned fast. Everything about how music moves now was decided in its two years.",
+  "tech": [
+   "P2P",
+   "Music"
+  ],
+  "silence_days": 9300,
+  "style": "tablet"
+ },
+ {
+  "id": "altavista",
+  "name": "AltaVista",
+  "born": "1995",
+  "died": "2013",
+  "cause": "Faded away quietly",
+  "epitaph": "The guide to the Net.",
+  "description": "For a few years this was how you found anything: the biggest index on Earth, queried by people who still said 'the Net.' Sold, resold, folded into Yahoo, and switched off in July 2013, by then a footnote in its own results.",
+  "tech": [
+   "Search",
+   "Web"
+  ],
+  "silence_days": 4700,
+  "style": "gothic"
+ },
+ {
+  "id": "friendster",
+  "name": "Friendster",
+  "born": "2002",
+  "died": "2011",
+  "cause": "Survived by everyone",
+  "epitaph": "The original social network.",
+  "description": "The first of its kind, with millions of members before the word 'social network' settled. Slow pages and fake profiles drove its crowd to younger rivals; it relaunched as a games site in 2011 and suspended for good in 2015. The Society notes what replaced it: everyone.",
+  "tech": [
+   "Social",
+   "Web"
+  ],
+  "silence_days": 5500,
+  "style": "tablet"
+ },
+ {
+  "id": "google-wave",
+  "name": "Google Wave",
+  "born": "2009",
+  "died": "2012",
+  "cause": "Died ahead of its time",
+  "epitaph": "Email, if it were invented today.",
+  "description": "A real-time, threaded, collaborative everything, unveiled to applause and abandoned within a year of launch. Read-only in 2012. Half its ideas quietly moved into documents and chat tools that arrived later and explained themselves better.",
+  "tech": [
+   "Collaboration",
+   "Web"
+  ],
+  "silence_days": 5100,
+  "style": "gothic"
+ },
+ {
+  "id": "orkut",
+  "name": "Orkut",
+  "born": "2004",
+  "died": "2014",
+  "cause": "Died abroad, beloved",
+  "epitaph": "Scrap me.",
+  "description": "A footnote in its home country and a phenomenon in Brazil and India, where for years it simply was social networking. Google closed it in September 2014. Its mourners were counted in tens of millions, an ocean away from the headquarters that ended it.",
+  "tech": [
+   "Social",
+   "Web"
+  ],
+  "silence_days": 4450,
+  "style": "tablet"
+ },
+ {
+  "id": "delicious",
+  "name": "Delicious",
+  "born": "2003",
+  "died": "2017",
+  "cause": "Starved",
+  "epitaph": "Keep, share, discover.",
+  "description": "Social bookmarking before the feed ate the web: your links, tagged and shared, a library of what the internet thought was worth keeping. Sold twice, neglected, and made read-only in 2017. The bookmarks outlived the bookmarker.",
+  "tech": [
+   "Bookmarks",
+   "Web"
+  ],
+  "silence_days": 3300,
+  "style": "gothic"
+ },
+ {
+  "id": "stumbleupon",
+  "name": "StumbleUpon",
+  "born": "2001",
+  "died": "2018",
+  "cause": "Died in a pivot",
+  "epitaph": "Stumble!",
+  "description": "One button and the interesting internet arrived at random, back when randomness was a feature. Fifteen years of serendipity ended in June 2018 when its users were moved to a successor most never asked for. The slot it filled is still open.",
+  "tech": [
+   "Discovery",
+   "Web"
+  ],
+  "silence_days": 3050,
+  "style": "tablet"
+ },
+ {
+  "id": "digg",
+  "name": "Digg",
+  "born": "2004",
+  "died": "2012",
+  "cause": "Died in a redesign",
+  "epitaph": "Digg it.",
+  "description": "The front page of the internet, voted on by its readers, until a 2010 redesign so hated that the readers left in a weekend and founded the competition's traffic. Sold for parts in 2012. The redesign is still taught as a warning.",
+  "tech": [
+   "News",
+   "Social"
+  ],
+  "silence_days": 5100,
+  "style": "gothic"
+ },
+ {
+  "id": "winamp",
+  "name": "Winamp",
+  "born": "1997",
+  "died": "2013",
+  "cause": "Cold case",
+  "epitaph": "It really whips the llama's ass.",
+  "description": "The music player of a generation: skinnable, beloved, and bundled with everyone's MP3 library. AOL, which paid 80 million dollars for its maker, announced its end in 2013. The llama outlived the roadmap.",
+  "tech": [
+   "Music",
+   "Desktop"
+  ],
+  "silence_days": 4700,
+  "style": "tablet"
+ },
+ {
+  "id": "google-glass",
+  "name": "Google Glass",
+  "born": "2013",
+  "died": "2023",
+  "cause": "Died of exposure",
+  "epitaph": "Okay, Glass.",
+  "description": "A computer on your face, years before the world had decided how it felt about that. The consumer version ended in 2015 amid a privacy backlash; the enterprise edition carried on quietly until 2023. It had two lives and was early for both.",
+  "tech": [
+   "Wearables",
+   "Hardware"
+  ],
+  "silence_days": 1330,
+  "style": "tablet"
+ },
+ {
+  "id": "palm",
+  "name": "Palm",
+  "born": "1996",
+  "died": "2011",
+  "cause": "Died in a merger",
+  "epitaph": "HotSync complete.",
+  "description": "The PalmPilot put a computer in a shirt pocket a decade before the smartphone settled, and webOS was the most elegant mobile system of its year. HP bought Palm for 1.2 billion dollars and discontinued the devices sixteen months later. Survived by every phone now in every pocket.",
+  "tech": [
+   "Mobile",
+   "Hardware"
+  ],
+  "silence_days": 5500,
+  "style": "gothic"
+ }
+]

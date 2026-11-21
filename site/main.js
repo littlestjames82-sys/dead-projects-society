@@ -959,10 +959,10 @@ for (let i = 0; i < 18; i++) {
 {
   const silMat = new THREE.MeshBasicMaterial({ color: 0x161d26, fog: false });
   for (let x = -38; x <= 38; x += 5 + Math.random() * 3) {
-    const h = 7 + Math.random() * 7;
+    const h = 9 + Math.random() * 8;
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(3 + Math.random() * 2.5, h, 2), silMat);
-    tower.position.set(x, h / 2 - 0.5, -31 + (Math.random() - 0.5) * 3);
+    tower.position.set(x, h / 2 - 0.5, -38 + (Math.random() - 0.5) * 3);
     scene.add(tower);
     if (Math.random() < 0.65) {
       const spire = new THREE.Mesh(
@@ -1019,7 +1019,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=16");
+    const res = await fetch("wards.json?v=17");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1167,7 +1167,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=16");
+    const res = await fetch("projects.json?v=17");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1228,7 +1228,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=16");
+    const res = await fetch("honors.json?v=17");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1260,7 +1260,7 @@ loadHonors();
 
 async function loadInfamy() {
   try {
-    const res = await fetch("infamy.json?v=16");
+    const res = await fetch("infamy.json?v=17");
     if (!res.ok) return;
     const infamy = await res.json();
     if (!Array.isArray(infamy) || !infamy.length) return;
@@ -1296,7 +1296,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=16");
+    const res = await fetch("public.json?v=17");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {
@@ -1311,7 +1311,7 @@ async function loadPublicGrounds() {
     allPublic.push(project);
     const row = Math.floor(i / 6), col = i % 6;
     const x = -13.5 + col * 5.4 + (Math.random() - 0.5) * 0.7;
-    const z = -16 - row * 4.2 + (Math.random() - 0.5) * 0.5;
+    const z = -15.5 - row * 3.4 + (Math.random() - 0.5) * 0.5;
     const group = raiseStone(project, new THREE.Vector3(x, 0, z), false,
       entry.style || styleFor(project, null));
     group.rotation.y = (Math.random() - 0.5) * 0.16;

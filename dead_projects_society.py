@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1321,6 +1321,37 @@ def site_wards(cem):
     }
 
 
+def render_badge(cem):
+    """A shields-style badge for a README: the state of the grounds."""
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    label = "dead projects society"
+    msg = "%d buried \u00b7 %d in a coma \u00b7 %d breathing" % (
+        len(cem.deceased), len(cem.coma), len(cem.alive))
+    if cem.resting:
+        msg += " \u00b7 %d at rest" % len(cem.resting)
+    color = "#4c1" if not cem.deceased else "#b08d57"
+    lw = int(38 + len(label) * 6.5)
+    mw = int(12 + len(msg) * 6.5)
+    w = lw + mw
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="20" '
+        'role="img" aria-label="%s: %s">'
+        "<title>%s: %s</title>"
+        '<rect width="%d" height="20" rx="3" fill="#555"/>'
+        '<rect x="%d" width="%d" height="20" rx="3" fill="%s"/>'
+        '<rect x="%d" width="4" height="20" fill="%s"/>'
+        '<text x="%d" y="14" text-anchor="middle" '
+        'font-family="Verdana, sans-serif" font-size="11" fill="#fff">%s'
+        "</text>"
+        '<text x="%d" y="14" text-anchor="middle" '
+        'font-family="Verdana, sans-serif" font-size="11" fill="#fff">%s'
+        "</text></svg>"
+        % (w, esc(label), esc(msg), esc(label), esc(msg), w, lw, mw,
+           color, lw, color, lw // 2, esc(label), lw + mw // 2, esc(msg)))
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1342,6 +1373,8 @@ def main(argv=None):
                     help="Write a walkable HTML graveyard")
     ap.add_argument("--card", metavar="FILE",
                     help="Write an SVG share card")
+    ap.add_argument("--badge", metavar="FILE",
+                    help="Write an SVG status badge for a README")
     ap.add_argument("--out", metavar="FILE",
                     help="Write Markdown obituaries")
     ap.add_argument("--json", action="store_true",
@@ -1390,6 +1423,10 @@ def main(argv=None):
         with open(args.card, "w", encoding="utf-8") as fh:
             fh.write(render_card(cem))
         print("Share card written to %s" % args.card)
+    if args.badge:
+        with open(args.badge, "w", encoding="utf-8") as fh:
+            fh.write(render_badge(cem))
+        print("Badge written to %s" % args.badge)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(render_markdown(cem))
