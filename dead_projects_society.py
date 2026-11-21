@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -642,6 +642,9 @@ _HTML = """<!DOCTYPE html>
   .dates {{ color:#9aa6b1; font-size:.92rem; }}
   .words {{ font-style:italic; color:#c3ccd4; margin:.7rem 0 .3rem; }}
   .cause {{ color:#b08d57; font-size:.95rem; }}
+  .eulogy {{ font-style:italic; color:#aeb9c2; margin-top:.55rem;
+            font-size:.92rem; }}
+  .risen {{ color:#d8c58f; font-size:.85rem; margin-top:.35rem; }}
   .factor, .survived {{ color:#77828d; font-size:.85rem; margin-top:.35rem; }}
   h3.section {{ color:#e8edf1; letter-spacing:.08em; margin:2.5rem 0 1rem;
                text-align:center; font-weight:normal; }}
@@ -671,19 +674,34 @@ def render_html(cem):
     for p in cem.deceased:
         factors = "".join(
             '<div class="factor">%s</div>' % esc(f) for f in p.factors)
+        risen = ""
+        if p.resurrections >= 1:
+            risen = ('<div class="risen">It had already flatlined for %d '
+                     "days once and come back. This time it did "
+                     "not.</div>" % p.longest_flatline)
         stones.append(
             '<div class="stone"><div class="rip">R.I.P.</div>'
             "<h2>%s</h2>"
             '<div class="dates">%s &ndash; %s<br>aged %s &middot; %d commits'
             "</div>"
             '<div class="words">&ldquo;%s&rdquo;</div>'
-            '<div class="cause">%s</div>%s'
+            '<div class="cause">%s</div>'
+            '<div class="eulogy">%s</div>%s%s'
             '<div class="survived">%s</div></div>'
             % (esc(p.name), _fmt_date(p.born), _fmt_date(p.died),
                _lifespan_text(p), p.commits,
-               esc(p.last_words or "(silence)"), esc(p.cause), factors,
+               esc(p.last_words or "(silence)"), esc(p.cause),
+               esc(compose_eulogy(p)), risen, factors,
                esc(p.survived_by)))
     extra = []
+    honors = society_honors(cem)
+    if honors:
+        rows = "<br>".join(
+            "%s: %s. %s" % (esc(h["title"]), esc(h["project"].name),
+                            esc(h["detail"]))
+            for h in honors)
+        extra.append('<h3 class="section">THE SOCIETY&rsquo;S HONORS</h3>'
+                     '<div class="living">%s</div>' % rows)
     if cem.coma:
         rows = "<br>".join(
             "%s &mdash; last seen %s (%d days ago)"
@@ -718,6 +736,16 @@ def render_card(cem):
         worst = max(cem.deceased, key=lambda p: p.silence_days)
         lines.append("Longest silence: %s, %d days."
                      % (worst.name, worst.silence_days))
+    risen = [p for p in cem.projects if p.resurrections >= 1]
+    if risen:
+        p = max(risen, key=lambda x: x.longest_flatline)
+        lines.append("Back from the dead: %s, after %d days."
+                     % (p.name, p.longest_flatline))
+    elif cem.deceased:
+        marathoner = max(cem.deceased, key=lambda p: p.lifespan_days)
+        lines.append("The Marathoner: %s, %s."
+                     % (marathoner.name,
+                        _site_life_text(marathoner.lifespan_days)))
     parts = []
     parts.append(
         '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" '

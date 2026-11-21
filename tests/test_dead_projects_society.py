@@ -404,3 +404,27 @@ class TestEulogiesAndPatients(FixtureBase):
         self.assertEqual(e["epitaph"], "last words so far")
         self.assertEqual(e["born"], "2026")
         self.assertIn("does not bury the living", e["description"])
+
+
+class TestHtmlAndCardParity(FixtureBase):
+    def test_html_has_honors_and_eulogy(self):
+        make_repo(os.path.join(self.tmp, "htmlproj"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-02-01T10:00:00", "the end"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        page = dps.render_html(cem)
+        self.assertIn("THE SOCIETY", page)
+        self.assertIn("HONORS", page)
+        self.assertIn("It had a short, bright season.", page)
+        self.assertIn('class="eulogy"', page)
+
+    def test_card_prefers_the_phoenix_line(self):
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-06-01T10:00:00", "back from a 151-day flatline"),
+            ("2025-06-05T10:00:00", "final"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        card = dps.render_card(cem)
+        self.assertIn("Back from the dead: phoenix, after 151 days.", card)

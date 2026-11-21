@@ -170,6 +170,57 @@ function wrapText(g, text, maxWidth) {
   return lines;
 }
 
+// The concept sheet's other vision: the stone as a dead terminal, cyan
+// monospace on near-black. Same facts, haunted by a different decade.
+function makeTerminalPlaqueTexture(project) {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 640;
+  const g = c.getContext("2d");
+  g.fillStyle = "#04070a";
+  g.fillRect(0, 0, 512, 640);
+  g.strokeStyle = "rgba(127,231,255,0.35)";
+  g.lineWidth = 3;
+  g.strokeRect(14, 14, 484, 612);
+  g.textAlign = "left";
+  g.shadowColor = "rgba(127,231,255,0.8)";
+  g.shadowBlur = 9;
+  const cyan = "#7fe7ff";
+  const dimCyan = "rgba(127,231,255,0.66)";
+  const line = (text, y, size, color) => {
+    g.font = size + "px 'Courier New', monospace";
+    g.fillStyle = color || cyan;
+    g.fillText(text, 44, y);
+  };
+  line("PROJECT: " + project.name.toUpperCase().slice(0, 24), 96, 30);
+  const years = project.born === project.died
+    ? String(project.born) : project.born + " - " + project.died;
+  line("LIFESPAN: " + years, 148, 25, dimCyan);
+  line("COMMITS: " + project.commits, 190, 25, dimCyan);
+  line("LAST COMMIT: " + project.silence_days + " DAYS AGO", 232, 25,
+    dimCyan);
+  let y = 300;
+  if (project.epitaph) {
+    g.font = "25px 'Courier New', monospace";
+    const words = wrapText(g, project.epitaph, 400).slice(0, 3);
+    line("// LAST WORDS:", y, 25, dimCyan);
+    y += 40;
+    for (const w of words) {
+      line(w.toUpperCase().slice(0, 26), y, 25);
+      y += 38;
+    }
+  }
+  y += 26;
+  line("// " + (project.cause || "CAUSE UNKNOWN").toUpperCase().slice(0, 26),
+    y, 25, dimCyan);
+  y += 52;
+  line("STATUS: ABANDONED", y, 28);
+  line("x", y + 54, 28, dimCyan);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+
 function makePlaqueTexture(project) {
   const c = document.createElement("canvas");
   c.width = 512;
@@ -281,24 +332,24 @@ function makeStoneTexture() {
   const g = c.getContext("2d");
   g.fillStyle = "#a7b0b8";
   g.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 34; i++) {
     const x = Math.random() * 256, y = Math.random() * 256;
-    const r = 18 + Math.random() * 46;
+    const r = 18 + Math.random() * 52;
     const grad = g.createRadialGradient(x, y, 0, x, y, r);
-    const tone = Math.random() < 0.5 ? "70,78,86" : "140,148,156";
-    grad.addColorStop(0, "rgba(" + tone + ",0.20)");
+    const tone = Math.random() < 0.5 ? "58,66,74" : "150,158,166";
+    grad.addColorStop(0, "rgba(" + tone + ",0.36)");
     grad.addColorStop(1, "rgba(" + tone + ",0)");
     g.fillStyle = grad;
     g.fillRect(x - r, y - r, r * 2, r * 2);
   }
-  for (let i = 0; i < 1500; i++) {
+  for (let i = 0; i < 2600; i++) {
     g.fillStyle = Math.random() < 0.5
-      ? "rgba(30,34,38," + (0.05 + Math.random() * 0.16) + ")"
-      : "rgba(230,236,240," + (0.04 + Math.random() * 0.1) + ")";
+      ? "rgba(24,28,32," + (0.08 + Math.random() * 0.22) + ")"
+      : "rgba(232,238,242," + (0.05 + Math.random() * 0.14) + ")";
     g.fillRect(Math.random() * 256, Math.random() * 256,
-      1 + Math.random() * 2, 1 + Math.random() * 2);
+      1 + Math.random() * 2.4, 1 + Math.random() * 2.4);
   }
-  g.strokeStyle = "rgba(38,42,46,0.4)";
+  g.strokeStyle = "rgba(30,34,38,0.55)";
   g.lineWidth = 1;
   for (let i = 0; i < 6; i++) {
     let x = Math.random() * 256, y = Math.random() * 90;
@@ -387,6 +438,7 @@ function raiseStone(project, position, decorative, style) {
     group.add(plaque);
     group.userData.plaque = plaque;
     group.userData.plaqueCanvas = plaque.material.map.image;
+    group.userData.engravedTex = plaque.material.map;
     if (project.resurrections > 0) {
       // A faint ring of light for the ones who came back at least once.
       const ring = new THREE.Mesh(
@@ -815,18 +867,20 @@ for (let i = 0; i < 18; i++) {
   makeCypress(x, z, 4.5 + Math.random() * 3);
 }
 
-// A distant spired skyline on the horizon, all silhouette.
+// A distant spired skyline on the horizon, all silhouette. It ignores
+// the fog on purpose: at fog density the far band would wash to the sky
+// color and vanish, so the skyline is drawn flat, a shade off the sky.
 {
-  const silMat = new THREE.MeshBasicMaterial({ color: 0x0a0d12 });
-  for (let x = -36; x <= 36; x += 5 + Math.random() * 3) {
-    const h = 5 + Math.random() * 7;
+  const silMat = new THREE.MeshBasicMaterial({ color: 0x161d26, fog: false });
+  for (let x = -38; x <= 38; x += 5 + Math.random() * 3) {
+    const h = 7 + Math.random() * 7;
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(3 + Math.random() * 2.5, h, 2), silMat);
-    tower.position.set(x, h / 2 - 0.5, -42 + (Math.random() - 0.5) * 3);
+    tower.position.set(x, h / 2 - 0.5, -31 + (Math.random() - 0.5) * 3);
     scene.add(tower);
-    if (Math.random() < 0.6) {
+    if (Math.random() < 0.65) {
       const spire = new THREE.Mesh(
-        new THREE.ConeGeometry(1.4, 3 + Math.random() * 2.5, 4), silMat);
+        new THREE.ConeGeometry(1.4, 3.5 + Math.random() * 3, 4), silMat);
       spire.position.set(x, h - 0.5 + spire.geometry.parameters.height / 2,
         tower.position.z);
       scene.add(spire);
@@ -879,7 +933,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=12");
+    const res = await fetch("wards.json?v=13");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -988,6 +1042,28 @@ function buildRegistry(projects) {
     else startTour();
   });
 
+  let terminalMode = false;
+  el("terminal-btn").addEventListener("click", () => {
+    terminalMode = !terminalMode;
+    el("terminal-btn").textContent =
+      terminalMode ? "Engraved mode" : "Terminal mode";
+    for (const [id, group] of stoneGroups) {
+      const plaque = group.userData.plaque;
+      if (!plaque) continue;
+      if (terminalMode) {
+        if (!group.userData.terminalTex) {
+          const project = allProjects.find((p) => p.id === id);
+          if (!project) continue;
+          group.userData.terminalTex = makeTerminalPlaqueTexture(project);
+        }
+        plaque.material.map = group.userData.terminalTex;
+      } else {
+        plaque.material.map = group.userData.engravedTex;
+      }
+      plaque.material.needsUpdate = true;
+    }
+  });
+
   el("registry-search").addEventListener("input", (event) => {
     const q = event.target.value.trim().toLowerCase();
     list.querySelectorAll("li").forEach((li) => {
@@ -1004,7 +1080,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=12");
+    const res = await fetch("projects.json?v=13");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1065,7 +1141,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=12");
+    const res = await fetch("honors.json?v=13");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
