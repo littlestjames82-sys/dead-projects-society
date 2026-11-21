@@ -234,12 +234,29 @@ function makePlaqueTexture(project) {
   return tex;
 }
 
-function makeStoneGeometry() {
+function makeStoneGeometry(style) {
   const s = new THREE.Shape();
-  s.moveTo(-0.5, 0);
-  s.lineTo(-0.5, 1.05);
-  s.absarc(0, 1.05, 0.5, Math.PI, 0, true);
-  s.lineTo(0.5, 0);
+  if (style === "gothic") {
+    // Classic Gothic: straight sides rising to a pointed arch.
+    s.moveTo(-0.5, 0);
+    s.lineTo(-0.5, 0.95);
+    s.quadraticCurveTo(-0.5, 1.42, 0, 1.78);
+    s.quadraticCurveTo(0.5, 1.42, 0.5, 0.95);
+    s.lineTo(0.5, 0);
+  } else if (style === "tablet") {
+    // Modern Tablet: a clean slab with barely rounded corners.
+    s.moveTo(-0.52, 0);
+    s.lineTo(-0.52, 1.38);
+    s.quadraticCurveTo(-0.52, 1.5, -0.4, 1.5);
+    s.lineTo(0.4, 1.5);
+    s.quadraticCurveTo(0.52, 1.5, 0.52, 1.38);
+    s.lineTo(0.52, 0);
+  } else {
+    s.moveTo(-0.5, 0);
+    s.lineTo(-0.5, 1.05);
+    s.absarc(0, 1.05, 0.5, Math.PI, 0, true);
+    s.lineTo(0.5, 0);
+  }
   s.closePath();
   const geo = new THREE.ExtrudeGeometry(s, {
     depth: 0.16, bevelEnabled: true, bevelThickness: 0.015,
@@ -248,19 +265,102 @@ function makeStoneGeometry() {
   geo.translate(0, 0, -0.08);
   return geo;
 }
-const stoneGeometry = makeStoneGeometry();
+const stoneGeometries = {
+  classic: makeStoneGeometry("classic"),
+  gothic: makeStoneGeometry("gothic"),
+  tablet: makeStoneGeometry("tablet"),
+};
+const stoneGeometry = stoneGeometries.classic;
+
+// Weathered stone, painted once on a canvas: speckle, blotches, hairline
+// cracks, and moss staining toward the base. No external assets.
+function makeStoneTexture() {
+  const c = document.createElement("canvas");
+  c.width = 256;
+  c.height = 256;
+  const g = c.getContext("2d");
+  g.fillStyle = "#a7b0b8";
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 26; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256;
+    const r = 18 + Math.random() * 46;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    const tone = Math.random() < 0.5 ? "70,78,86" : "140,148,156";
+    grad.addColorStop(0, "rgba(" + tone + ",0.20)");
+    grad.addColorStop(1, "rgba(" + tone + ",0)");
+    g.fillStyle = grad;
+    g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  for (let i = 0; i < 1500; i++) {
+    g.fillStyle = Math.random() < 0.5
+      ? "rgba(30,34,38," + (0.05 + Math.random() * 0.16) + ")"
+      : "rgba(230,236,240," + (0.04 + Math.random() * 0.1) + ")";
+    g.fillRect(Math.random() * 256, Math.random() * 256,
+      1 + Math.random() * 2, 1 + Math.random() * 2);
+  }
+  g.strokeStyle = "rgba(38,42,46,0.4)";
+  g.lineWidth = 1;
+  for (let i = 0; i < 6; i++) {
+    let x = Math.random() * 256, y = Math.random() * 90;
+    g.beginPath();
+    g.moveTo(x, y);
+    const segs = 3 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < segs; k++) {
+      x += (Math.random() - 0.5) * 22;
+      y += 14 + Math.random() * 22;
+      g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  const moss = g.createLinearGradient(0, 180, 0, 256);
+  moss.addColorStop(0, "rgba(74,96,58,0)");
+  moss.addColorStop(1, "rgba(74,96,58,0.4)");
+  g.fillStyle = moss;
+  g.fillRect(0, 180, 256, 76);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+const stoneTexture = makeStoneTexture();
+
+// Which concept from the design sheet a project gets: the biggest legacy
+// earns the Celtic Cross; the rest split between Gothic and Tablet.
+function styleFor(project, loudestId) {
+  if (project.id === loudestId) return "cross";
+  let h = 0;
+  for (const ch of project.id) h += ch.charCodeAt(0);
+  return h % 2 === 0 ? "gothic" : "tablet";
+}
 
 const interactive = [];
 const stoneGroups = new Map();
 
-function raiseStone(project, position, decorative) {
+function raiseStone(project, position, decorative, style) {
   const group = new THREE.Group();
   const tint = 0.92 + Math.random() * 0.16;
   const stoneMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.42 * tint, 0.46 * tint, 0.5 * tint),
+    map: stoneTexture,
+    color: new THREE.Color(0.66 * tint, 0.7 * tint, 0.74 * tint),
     roughness: 0.95, metalness: 0.02,
   });
-  const body = new THREE.Mesh(stoneGeometry, stoneMat);
+  const geo = style === "cross" ? stoneGeometries.gothic
+    : stoneGeometries[style] || stoneGeometries.classic;
+  const body = new THREE.Mesh(geo, stoneMat);
+  if (style === "cross") {
+    // Celtic Cross, for the project that leaves a legacy beyond scope.
+    const upright = new THREE.Mesh(
+      new THREE.BoxGeometry(0.15, 0.66, 0.09), stoneMat);
+    upright.position.set(0, 1.98, 0);
+    upright.castShadow = true;
+    group.add(upright);
+    const bar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.46, 0.13, 0.09), stoneMat);
+    bar.position.set(0, 2.06, 0);
+    bar.castShadow = true;
+    group.add(bar);
+  }
   body.castShadow = true;
   body.receiveShadow = true;
   body.userData.baseColor = stoneMat.color.clone();
@@ -683,6 +783,57 @@ const gate = makeSign("DEAD PROJECTS SOCIETY", 5.6);
 gate.position.set(0, 0, 7.6);
 scene.add(gate);
 
+// Cypress trees around the grounds, from the concept sheet's skyline.
+function makeCypress(x, z, h) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.1, 0.8, 6),
+    new THREE.MeshStandardMaterial({ color: 0x1a140e, roughness: 1 }));
+  trunk.position.y = 0.4;
+  tree.add(trunk);
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: 0x0c130e, roughness: 1 });
+  const tiers = [[0.62, 0.5], [0.46, 0.42], [0.28, 0.34]];
+  let y = 0.6;
+  for (const [r, frac] of tiers) {
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(r, h * frac, 8), leafMat);
+    cone.position.y = y + (h * frac) / 2;
+    cone.castShadow = true;
+    tree.add(cone);
+    y += h * frac * 0.72;
+  }
+  tree.position.set(x, 0, z);
+  scene.add(tree);
+}
+for (let i = 0; i < 18; i++) {
+  const angle = (i / 18) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+  const radius = 20 + Math.random() * 8;
+  const x = Math.cos(angle) * radius;
+  const z = Math.sin(angle) * radius - 6;
+  if (z > 4 && Math.abs(x) < 6) continue; // keep the entrance clear
+  makeCypress(x, z, 4.5 + Math.random() * 3);
+}
+
+// A distant spired skyline on the horizon, all silhouette.
+{
+  const silMat = new THREE.MeshBasicMaterial({ color: 0x0a0d12 });
+  for (let x = -36; x <= 36; x += 5 + Math.random() * 3) {
+    const h = 5 + Math.random() * 7;
+    const tower = new THREE.Mesh(
+      new THREE.BoxGeometry(3 + Math.random() * 2.5, h, 2), silMat);
+    tower.position.set(x, h / 2 - 0.5, -42 + (Math.random() - 0.5) * 3);
+    scene.add(tower);
+    if (Math.random() < 0.6) {
+      const spire = new THREE.Mesh(
+        new THREE.ConeGeometry(1.4, 3 + Math.random() * 2.5, 4), silMat);
+      spire.position.set(x, h - 0.5 + spire.geometry.parameters.height / 2,
+        tower.position.z);
+      scene.add(spire);
+    }
+  }
+}
+
 const wardGroups = new Map();
 const allPatients = [];
 
@@ -703,8 +854,9 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
     patient: true,
   };
   const group = new THREE.Group();
-  const body = new THREE.Mesh(stoneGeometry, new THREE.MeshStandardMaterial({
-    color: 0x565e66, roughness: 0.97 }));
+  const body = new THREE.Mesh(stoneGeometries.tablet,
+    new THREE.MeshStandardMaterial({
+      map: stoneTexture, color: 0x9aa2a8, roughness: 0.97 }));
   body.castShadow = true;
   body.userData.project = patient;
   interactive.push(body);
@@ -727,7 +879,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=11");
+    const res = await fetch("wards.json?v=12");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -852,7 +1004,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=11");
+    const res = await fetch("projects.json?v=12");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -865,6 +1017,8 @@ async function build() {
   }
 
   // Rows of the departed, flanking the path.
+  const loudestId = projects.reduce((a, b) =>
+    (b.commits || 0) > (a.commits || 0) ? b : a, projects[0]).id;
   const perRow = 4;
   projects.forEach((project, i) => {
     const row = Math.floor(i / perRow);
@@ -873,7 +1027,8 @@ async function build() {
     const pairIndex = Math.floor(col / 2);
     const x = side * (2.6 + pairIndex * 2.4) + (Math.random() - 0.5) * 0.5;
     const z = 2.5 - row * 3.1 + (Math.random() - 0.5) * 0.6;
-    const group = raiseStone(project, new THREE.Vector3(x, 0, z), false);
+    const group = raiseStone(project, new THREE.Vector3(x, 0, z), false,
+      styleFor(project, loudestId));
     group.rotation.y = side * -0.18 + (Math.random() - 0.5) * 0.1;
   });
 
@@ -884,7 +1039,8 @@ async function build() {
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius - 6;
     if (Math.abs(x) < 3.4) continue;
-    raiseStone(null, new THREE.Vector3(x, 0, z), true)
+    const pick = ["classic", "gothic", "tablet"][i % 3];
+    raiseStone(null, new THREE.Vector3(x, 0, z), true, pick)
       .lookAt(0, 0, z + 4);
   }
 
@@ -909,7 +1065,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=11");
+    const res = await fetch("honors.json?v=12");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
