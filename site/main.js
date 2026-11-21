@@ -274,6 +274,10 @@ function raiseStone(project, position, decorative) {
       ? Math.max(0, new Date().getFullYear() - diedYear) : 0;
     group.rotation.z += Math.min(0.09, yearsDead * 0.012) *
       (Math.random() < 0.5 ? -1 : 1);
+    // Moss creeps in with the years.
+    body.material.color.lerp(new THREE.Color(0.3, 0.4, 0.28),
+      Math.min(0.45, yearsDead * 0.06));
+    body.userData.baseColor.copy(body.material.color);
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(0.94, 1.18),
       new THREE.MeshBasicMaterial({
@@ -379,6 +383,27 @@ el("panel-close").addEventListener("click", closePanel);
 el("panel-prev").addEventListener("click", () => { stopTour(); cycleProject(-1); });
 el("panel-next").addEventListener("click", () => { stopTour(); cycleProject(1); });
 
+el("panel-copy").addEventListener("click", async () => {
+  const project = allProjects.find((p) => p.id === selectedId);
+  if (!project) return;
+  const years = project.born === project.died
+    ? String(project.born) : project.born + " — " + project.died;
+  const text = "R.I.P. " + project.name + " (" + years + ")\n" +
+    "Cause of death: " + (project.cause || "Cause unknown") + "\n" +
+    (project.epitaph ? "Last words: \"" + project.epitaph + "\"\n" : "") +
+    (project.description || "") + "\n" +
+    location.origin + location.pathname + "#grave=" +
+    encodeURIComponent(project.id);
+  const btn = el("panel-copy");
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = "Copied";
+  } catch (e) {
+    btn.textContent = "Copy failed";
+  }
+  setTimeout(() => { btn.textContent = "Copy obituary"; }, 2200);
+});
+
 el("panel-share").addEventListener("click", async () => {
   if (!selectedId) return;
   const url = location.origin + location.pathname + "#grave=" +
@@ -450,9 +475,18 @@ function startTour() {
 }
 
 window.addEventListener("keydown", (event) => {
+  if (event.target && (event.target.tagName === "INPUT" ||
+      event.target.tagName === "TEXTAREA")) return;
   if (event.key === "ArrowRight") cycleProject(1);
   else if (event.key === "ArrowLeft") cycleProject(-1);
   else if (event.key === "Escape") closePanel();
+  else if (event.key === "r" || event.key === "R") {
+    const pool = allProjects.filter((p) => p.id !== selectedId);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    if (pick) { stopTour(); visitProject(pick); }
+  } else if (event.key === "t" || event.key === "T") {
+    if (tourTimer) stopTour(); else startTour();
+  }
 });
 
 // A shared link followed while the grounds are already open should still
@@ -620,7 +654,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=7");
+    const res = await fetch("wards.json?v=8");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -712,6 +746,15 @@ function buildRegistry(projects) {
     else startTour();
   });
 
+  el("registry-search").addEventListener("input", (event) => {
+    const q = event.target.value.trim().toLowerCase();
+    list.querySelectorAll("li").forEach((li) => {
+      const btn = li.querySelector("button");
+      li.style.display = !q || btn.dataset.id.includes(q) ||
+        btn.textContent.toLowerCase().includes(q) ? "" : "none";
+    });
+  });
+
   registry.hidden = false;
 }
 
@@ -719,7 +762,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=7");
+    const res = await fetch("projects.json?v=8");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {

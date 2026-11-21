@@ -239,3 +239,52 @@ class TestCli(FixtureBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestNewCauses(FixtureBase):
+    def test_died_in_a_refactor(self):
+        commits = [("2025-01-05T10:00:00", "start")]
+        for i in range(10):
+            commits.append(("2025-0%d-15T10:00:00" % (i % 9 + 1),
+                            "feature %d" % i))
+        commits.append(("2025-06-01T10:00:00", "big refactor of the core"))
+        make_repo(os.path.join(self.tmp, "refactored"), commits)
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        self.assertEqual(len(cem.deceased), 1)
+        self.assertTrue(cem.deceased[0].cause.startswith("Died in a refactor"))
+
+    def test_starved(self):
+        make_repo(os.path.join(self.tmp, "starved"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-03-01T10:00:00", "a little more"),
+            ("2025-05-01T10:00:00", "small step"),
+            ("2025-06-15T10:00:00", "tiny tweak"),
+            ("2025-08-01T10:00:00", "another small step"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        self.assertEqual(len(cem.deceased), 1)
+        self.assertTrue(cem.deceased[0].cause.startswith("Starved"))
+
+
+class TestSiteExport(FixtureBase):
+    def test_site_export_writes_both_files(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2024-01-01T10:00:00", "start"),
+            ("2024-02-01T10:00:00", "last gasp"),
+        ])
+        make_repo(os.path.join(self.tmp, "sleepy"), [
+            ("2026-11-01T10:00:00", "recent start"),
+            ("2026-11-10T10:00:00", "still going"),
+        ])
+        outdir = os.path.join(self.tmp, "site-data")
+        rc = dps.main([self.tmp, "--site", outdir])
+        self.assertEqual(rc, 0)
+        stones = json.load(open(os.path.join(outdir, "projects.json")))
+        wards = json.load(open(os.path.join(outdir, "wards.json")))
+        self.assertEqual([s["name"] for s in stones], ["gone"])
+        self.assertEqual(stones[0]["cause"], "New Year's resolution")
+        self.assertEqual(stones[0]["epitaph"], "last gasp")
+        self.assertIn("silence_days", stones[0])
+        names_icu = [e["name"] for e in wards["intensive_care"]]
+        names_alive = [e["name"] for e in wards["still_breathing"]]
+        self.assertEqual(names_icu + names_alive, ["sleepy"])

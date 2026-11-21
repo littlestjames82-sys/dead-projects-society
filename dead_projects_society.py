@@ -16,6 +16,7 @@ Your code never leaves the machine; only git log metadata is read.
 Usage:
     dead-projects-society [PATH] [--days N] [--depth N]
                           [--html FILE] [--card FILE] [--out FILE] [--json]
+                          [--site DIR]
 """
 
 import argparse
@@ -28,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -201,6 +202,9 @@ def read_project(path, now):
 _WIP_RE = re.compile(r"^(wip|temp|tmp|test|testing|asdf|checkpoint|save)\b",
                      re.IGNORECASE)
 _FIX_RE = re.compile(r"\bfix", re.IGNORECASE)
+_REFACTOR_RE = re.compile(
+    r"\b(refactor|cleanup|clean up|reorganiz\w*|restructur\w*|tidy)\b",
+    re.IGNORECASE)
 
 
 def classify(p, dead_days):
@@ -229,9 +233,15 @@ def cause_of_death(p):
         return "Weekend fling. It was never going to be a thing."
     if _FIX_RE.search(msg) and p.commits >= 20:
         return "Died as it lived: one more fix."
+    if _REFACTOR_RE.search(msg) and p.commits >= 10:
+        return ("Died in a refactor. It was going to be cleaner. "
+                "It was going to be beautiful.")
     if p.commits >= 100:
         return ("Sudden cardiac arrest. %d commits, then silence."
                 % p.commits)
+    if life >= 180 and p.commits <= 12:
+        return ("Starved. A commit every few weeks, then none. "
+                "It needed feeding, not features.")
     if p.silence_days >= 730:
         return "Cold case. Even the trail has gone quiet."
     if life >= 180:
@@ -608,6 +618,88 @@ def render_card(cem):
 
 
 # ---------------------------------------------------------------------------
+# Web graveyard export: projects.json + wards.json for the 3D site
+# ---------------------------------------------------------------------------
+
+
+def _site_slug(name):
+    return re.sub(r"[^a-z0-9-]+", "-", name.lower()).strip("-")
+
+
+def _site_cause_tag(cause):
+    if not cause:
+        return "Cause unknown"
+    tag = cause.split(".")[0].strip()
+    return tag[:1].upper() + tag[1:]
+
+
+def _site_life_text(life):
+    if life == 1:
+        return "1 day"
+    if life < 60:
+        return "%d days" % life
+    if life < 730:
+        return "%d months" % round(life / 30.44)
+    return "%.1f years" % (life / 365.25)
+
+
+def _site_github_url(path):
+    url = _git(path, "remote", "get-url", "origin")
+    if not url:
+        return None
+    url = url.strip()
+    m = re.match(r"git@github\.com:(.+?)(?:\.git)?$", url)
+    if m:
+        return "https://github.com/" + m.group(1)
+    if url.startswith("https://github.com/"):
+        return url[:-4] if url.endswith(".git") else url
+    return None
+
+
+def site_projects(cem):
+    stones = []
+    for p in cem.deceased:
+        desc = "%d commits over %s. %s" % (
+            p.commits, _site_life_text(p.lifespan_days), p.cause or "")
+        for f in p.factors:
+            desc += " " + f
+        if p.survived_by:
+            desc += " " + p.survived_by
+        stone = {
+            "id": _site_slug(p.name),
+            "name": p.name,
+            "born": p.born.strftime("%Y"),
+            "died": p.died.strftime("%Y"),
+            "cause": _site_cause_tag(p.cause),
+            "epitaph": p.last_words or "",
+            "description": desc,
+            "tech": [],
+            "commits": p.commits,
+            "died_full": p.died.date().isoformat(),
+            "silence_days": p.silence_days,
+        }
+        url = _site_github_url(p.path)
+        if url:
+            stone["url"] = url
+        stones.append(stone)
+    return stones
+
+
+def site_wards(cem):
+    def entry(p):
+        return {
+            "id": _site_slug(p.name),
+            "name": p.name,
+            "silence_days": p.silence_days,
+            "commits": p.commits,
+        }
+    return {
+        "intensive_care": [entry(p) for p in cem.coma],
+        "still_breathing": [entry(p) for p in cem.alive],
+    }
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -632,6 +724,9 @@ def main(argv=None):
                     help="Write Markdown obituaries")
     ap.add_argument("--json", action="store_true",
                     help="Print the full report as JSON")
+    ap.add_argument("--site", metavar="DIR",
+                    help="Write projects.json and wards.json for the 3D "
+                         "web graveyard into DIR")
     ap.add_argument("--version", action="version",
                     version="dead-projects-society %s" % VERSION)
     args = ap.parse_args(argv)
@@ -661,6 +756,17 @@ def main(argv=None):
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(render_markdown(cem))
         print("Obituaries written to %s" % args.out)
+    if args.site:
+        os.makedirs(args.site, exist_ok=True)
+        with open(os.path.join(args.site, "projects.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(site_projects(cem), fh, indent=2)
+            fh.write("\n")
+        with open(os.path.join(args.site, "wards.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(site_wards(cem), fh, indent=2)
+            fh.write("\n")
+        print("Web graveyard data written to %s" % args.site)
     return 0
 
 

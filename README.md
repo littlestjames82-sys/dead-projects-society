@@ -66,6 +66,7 @@ dead-projects-society ~/projects --html graveyard.html
 dead-projects-society ~/projects --card card.svg
 dead-projects-society ~/projects --out obituaries.md
 dead-projects-society ~/projects --json
+dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 ```
 
 - A project silent **30 days or less** is alive. **31 to 90 days** puts it
@@ -86,7 +87,8 @@ library, Python 3.9+.
 Causes of death are determined by a small, very judgmental coroner:
 one-commit wonders, weekend flings, projects that died mid-sentence on a
 `wip`, New Year's resolutions, sudden cardiac arrests after hundreds of
-commits, cold cases silent for two years, and more.
+commits, projects that died in a refactor, projects that starved on a
+commit every few weeks, cold cases silent for two years, and more.
 
 ## The Society's rules
 

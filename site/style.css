@@ -63,6 +63,21 @@ html, body {
   margin-bottom: 0.7rem;
 }
 
+.registry-search {
+  width: 100%;
+  margin-bottom: 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.registry-search::placeholder { color: var(--ink-faint); font-style: italic; }
+.registry-search:focus { outline: 1px solid var(--accent); }
+
 .cause-filters {
   display: flex;
   flex-wrap: wrap;
