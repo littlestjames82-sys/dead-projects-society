@@ -3,7 +3,7 @@
 
 Usage:
     dead-projects-society ~/projects --json > cemetery.json
-    python3 tools/to_site_json.py cemetery.json site/projects.json
+    python3 tools/to_site_json.py cemetery.json site/projects.json [site/wards.json]
 
 Only the deceased are buried. The epitaph is the project's last words,
 the description is composed from the coroner's report, and the URL is
@@ -71,6 +71,8 @@ def convert(data):
             "description": desc,
             "tech": [],
             "commits": p["commits"],
+            "died_full": p["died"],
+            "silence_days": p["silence_days"],
         }
         url = github_url(p["path"])
         if url:
@@ -79,8 +81,24 @@ def convert(data):
     return stones
 
 
+def convert_wards(data):
+    wards = {"intensive_care": [], "still_breathing": []}
+    for p in data.get("projects", []):
+        entry = {
+            "id": re.sub(r"[^a-z0-9-]+", "-", p["name"].lower()).strip("-"),
+            "name": p["name"],
+            "silence_days": p["silence_days"],
+            "commits": p["commits"],
+        }
+        if p.get("status") == "coma":
+            wards["intensive_care"].append(entry)
+        elif p.get("status") == "alive":
+            wards["still_breathing"].append(entry)
+    return wards
+
+
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         print(__doc__)
         return 2
     with open(sys.argv[1], encoding="utf-8") as fh:
@@ -90,6 +108,13 @@ def main():
         json.dump(stones, fh, indent=2)
         fh.write("\n")
     print("Wrote %d tombstone(s) to %s" % (len(stones), sys.argv[2]))
+    if len(sys.argv) == 4:
+        wards = convert_wards(data)
+        with open(sys.argv[3], "w", encoding="utf-8") as fh:
+            json.dump(wards, fh, indent=2)
+            fh.write("\n")
+        print("Wrote wards: %d intensive care, %d still breathing"
+              % (len(wards["intensive_care"]), len(wards["still_breathing"])))
     return 0
 
 

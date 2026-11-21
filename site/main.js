@@ -52,7 +52,8 @@ controls.autoRotate = !reducedMotion;
 controls.autoRotateSpeed = 0.35;
 
 // ---------- lights ----------
-scene.add(new THREE.AmbientLight(0x2a3442, 1.1));
+const ambient = new THREE.AmbientLight(0x2a3442, 1.1);
+scene.add(ambient);
 
 const moonLight = new THREE.DirectionalLight(0xaFC4e8, 1.6);
 moonLight.position.set(-14, 20, -8);
@@ -341,6 +342,9 @@ function openPanel(project) {
   el("panel-years").textContent = project.born === project.died
     ? String(project.born)
     : project.born + " — " + project.died;
+  el("panel-silent").textContent = project.silence_days
+    ? "Silent for " + project.silence_days + " days now."
+    : "";
   el("panel-cause").textContent = project.cause || "Cause unknown";
   el("panel-epitaph").textContent = project.epitaph || "";
   el("panel-epitaph").style.display = project.epitaph ? "" : "none";
@@ -371,11 +375,28 @@ function closePanel() {
 }
 el("panel-close").addEventListener("click", closePanel);
 
+el("panel-share").addEventListener("click", async () => {
+  if (!selectedId) return;
+  const url = location.origin + location.pathname + "#grave=" +
+    encodeURIComponent(selectedId);
+  const btn = el("panel-share");
+  try {
+    await navigator.clipboard.writeText(url);
+    btn.textContent = "Link copied";
+  } catch (e) {
+    btn.textContent = url;
+  }
+  setTimeout(() => { btn.textContent = "Share this grave"; }, 2200);
+});
+
 // ---------- visiting a grave (click, registry, random, keys) ----------
 let desiredCamPos = null;
 
 function visitProject(project) {
   openPanel(project);
+  try {
+    history.replaceState(null, "", "#grave=" + encodeURIComponent(project.id));
+  } catch (e) { /* file:// or sandboxed frames may refuse; the visit stands */ }
   const group = stoneGroups.get(project.id);
   if (!group) return;
   document.querySelectorAll(".registry-list button").forEach((b) => {
@@ -426,9 +447,21 @@ function castAt(event) {
   return hits.length ? hits[0].object : null;
 }
 
+const tooltip = el("tooltip");
 renderer.domElement.addEventListener("pointermove", (event) => {
   hovered = castAt(event);
   renderer.domElement.style.cursor = hovered ? "pointer" : "";
+  if (hovered) {
+    tooltip.textContent = hovered.userData.project.name;
+    tooltip.style.left = event.clientX + "px";
+    tooltip.style.top = event.clientY + "px";
+    tooltip.hidden = false;
+  } else {
+    tooltip.hidden = true;
+  }
+});
+renderer.domElement.addEventListener("pointerleave", () => {
+  tooltip.hidden = true;
 });
 
 let downAt = null;
@@ -449,6 +482,131 @@ renderer.domElement.addEventListener("pointerup", (event) => {
     desiredTarget.set(0, 1.1, 0);
   }
 });
+
+// ---------- wards: intensive care + still breathing ----------
+let icuLight = null;
+
+function makeWardPlaqueTexture(entry, label, accent) {
+  const c = document.createElement("canvas");
+  c.width = 512;
+  c.height = 640;
+  const g = c.getContext("2d");
+  g.textAlign = "center";
+  const draw = (text, y, font, color) => {
+    g.font = font;
+    g.fillStyle = "rgba(10,12,14,0.85)";
+    g.fillText(text, 256, y + 2);
+    g.fillStyle = color;
+    g.fillText(text, 256, y);
+  };
+  draw(label, 120, "30px Georgia, serif", accent);
+  g.font = "bold 42px Georgia, serif";
+  const lines = wrapText(g, entry.name, 420).slice(0, 3);
+  let y = 210;
+  for (const line of lines) {
+    draw(line, y, "bold 42px Georgia, serif", "rgba(228,233,238,0.9)");
+    y += 50;
+  }
+  draw("silent " + entry.silence_days + " days", y + 26,
+    "italic 30px Georgia, serif", "rgba(178,188,198,0.85)");
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+
+function makeSign(text) {
+  const c = document.createElement("canvas");
+  c.width = 1024;
+  c.height = 224;
+  const g = c.getContext("2d");
+  g.fillStyle = "#171310";
+  g.fillRect(0, 0, 1024, 224);
+  g.strokeStyle = "rgba(207,214,221,0.35)";
+  g.lineWidth = 6;
+  g.strokeRect(14, 14, 996, 196);
+  g.fillStyle = "rgba(226,231,236,0.92)";
+  g.font = "64px Georgia, serif";
+  g.textAlign = "center";
+  g.fillText(text.split("").join(" "), 512, 138);
+  const tex = new THREE.CanvasTexture(c);
+  const group = new THREE.Group();
+  const board = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.6, 0.79),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
+  board.position.y = 1.55;
+  group.add(board);
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x241c12, roughness: 1 });
+  for (const px of [-1.5, 1.5]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.6, 8), postMat);
+    post.position.set(px, 0.8, -0.03);
+    group.add(post);
+  }
+  return group;
+}
+
+function raiseWardStone(entry, label, accent, position, faceAngle) {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(stoneGeometry, new THREE.MeshStandardMaterial({
+    color: 0x565e66, roughness: 0.97 }));
+  body.castShadow = true;
+  group.add(body);
+  const plaque = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.94, 1.18),
+    new THREE.MeshBasicMaterial({
+      map: makeWardPlaqueTexture(entry, label, accent), transparent: true }));
+  plaque.position.set(0, 0.82, 0.098);
+  group.add(plaque);
+  group.scale.setScalar(0.55);
+  group.position.copy(position);
+  group.rotation.y = faceAngle;
+  scene.add(group);
+}
+
+async function buildWards() {
+  let wards;
+  try {
+    const res = await fetch("wards.json");
+    if (!res.ok) return;
+    wards = await res.json();
+  } catch (e) {
+    return; // the wards are optional; the buried are the main grounds
+  }
+  const icu = wards.intensive_care || [];
+  const breathing = wards.still_breathing || [];
+
+  if (icu.length) {
+    const sign = makeSign("INTENSIVE CARE");
+    sign.position.set(-10.5, 0, -2.2);
+    sign.rotation.y = 0.5;
+    scene.add(sign);
+    icuLight = new THREE.PointLight(0xffb46b, 7, 13, 1.8);
+    icuLight.position.set(-11.5, 1.7, -6.5);
+    scene.add(icuLight);
+    icu.forEach((entry, i) => {
+      const col = i % 5, row = Math.floor(i / 5);
+      raiseWardStone(entry, "INTENSIVE CARE", "rgba(216,162,74,0.95)",
+        new THREE.Vector3(-9.8 - col * 1.9, 0, -5 - row * 2.6), 0.55);
+    });
+  }
+  if (breathing.length) {
+    const sign = makeSign("STILL BREATHING");
+    sign.position.set(10.5, 0, -2.2);
+    sign.rotation.y = -0.5;
+    scene.add(sign);
+    const light = new THREE.PointLight(0x86d97a, 6, 12, 1.8);
+    light.position.set(11.5, 1.7, -6.5);
+    scene.add(light);
+    breathing.forEach((entry, i) => {
+      const col = i % 5, row = Math.floor(i / 5);
+      raiseWardStone(entry, "STILL BREATHING", "rgba(159,212,138,0.95)",
+        new THREE.Vector3(9.8 + col * 1.9, 0, -5 - row * 2.6), -0.55);
+    });
+  }
+  if (icu.length || breathing.length) {
+    statsEl.textContent += " · " + icu.length + " in intensive care · " +
+      breathing.length + " still breathing";
+  }
+}
 
 // ---------- registry ----------
 function buildRegistry(projects) {
@@ -544,12 +702,22 @@ async function build() {
     ? "Now resting: " + projects.length + " projects · " +
       totalCommits.toLocaleString() + " commits buried"
     : "Now resting: " + projects.length + " projects";
+
+  buildWards();
+
+  const m = location.hash.match(/grave=([^&]+)/);
+  if (m) {
+    const target = projects.find((p) => p.id === decodeURIComponent(m[1]));
+    if (target) setTimeout(() => visitProject(target), 700);
+  }
 }
 build();
 
 // ---------- animate ----------
 const clock = new THREE.Clock();
 let prevT = 0;
+let nextFlash = 14 + Math.random() * 20;
+let flashStart = -1;
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
@@ -569,6 +737,26 @@ function animate() {
     }
     pos.needsUpdate = true;
     lantern.intensity = 11 + Math.sin(t * 7.3) * 1.2 + Math.sin(t * 13.7) * 0.7;
+    if (icuLight) icuLight.intensity = 6.5 + Math.sin(t * 2.2) * 1.8;
+
+    // Distant lightning, now and then: a soft double blink on the horizon.
+    if (t > nextFlash) {
+      flashStart = t;
+      nextFlash = t + 18 + Math.random() * 26;
+    }
+    if (flashStart > 0) {
+      const age = t - flashStart;
+      const env = age < 0.08 ? age / 0.08
+        : age < 0.15 ? 0.3
+        : age < 0.34 ? Math.max(0, 1 - (age - 0.15) / 0.19) : 0;
+      ambient.intensity = 1.1 + env * 2.2;
+      moonLight.intensity = 1.6 + env * 1.8;
+      if (age >= 0.34) {
+        flashStart = -1;
+        ambient.intensity = 1.1;
+        moonLight.intensity = 1.6;
+      }
+    }
   }
 
   if (hovered) {
