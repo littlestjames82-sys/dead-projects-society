@@ -366,3 +366,41 @@ class TestHonors(FixtureBase):
         cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
         titles = [h["title"] for h in dps.society_honors(cem)]
         self.assertIn("The Phoenix", titles)
+
+
+class TestEulogiesAndPatients(FixtureBase):
+    def test_eulogy_scales_with_the_life(self):
+        commits = [("2024-01-01T10:00:00", "start")]
+        for i in range(60):
+            commits.append(("2024-%02d-10T10:00:00" % (i % 12 + 1),
+                            "work %d" % i))
+        commits.append(("2025-03-01T10:00:00", "the end"))
+        make_repo(os.path.join(self.tmp, "biglife"), commits)
+        make_repo(os.path.join(self.tmp, "smalllife"), [
+            ("2025-03-01T10:00:00", "hi"),
+            ("2025-03-02T10:00:00", "bye"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        by_name = {p.name: p for p in cem.deceased}
+        big = dps.compose_eulogy(by_name["biglife"])
+        small = dps.compose_eulogy(by_name["smalllife"])
+        self.assertIn("was meant", big)
+        self.assertIn("burned fast", small)
+        self.assertNotEqual(big, small)
+        data = dps.cemetery_dict(cem)
+        eulogies = {d["name"]: d["eulogy"] for d in data["projects"]}
+        self.assertTrue(all(eulogies.values()))
+
+    def test_patient_records_are_complete(self):
+        make_repo(os.path.join(self.tmp, "sleepy"), [
+            ("2026-10-01T10:00:00", "start"),
+            ("2026-10-20T10:00:00", "last words so far"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        wards = dps.site_wards(cem)
+        entries = wards["intensive_care"] + wards["still_breathing"]
+        self.assertEqual(len(entries), 1)
+        e = entries[0]
+        self.assertEqual(e["epitaph"], "last words so far")
+        self.assertEqual(e["born"], "2026")
+        self.assertIn("does not bury the living", e["description"])

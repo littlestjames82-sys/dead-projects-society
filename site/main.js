@@ -385,6 +385,8 @@ function openPanel(project) {
   } else {
     link.hidden = true;
   }
+  // Patients have no grave to deep-link to; the share button rests.
+  el("panel-share").style.display = project.patient ? "none" : "";
   panel.hidden = false;
 }
 
@@ -401,16 +403,21 @@ el("panel-prev").addEventListener("click", () => { stopTour(); cycleProject(-1);
 el("panel-next").addEventListener("click", () => { stopTour(); cycleProject(1); });
 
 el("panel-copy").addEventListener("click", async () => {
-  const project = allProjects.find((p) => p.id === selectedId);
+  const project = allProjects.find((p) => p.id === selectedId) ||
+    allPatients.find((p) => p.id === selectedId);
   if (!project) return;
   const years = project.born === project.died
     ? String(project.born) : project.born + " — " + project.died;
-  const text = "R.I.P. " + project.name + " (" + years + ")\n" +
-    "Cause of death: " + (project.cause || "Cause unknown") + "\n" +
-    (project.epitaph ? "Last words: \"" + project.epitaph + "\"\n" : "") +
-    (project.description || "") + "\n" +
-    location.origin + location.pathname + "#grave=" +
-    encodeURIComponent(project.id);
+  const text = project.patient
+    ? project.name + " (" + years + ") — " + project.cause + "\n" +
+      (project.epitaph ? "Last words so far: \"" + project.epitaph + "\"\n" : "") +
+      (project.description || "") + "\n" + location.origin + location.pathname
+    : "R.I.P. " + project.name + " (" + years + ")\n" +
+      "Cause of death: " + (project.cause || "Cause unknown") + "\n" +
+      (project.epitaph ? "Last words: \"" + project.epitaph + "\"\n" : "") +
+      (project.description || "") + "\n" +
+      location.origin + location.pathname + "#grave=" +
+      encodeURIComponent(project.id);
   const btn = el("panel-copy");
   try {
     await navigator.clipboard.writeText(text);
@@ -422,7 +429,7 @@ el("panel-copy").addEventListener("click", async () => {
 });
 
 el("panel-download").addEventListener("click", () => {
-  const group = stoneGroups.get(selectedId);
+  const group = stoneGroups.get(selectedId) || wardGroups.get(selectedId);
   if (!group || !group.userData.plaqueCanvas) return;
   const src = group.userData.plaqueCanvas;
   const card = document.createElement("canvas");
@@ -464,10 +471,12 @@ let desiredCamPos = null;
 
 function visitProject(project) {
   openPanel(project);
-  try {
-    history.replaceState(null, "", "#grave=" + encodeURIComponent(project.id));
-  } catch (e) { /* file:// or sandboxed frames may refuse; the visit stands */ }
-  const group = stoneGroups.get(project.id);
+  if (!project.patient) {
+    try {
+      history.replaceState(null, "", "#grave=" + encodeURIComponent(project.id));
+    } catch (e) { /* file:// or sandboxed frames may refuse; the visit stands */ }
+  }
+  const group = stoneGroups.get(project.id) || wardGroups.get(project.id);
   if (!group) return;
   document.querySelectorAll(".registry-list button").forEach((b) => {
     b.classList.toggle("selected", b.dataset.id === project.id);
@@ -674,11 +683,31 @@ const gate = makeSign("DEAD PROJECTS SOCIETY", 5.6);
 gate.position.set(0, 0, 7.6);
 scene.add(gate);
 
+const wardGroups = new Map();
+const allPatients = [];
+
 function raiseWardStone(entry, label, accent, position, faceAngle) {
+  const patient = {
+    id: entry.id,
+    name: entry.name,
+    born: entry.born,
+    died: entry.died,
+    cause: label === "INTENSIVE CARE" ? "Intensive Care" : "Still Breathing",
+    epitaph: entry.epitaph || "",
+    description: entry.description || "",
+    tech: [],
+    url: entry.url,
+    silence_days: entry.silence_days,
+    resurrections: entry.resurrections || 0,
+    longest_flatline_days: entry.longest_flatline_days || 0,
+    patient: true,
+  };
   const group = new THREE.Group();
   const body = new THREE.Mesh(stoneGeometry, new THREE.MeshStandardMaterial({
     color: 0x565e66, roughness: 0.97 }));
   body.castShadow = true;
+  body.userData.project = patient;
+  interactive.push(body);
   group.add(body);
   const plaque = new THREE.Mesh(
     new THREE.PlaneGeometry(0.94, 1.18),
@@ -686,16 +715,19 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
       map: makeWardPlaqueTexture(entry, label, accent), transparent: true }));
   plaque.position.set(0, 0.82, 0.098);
   group.add(plaque);
+  group.userData.plaqueCanvas = plaque.material.map.image;
   group.scale.setScalar(0.55);
   group.position.copy(position);
   group.rotation.y = faceAngle;
   scene.add(group);
+  wardGroups.set(patient.id, group);
+  allPatients.push(patient);
 }
 
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=10");
+    const res = await fetch("wards.json?v=11");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -735,6 +767,23 @@ async function buildWards() {
   if (icu.length || breathing.length) {
     statsEl.textContent += " · " + icu.length + " in intensive care · " +
       breathing.length + " still breathing";
+    const list = el("wards-list");
+    for (const patient of allPatients) {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.id = patient.id;
+      btn.textContent = patient.name;
+      const meta = document.createElement("span");
+      meta.className = "registry-years";
+      meta.textContent = patient.cause.toLowerCase() + " · silent " +
+        patient.silence_days + "d";
+      btn.appendChild(meta);
+      btn.addEventListener("click", () => { stopTour(); visitProject(patient); });
+      li.appendChild(btn);
+      list.appendChild(li);
+    }
+    el("wards-section").hidden = false;
   }
 }
 
@@ -803,7 +852,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=10");
+    const res = await fetch("projects.json?v=11");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -860,7 +909,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=10");
+    const res = await fetch("honors.json?v=11");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;

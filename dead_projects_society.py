@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -376,6 +376,34 @@ def society_honors(cem):
     return honors
 
 
+def compose_eulogy(p):
+    """A few kind sentences, assembled from the facts of the life."""
+    life = p.lifespan_days
+    if life < 7:
+        opener = "It burned fast."
+    elif life < 60:
+        opener = "It had a short, bright season."
+    elif life < 365:
+        opener = "It had a real season."
+    else:
+        opener = "It had a long life, by side-project standards."
+    if p.commits >= 500:
+        middle = "Its %d commits say it was loved." % p.commits
+    elif p.commits >= 50:
+        middle = "Its %d commits say it was meant." % p.commits
+    elif p.commits >= 10:
+        middle = "Its %d commits say it was more than an idea." % p.commits
+    elif p.commits >= 2:
+        middle = "Its %d commits are nearly all that remain." % p.commits
+    else:
+        middle = "Its single commit is nearly all that remains."
+    if p.survived_by and "no one" not in p.survived_by:
+        closer = "The Society notes what replaced it."
+    else:
+        closer = "Nothing replaced it. The slot is still open."
+    return "%s %s %s" % (opener, middle, closer)
+
+
 # ---------------------------------------------------------------------------
 # Rendering: terminal
 # ---------------------------------------------------------------------------
@@ -500,6 +528,7 @@ def cemetery_dict(cem):
             "cause_of_death": p.cause or None,
             "contributing_factors": p.factors,
             "survived_by": p.survived_by or None,
+            "eulogy": compose_eulogy(p) if p.status == "deceased" else None,
         }
     return {
         "tool": "dead-projects-society",
@@ -548,6 +577,8 @@ def render_markdown(cem):
         out.append('> Last words: "%s"' % (p.last_words or "(silence)"))
         out.append("")
         out.append("**Cause of death:** %s" % p.cause)
+        out.append("")
+        out.append("*%s*" % compose_eulogy(p))
         out.append("")
         if p.resurrections >= 1:
             out.append("It had already flatlined for %d days once and come "
@@ -776,6 +807,7 @@ def site_projects(cem):
             desc += " " + f
         if p.survived_by:
             desc += " " + p.survived_by
+        desc += " " + compose_eulogy(p)
         stone = {
             "id": _site_slug(p.name),
             "name": p.name,
@@ -810,16 +842,37 @@ def site_honors(cem):
     ]
 
 
+def _patient_description(p):
+    if p.status == "coma":
+        desc = ("The Society does not bury the living. %d commits; "
+                "last seen %d days ago." % (p.commits, p.silence_days))
+    else:
+        desc = ("Still active, %d days ago. %d commits and counting. "
+                "Nothing to pronounce." % (p.silence_days, p.commits))
+    if p.resurrections >= 1:
+        desc += (" It has flatlined before, %d days at the longest, "
+                 "and come back." % p.longest_flatline)
+    return desc
+
+
 def site_wards(cem):
     def entry(p):
-        return {
+        e = {
             "id": _site_slug(p.name),
             "name": p.name,
+            "born": p.born.strftime("%Y"),
+            "died": p.died.strftime("%Y"),
+            "epitaph": p.last_words or "",
+            "description": _patient_description(p),
             "silence_days": p.silence_days,
             "commits": p.commits,
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
         }
+        url = _site_github_url(p.path)
+        if url:
+            e["url"] = url
+        return e
     return {
         "intensive_care": [entry(p) for p in cem.coma],
         "still_breathing": [entry(p) for p in cem.alive],
