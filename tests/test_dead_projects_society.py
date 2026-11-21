@@ -328,3 +328,41 @@ class TestResurrections(FixtureBase):
         cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
         self.assertEqual(cem.projects[0].resurrections, 0)
         self.assertEqual(cem.projects[0].longest_flatline, 0)
+
+
+class TestHonors(FixtureBase):
+    def test_honors_awarded(self):
+        from datetime import datetime as _dt, timedelta as _td
+        base = _dt(2024, 1, 1, 10, 0, 0)
+        commits = [("2024-01-01T10:00:00", "start")]
+        for i in range(30):
+            day = base + _td(days=15 * (i + 1))
+            commits.append((day.strftime("%Y-%m-%dT10:00:00"),
+                            "work %d" % i))
+        commits.append(("2025-06-01T10:00:00", "the end"))
+        make_repo(os.path.join(self.tmp, "longlived"), commits)
+        make_repo(os.path.join(self.tmp, "mayfly"), [
+            ("2025-03-01T10:00:00", "hi"),
+            ("2025-03-02T10:00:00", "bye"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        honors = {h["title"]: h["project"].name
+                  for h in dps.society_honors(cem)}
+        self.assertEqual(honors["The Marathoner"], "longlived")
+        self.assertEqual(honors["The Mayfly"], "mayfly")
+        self.assertEqual(honors["The Loudest Exit"], "longlived")
+        self.assertIn("The Coldest Case", honors)
+        self.assertNotIn("The Phoenix", honors)
+        self.assertIn("THE SOCIETY'S HONORS", dps.render_terminal(cem))
+        data = dps.cemetery_dict(cem)
+        self.assertEqual(len(data["honors"]), 4)
+
+    def test_phoenix_honor(self):
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2025-01-01T10:00:00", "start"),
+            ("2025-06-01T10:00:00", "back from a 151-day flatline"),
+            ("2025-06-05T10:00:00", "final"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
+        titles = [h["title"] for h in dps.society_honors(cem)]
+        self.assertIn("The Phoenix", titles)

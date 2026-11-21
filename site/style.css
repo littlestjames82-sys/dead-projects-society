@@ -135,6 +135,17 @@ html, body {
   font-size: 0.76rem;
 }
 
+#honors { margin-top: 1.1rem; }
+
+.honor-detail {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
+.honor-title { color: var(--accent); }
+
 .random-grave {
   width: 100%;
   background: none;

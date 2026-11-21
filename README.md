@@ -75,6 +75,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - Projects that flatlined past the death line and then committed again are
   listed as **back from the dead**, with their longest flatline on record.
   Even the buried ones confess their earlier resurrections.
+- Every report ends with **the Society's Honors**: the Marathoner, the
+  Mayfly, the Loudest Exit, the Coldest Case, and, when one exists, the
+  Phoenix. Awarded without appeal.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

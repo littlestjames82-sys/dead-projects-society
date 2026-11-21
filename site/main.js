@@ -695,7 +695,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=9");
+    const res = await fetch("wards.json?v=10");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -803,7 +803,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=9");
+    const res = await fetch("projects.json?v=10");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -857,6 +857,38 @@ async function build() {
   }
 }
 build();
+
+async function loadHonors() {
+  try {
+    const res = await fetch("honors.json?v=10");
+    if (!res.ok) return;
+    const honors = await res.json();
+    if (!Array.isArray(honors) || !honors.length) return;
+    const list = el("honors-list");
+    honors.forEach((h) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const title = document.createElement("span");
+      title.className = "honor-title";
+      title.textContent = h.title + ": ";
+      btn.appendChild(title);
+      btn.appendChild(document.createTextNode(h.project_name));
+      const detail = document.createElement("span");
+      detail.className = "honor-detail";
+      detail.textContent = h.detail;
+      btn.appendChild(detail);
+      btn.addEventListener("click", () => {
+        const project = allProjects.find((p) => p.id === h.project_id);
+        if (project) { stopTour(); visitProject(project); }
+      });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    el("honors").hidden = false;
+  } catch (e) { /* the honors are optional; the dead do not mind */ }
+}
+loadHonors();
 
 // ---------- animate ----------
 const clock = new THREE.Clock();

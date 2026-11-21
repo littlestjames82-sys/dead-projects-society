@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -328,6 +328,55 @@ def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
 
 
 # ---------------------------------------------------------------------------
+# The Society's Honors: superlatives, awarded without appeal
+# ---------------------------------------------------------------------------
+
+
+def society_honors(cem):
+    honors = []
+    dead = cem.deceased
+    if dead:
+        p = max(dead, key=lambda x: x.lifespan_days)
+        honors.append({
+            "title": "The Marathoner",
+            "project": p,
+            "detail": "Lived %s across %d commits before the end."
+                      % (_site_life_text(p.lifespan_days), p.commits),
+        })
+        p = min(dead, key=lambda x: x.lifespan_days)
+        honors.append({
+            "title": "The Mayfly",
+            "project": p,
+            "detail": "Born and buried within %s. No wasted motion."
+                      % _site_life_text(p.lifespan_days),
+        })
+        p = max(dead, key=lambda x: x.commits)
+        honors.append({
+            "title": "The Loudest Exit",
+            "project": p,
+            "detail": "%d commits, then silence." % p.commits,
+        })
+        p = max(dead, key=lambda x: x.silence_days)
+        honors.append({
+            "title": "The Coldest Case",
+            "project": p,
+            "detail": "Silent for %d days and counting." % p.silence_days,
+        })
+    risen = [p for p in cem.projects if p.resurrections >= 1]
+    if risen:
+        p = max(risen, key=lambda x: (x.resurrections, x.longest_flatline))
+        honors.append({
+            "title": "The Phoenix",
+            "project": p,
+            "detail": "Flatlined for %d days and came back %s."
+                      % (p.longest_flatline,
+                         "once" if p.resurrections == 1
+                         else "%d times" % p.resurrections),
+        })
+    return honors
+
+
+# ---------------------------------------------------------------------------
 # Rendering: terminal
 # ---------------------------------------------------------------------------
 
@@ -404,6 +453,13 @@ def render_terminal(cem):
                      else "%d times" % p.resurrections)
             out.append("  * %s: flatlined for %d days, rose again %s"
                        % (p.name, p.longest_flatline, times))
+    honors = society_honors(cem)
+    if honors:
+        out.append("-" * 64)
+        out.append("  THE SOCIETY'S HONORS (awarded without appeal)")
+        for h in honors:
+            out.append("  ~ %s: %s. %s"
+                       % (h["title"], h["project"].name, h["detail"]))
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -459,6 +515,11 @@ def cemetery_dict(cem):
             "back_from_the_dead": sum(
                 1 for p in cem.projects if p.resurrections >= 1),
         },
+        "honors": [
+            {"title": h["title"], "project": h["project"].name,
+             "detail": h["detail"]}
+            for h in society_honors(cem)
+        ],
         "projects": [pd(p) for p in cem.projects],
     }
 
@@ -495,6 +556,14 @@ def render_markdown(cem):
         for f in p.factors:
             out.append("- Contributing: %s" % f)
         out.append("- %s" % p.survived_by)
+        out.append("")
+    honors = society_honors(cem)
+    if honors:
+        out.append("## The Society's Honors")
+        out.append("")
+        for h in honors:
+            out.append("- **%s:** %s. %s"
+                       % (h["title"], h["project"].name, h["detail"]))
         out.append("")
     if cem.coma:
         out.append("## Intensive care")
@@ -729,6 +798,18 @@ def site_projects(cem):
     return stones
 
 
+def site_honors(cem):
+    return [
+        {
+            "title": h["title"],
+            "project_id": _site_slug(h["project"].name),
+            "project_name": h["project"].name,
+            "detail": h["detail"],
+        }
+        for h in society_honors(cem)
+    ]
+
+
 def site_wards(cem):
     def entry(p):
         return {
@@ -811,6 +892,10 @@ def main(argv=None):
         with open(os.path.join(args.site, "wards.json"), "w",
                   encoding="utf-8") as fh:
             json.dump(site_wards(cem), fh, indent=2)
+            fh.write("\n")
+        with open(os.path.join(args.site, "honors.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(site_honors(cem), fh, indent=2)
             fh.write("\n")
         print("Web graveyard data written to %s" % args.site)
     return 0
