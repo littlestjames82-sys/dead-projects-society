@@ -9,6 +9,7 @@ const input = document.getElementById("bury-input");
 const statusEl = document.getElementById("bury-status");
 const resultsEl = document.getElementById("bury-results");
 let lastVerdict = "";
+let lastResult = null;
 
 function setStatus(text) {
   statusEl.textContent = text;
@@ -171,6 +172,14 @@ form.addEventListener("submit", async (ev) => {
   fill("bury-coma", coma, "coma");
   fill("bury-alive", alive, "alive");
 
+  lastResult = {
+    user,
+    dead: dead.length,
+    coma: coma.length,
+    alive: alive.length,
+    total: repos.length,
+    coldest: dead.length ? dead[0] : null,
+  };
   lastVerdict = "Dead Projects Society reviewed @" + user + ": " + summary +
     (honors.length ? " Honors: " +
       honors.map((h) => h[0] + " — " + h[1]).join("; ") + "." : "") +
@@ -178,6 +187,63 @@ form.addEventListener("submit", async (ev) => {
     "dead-projects-society/bury.html";
   setStatus("");
   resultsEl.hidden = false;
+});
+
+function drawVerdictCard() {
+  // The 1080x1080 card: the shareable unit, drawn from the verdict.
+  const r = lastResult;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#101418";
+  ctx.fillRect(0, 0, 1080, 1080);
+  ctx.strokeStyle = "#333d46";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(30, 30, 1020, 1020);
+  ctx.strokeStyle = "#232a31";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(44, 44, 992, 992);
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#8b96a0";
+  ctx.font = "44px Georgia, serif";
+  ctx.fillText("DEAD PROJECTS SOCIETY", 540, 215);
+  ctx.fillStyle = "#c9cfc4";
+  ctx.font = "31px Georgia, serif";
+  ctx.fillText("The Society has reviewed @" + r.user + ".", 540, 300);
+  ctx.fillStyle = "#e8e2d2";
+  ctx.font = "230px Georgia, serif";
+  ctx.fillText(String(r.dead), 540, 540);
+  ctx.fillStyle = "#b08d57";
+  ctx.font = "34px Georgia, serif";
+  ctx.fillText("B U R I E D", 540, 610);
+  ctx.fillStyle = "#aeb6ae";
+  ctx.font = "30px Georgia, serif";
+  ctx.fillText(r.dead + " buried · " + r.coma + " in intensive care · " +
+    r.alive + " still breathing", 540, 700);
+  ctx.fillStyle = "#c9cfc4";
+  ctx.font = "30px Georgia, serif";
+  if (r.coldest) {
+    ctx.fillText("The Coldest Case: " + r.coldest.name + ", silent " +
+      r.coldest.silence.toLocaleString() + " days.", 540, 790);
+  }
+  ctx.fillStyle = "#77828d";
+  ctx.font = "25px Georgia, serif";
+  ctx.fillText("Bury your own: littlestjames82-sys.github.io/" +
+    "dead-projects-society/bury.html", 540, 985);
+  return canvas;
+}
+
+document.getElementById("bury-card").addEventListener("click", () => {
+  if (!lastResult) return;
+  drawVerdictCard().toBlob((blob) => {
+    if (!blob) return;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "dead-projects-society-" + lastResult.user + ".png";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, "image/png");
 });
 
 document.getElementById("bury-copy").addEventListener("click", async () => {
