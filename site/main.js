@@ -82,9 +82,9 @@ function makeMoonSprite() {
   g.fillRect(0, 0, 256, 256);
   const tex = new THREE.CanvasTexture(c);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: tex, transparent: true, depthWrite: false }));
-  spr.scale.set(16, 16, 1);
-  spr.position.set(-26, 17, -38);
+    map: tex, transparent: true, depthWrite: false, fog: false }));
+  spr.scale.set(15, 15, 1);
+  spr.position.set(-13, 12.5, -38);
   return spr;
 }
 scene.add(makeMoonSprite());
@@ -108,19 +108,20 @@ scene.add(path);
 
 // ---------- tombstones ----------
 function wrapText(g, text, maxWidth) {
-  const words = String(text).split(/\s+/);
+  // Split on spaces and hyphens so long repo names (one "word") can wrap.
+  const words = String(text).split(/(?<=[-\s])/).filter(Boolean);
   const lines = [];
   let line = "";
   for (const w of words) {
-    const trial = line ? line + " " + w : w;
+    const trial = line + w;
     if (g.measureText(trial).width > maxWidth && line) {
-      lines.push(line);
-      line = w;
+      lines.push(line.trimEnd());
+      line = w.trimStart();
     } else {
       line = trial;
     }
   }
-  if (line) lines.push(line);
+  if (line) lines.push(line.trim());
   return lines;
 }
 
