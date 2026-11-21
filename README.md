@@ -36,8 +36,13 @@ CLI's JSON through the converter and drop the result in `site/projects.json`:
 
 ```bash
 dead-projects-society ~/projects --json > cemetery.json
-python3 tools/to_site_json.py cemetery.json site/projects.json
+python3 tools/to_site_json.py cemetery.json site/projects.json site/wards.json
 ```
+
+The optional `wards.json` fills the side wards: small stones under an
+INTENSIVE CARE sign for projects in a coma, and a STILL BREATHING corner for
+the ones still alive. Every grave also gets a deep link
+(`#grave=<id>`) and a Share button in its panel.
 
 ## Install
 
