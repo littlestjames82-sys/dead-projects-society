@@ -196,7 +196,8 @@ function makeTerminalPlaqueTexture(project) {
   const years = project.born === project.died
     ? String(project.born) : project.born + " - " + project.died;
   line("LIFESPAN: " + years, 148, 25, dimCyan);
-  line("COMMITS: " + project.commits, 190, 25, dimCyan);
+  line("COMMITS: " + (project.commits != null ? project.commits : "—"),
+    190, 25, dimCyan);
   line("LAST COMMIT: " + project.silence_days + " DAYS AGO", 232, 25,
     dimCyan);
   let y = 300;
@@ -556,7 +557,8 @@ el("panel-next").addEventListener("click", () => { stopTour(); cycleProject(1); 
 
 el("panel-copy").addEventListener("click", async () => {
   const project = allProjects.find((p) => p.id === selectedId) ||
-    allPatients.find((p) => p.id === selectedId);
+    allPatients.find((p) => p.id === selectedId) ||
+    allPublic.find((p) => p.id === selectedId);
   if (!project) return;
   const years = project.born === project.died
     ? String(project.born) : project.born + " — " + project.died;
@@ -933,7 +935,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=13");
+    const res = await fetch("wards.json?v=14");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1052,7 +1054,8 @@ function buildRegistry(projects) {
       if (!plaque) continue;
       if (terminalMode) {
         if (!group.userData.terminalTex) {
-          const project = allProjects.find((p) => p.id === id);
+          const project = allProjects.find((p) => p.id === id) ||
+            allPublic.find((p) => p.id === id);
           if (!project) continue;
           group.userData.terminalTex = makeTerminalPlaqueTexture(project);
         }
@@ -1080,7 +1083,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=13");
+    const res = await fetch("projects.json?v=14");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1141,7 +1144,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=13");
+    const res = await fetch("honors.json?v=14");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1170,6 +1173,59 @@ async function loadHonors() {
   } catch (e) { /* the honors are optional; the dead do not mind */ }
 }
 loadHonors();
+
+// ---------- the Public Grounds: famous graves ----------
+const allPublic = [];
+
+async function loadPublicGrounds() {
+  let entries;
+  try {
+    const res = await fetch("public.json?v=14");
+    if (!res.ok) return;
+    entries = await res.json();
+  } catch (e) {
+    return; // the famous are patient; the personal grounds come first
+  }
+  if (!Array.isArray(entries) || !entries.length) return;
+  const sign = makeSign("THE PUBLIC GROUNDS", 4.8);
+  sign.position.set(0, 0, -12.4);
+  scene.add(sign);
+  entries.forEach((entry, i) => {
+    const project = Object.assign({ patient: false, famous: true }, entry);
+    allPublic.push(project);
+    const row = Math.floor(i / 6), col = i % 6;
+    const x = -13.5 + col * 5.4 + (Math.random() - 0.5) * 0.7;
+    const z = -16 - row * 4.2 + (Math.random() - 0.5) * 0.5;
+    const group = raiseStone(project, new THREE.Vector3(x, 0, z), false,
+      entry.style || styleFor(project, null));
+    group.rotation.y = (Math.random() - 0.5) * 0.16;
+  });
+  const list = el("public-list");
+  for (const project of allPublic) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.id = project.id;
+    btn.textContent = project.name;
+    const meta = document.createElement("span");
+    meta.className = "registry-years";
+    meta.textContent = project.born + " — " + project.died;
+    btn.appendChild(meta);
+    btn.addEventListener("click", () => { stopTour(); visitProject(project); });
+    li.appendChild(btn);
+    list.appendChild(li);
+  }
+  el("public-section").hidden = false;
+  statsEl.textContent += " · " + allPublic.length +
+    " famous graves in the Public Grounds";
+  const m = location.hash.match(/#grave=([^&]+)/);
+  if (m) {
+    const target = allPublic.find(
+      (p) => p.id === decodeURIComponent(m[1]));
+    if (target) setTimeout(() => visitProject(target), 900);
+  }
+}
+loadPublicGrounds();
 
 // ---------- animate ----------
 const clock = new THREE.Clock();
