@@ -540,6 +540,7 @@ function openPanel(project) {
   }
   // Patients have no grave to deep-link to; the share button rests.
   el("panel-share").style.display = project.patient ? "none" : "";
+  el("panel-cert").style.display = project.patient ? "none" : "";
   panel.hidden = false;
 }
 
@@ -602,6 +603,71 @@ el("panel-download").addEventListener("click", () => {
   g.fillText("DEAD PROJECTS SOCIETY", card.width / 2, card.height - 26);
   const a = document.createElement("a");
   a.download = selectedId + "-tombstone.png";
+  a.href = card.toDataURL("image/png");
+  a.click();
+});
+
+el("panel-cert").addEventListener("click", () => {
+  const project = allProjects.find((p) => p.id === selectedId) ||
+    allPublic.find((p) => p.id === selectedId);
+  if (!project) return;
+  const card = document.createElement("canvas");
+  card.width = 1200;
+  card.height = 850;
+  const g = card.getContext("2d");
+  g.fillStyle = "#101216";
+  g.fillRect(0, 0, 1200, 850);
+  g.strokeStyle = "#b08d57";
+  g.lineWidth = 3;
+  g.strokeRect(36, 36, 1128, 778);
+  g.lineWidth = 1;
+  g.strokeRect(52, 52, 1096, 746);
+  g.textAlign = "center";
+  g.fillStyle = "#8b96a0";
+  g.font = "26px Georgia, serif";
+  g.fillText("D E A D   P R O J E C T S   S O C I E T Y", 600, 130);
+  g.fillStyle = "#e8e2d2";
+  g.font = "52px Georgia, serif";
+  g.fillText("CERTIFICATE OF DEATH", 600, 205);
+  g.fillStyle = "#b08d57";
+  g.font = "30px Georgia, serif";
+  g.fillText("✦ ✦ ✦", 600, 262);
+  g.fillStyle = "#8b96a0";
+  g.font = "22px Georgia, serif";
+  g.fillText("THIS CERTIFIES THE RECORD OF", 600, 330);
+  g.fillStyle = "#f0ead8";
+  g.font = "64px Georgia, serif";
+  let name = project.name;
+  while (g.measureText(name).width > 1000 && name.length > 4) {
+    name = name.slice(0, -2);
+    g.font = (parseInt(g.font, 10) - 4) + "px Georgia, serif";
+  }
+  g.fillText(name, 600, 415);
+  g.fillStyle = "#aeb6ae";
+  g.font = "28px Georgia, serif";
+  g.fillText(project.born + " — " + project.died + " · silent for " +
+    (project.silence_days != null
+      ? project.silence_days.toLocaleString() + " days" : "ages"),
+    600, 475);
+  g.fillStyle = "#8b96a0";
+  g.font = "20px Georgia, serif";
+  g.fillText("CAUSE OF DEATH", 600, 545);
+  g.fillStyle = "#d8d2c2";
+  g.font = "italic 30px Georgia, serif";
+  g.fillText(project.cause || "Cause unknown", 600, 590);
+  g.fillStyle = "#8b96a0";
+  g.font = "20px Georgia, serif";
+  g.fillText("LAST WORDS", 600, 660);
+  g.fillStyle = "#d8d2c2";
+  g.font = "italic 26px Georgia, serif";
+  let words = "“" + (project.epitaph || "(silence)") + "”";
+  if (words.length > 58) words = words.slice(0, 57) + "…”";
+  g.fillText(words, 600, 702);
+  g.fillStyle = "#77828d";
+  g.font = "20px Georgia, serif";
+  g.fillText("Judged from the record alone. No code was read.", 600, 772);
+  const a = document.createElement("a");
+  a.download = selectedId + "-certificate.png";
   a.href = card.toDataURL("image/png");
   a.click();
 });
@@ -935,7 +1001,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=14");
+    const res = await fetch("wards.json?v=15");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1083,7 +1149,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=14");
+    const res = await fetch("projects.json?v=15");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1144,7 +1210,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=14");
+    const res = await fetch("honors.json?v=15");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1174,13 +1240,45 @@ async function loadHonors() {
 }
 loadHonors();
 
+async function loadInfamy() {
+  try {
+    const res = await fetch("infamy.json?v=15");
+    if (!res.ok) return;
+    const infamy = await res.json();
+    if (!Array.isArray(infamy) || !infamy.length) return;
+    const list = el("infamy-list");
+    infamy.forEach((h) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      const title = document.createElement("span");
+      title.className = "honor-title";
+      title.textContent = h.title + ": ";
+      btn.appendChild(title);
+      btn.appendChild(document.createTextNode(h.project_name));
+      const detail = document.createElement("span");
+      detail.className = "honor-detail";
+      detail.textContent = h.detail;
+      btn.appendChild(detail);
+      btn.addEventListener("click", () => {
+        const project = allProjects.find((p) => p.id === h.project_id);
+        if (project) { stopTour(); visitProject(project); }
+      });
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    el("infamy").hidden = false;
+  } catch (e) { /* infamy is optional too; the dead do not mind */ }
+}
+loadInfamy();
+
 // ---------- the Public Grounds: famous graves ----------
 const allPublic = [];
 
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=14");
+    const res = await fetch("public.json?v=15");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {

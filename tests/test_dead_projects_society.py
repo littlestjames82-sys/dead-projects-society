@@ -497,3 +497,87 @@ class TestWills(FixtureBase):
         self.assertEqual(len(cem.deceased), 1)
         self.assertEqual(cem.deceased[0].will_status, "")
         self.assertEqual(dps.cemetery_dict(cem)["summary"]["at_rest"], 0)
+
+
+def _proj(name, born, died, commits, authors=1, readme=True, remote=True,
+          silence=200, gaps=None, last="work", status="deceased",
+          resurrections=0, flatline=0, will_status=""):
+    from datetime import datetime, timezone
+    def d(s):
+        return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+    return dps.Project(
+        name=name, path="/x/" + name, born=d(born), died=d(died),
+        commits=commits, first_words="start", last_words=last,
+        authors=authors, has_readme=readme, has_remote=remote,
+        silence_days=silence, gaps=gaps or [], status=status,
+        resurrections=resurrections, longest_flatline=flatline,
+        will_status=will_status)
+
+
+class TestInfamyAndAutopsy(unittest.TestCase):
+    """v0.8.0: Hall of Infamy, metadata autopsy, certificates."""
+
+    def _cem(self, projects):
+        from datetime import datetime, timezone
+        return dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90,
+            projects=projects)
+
+    def test_shooting_star_picks_fastest_burn(self):
+        fast = _proj("fast", "2025-03-01", "2025-03-03", 20)
+        slow = _proj("slow", "2025-03-01", "2025-05-30", 60)
+        infamy = dps.hall_of_infamy(self._cem([fast, slow]))
+        star = [h for h in infamy if h["title"] == "The Shooting Star"]
+        self.assertEqual(len(star), 1)
+        self.assertEqual(star[0]["project"].name, "fast")
+
+    def test_crowd_and_unknown_soldier(self):
+        crowd = _proj("crowd", "2025-01-10", "2025-06-01", 30, authors=4)
+        ghost = _proj("ghost", "2025-02-01", "2025-05-01", 45,
+                      readme=False, remote=False)
+        titles = {h["title"]: h["project"].name
+                  for h in dps.hall_of_infamy(self._cem([crowd, ghost]))}
+        self.assertEqual(titles["The Crowd That Left"], "crowd")
+        self.assertEqual(titles["The Unknown Soldier"], "ghost")
+
+    def test_autopsy_rewards_the_risen(self):
+        risen = _proj("risen", "2024-06-01", "2025-06-01", 120,
+                      resurrections=1, flatline=120, silence=200)
+        a = dps.autopsy(risen)
+        self.assertEqual(a["revival_verdict"], "Worth exhuming.")
+        self.assertIn("it has risen before", a["revival_reasons"])
+
+    def test_autopsy_finished_stays_resting(self):
+        done = _proj("done", "2024-06-01", "2025-06-01", 80,
+                     status="resting", will_status="complete")
+        a = dps.autopsy(done)
+        self.assertEqual(a["revival_verdict"], "Let it rest. It finished.")
+        self.assertTrue(a["end_pattern"].startswith("Declared complete"))
+
+    def test_autopsy_end_patterns(self):
+        wip = _proj("wip", "2025-03-01", "2025-05-01", 12, last="wip")
+        self.assertIn("mid-sentence", dps.autopsy(wip)["end_pattern"])
+        tidy = _proj("tidy", "2025-03-01", "2025-05-01", 12,
+                     last="final release")
+        self.assertIn("Ended tidily", dps.autopsy(tidy)["end_pattern"])
+
+    def test_certificates_written_by_cli(self):
+        import tempfile
+        tmp = tempfile.mkdtemp(prefix="dps-cert-")
+        self.addCleanup(lambda: __import__("shutil").rmtree(
+            tmp, ignore_errors=True))
+        grounds = os.path.join(tmp, "grounds")
+        make_repo(os.path.join(grounds, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+            ("2025-02-05T09:00:00", "c"),
+        ])
+        out = os.path.join(tmp, "certs")
+        rc = dps.main([grounds, "--certificates", out])
+        self.assertEqual(rc, 0)
+        files = os.listdir(out)
+        self.assertEqual(files, ["gone-certificate.html"])
+        with open(os.path.join(out, files[0])) as fh:
+            html = fh.read()
+        self.assertIn("CERTIFICATE OF DEATH", html)
+        self.assertIn("gone", html)

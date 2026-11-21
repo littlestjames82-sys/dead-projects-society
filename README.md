@@ -92,6 +92,13 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   A will that says *complete* moves the project to **At Rest**: finished,
   not dead, and the Society does not bury the finished. A will that says
   *adoptable* stays buried, with the appeal for a new keeper on record.
+- The **Hall of Infamy** keeps the other ledger: the Shooting Star, the
+  Crowd That Left, the Unknown Soldier, the Stutter.
+- `--autopsy` opens the **Autopsy Department**: for every buried or
+  at-rest project, the pace it lived at, how it ended, and a revival
+  verdict with its reasons, all from the record alone.
+- `--certificates DIR` issues a formal **Certificate of Death** (or of
+  Completion, for the finished) for every project that earned one.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

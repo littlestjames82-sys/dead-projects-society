@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -451,6 +451,115 @@ def society_honors(cem):
     return honors
 
 
+def hall_of_infamy(cem):
+    """The Honors, pointed the other way. Entered without appeal."""
+    infamy = []
+    dead = cem.deceased
+    if not dead:
+        return infamy
+    shooters = [p for p in dead
+                if p.lifespan_days >= 1 and p.commits >= 10]
+    if shooters:
+        p = max(shooters,
+                key=lambda x: x.commits / max(1, x.lifespan_days))
+        infamy.append({
+            "title": "The Shooting Star",
+            "project": p,
+            "detail": "%d commits in %s, then nothing. Burned brightest, "
+                      "fastest." % (p.commits,
+                                    _site_life_text(p.lifespan_days)),
+        })
+    crowds = [p for p in dead if p.authors >= 2]
+    if crowds:
+        p = max(crowds, key=lambda x: x.authors)
+        infamy.append({
+            "title": "The Crowd That Left",
+            "project": p,
+            "detail": "%d authors at its height. Every one of them gone."
+                      % p.authors,
+        })
+    unknowns = [p for p in dead if not p.has_readme and not p.has_remote]
+    if unknowns:
+        p = max(unknowns, key=lambda x: x.commits)
+        infamy.append({
+            "title": "The Unknown Soldier",
+            "project": p,
+            "detail": "%d commits, no README, no remote. Did the most, "
+                      "told no one." % p.commits,
+        })
+    stutters = [p for p in dead if len(p.gaps) >= 2]
+    if stutters:
+        p = max(stutters, key=lambda x: len(x.gaps))
+        infamy.append({
+            "title": "The Stutter",
+            "project": p,
+            "detail": "Stopped and started %d times, then stopped."
+                      % len(p.gaps),
+        })
+    return infamy
+
+
+def autopsy(p):
+    """The metadata autopsy: what the record shows, and revival odds.
+
+    Reads only what the Society already lawfully knows: dates, counts,
+    messages, and the will. No code is opened, here or anywhere.
+    """
+    life = max(1, p.lifespan_days)
+    pace = p.commits / life * 30.44
+    if p.will_status == "complete":
+        end = "Declared complete by its author, in writing."
+    elif _WIP_RE.match(p.last_words or ""):
+        end = "Ended mid-sentence: the final commit was never finished."
+    elif _COMPLETE_RE.search(p.last_words or ""):
+        end = "Ended tidily: the last words read like a farewell."
+    elif (p.last_words or "").lower().startswith("merge "):
+        end = "Ended in paperwork: a merge, then silence."
+    elif _FIX_RE.search(p.last_words or ""):
+        end = "Ended mid-repair: one more fix, then silence."
+    else:
+        end = "Ended without ceremony: an ordinary commit, then silence."
+    score = 0
+    reasons = []
+    if p.resurrections >= 1:
+        score += 3
+        reasons.append("it has risen before")
+    if p.will_status == "adoptable":
+        score += 2
+        reasons.append("its will asks for a new keeper")
+    if p.has_remote:
+        score += 1
+        reasons.append("the world can still reach it")
+    if p.has_readme:
+        score += 1
+        reasons.append("it explains itself")
+    if p.authors >= 2:
+        score += 1
+        reasons.append("more than one witness knows it")
+    if p.silence_days < 365:
+        score += 1
+        reasons.append("the trail is still warm")
+    if p.commits >= 50:
+        score += 1
+        reasons.append("there is real substance to revive")
+    if p.will_status == "complete":
+        verdict = "Let it rest. It finished."
+    elif score >= 5:
+        verdict = "Worth exhuming."
+    elif score >= 3:
+        verdict = "Long odds, but not none."
+    else:
+        verdict = "Let it rest."
+    return {
+        "pace_commits_per_month": round(pace, 1),
+        "flatlines": len(p.gaps),
+        "end_pattern": end,
+        "revival_score": score,
+        "revival_verdict": verdict,
+        "revival_reasons": reasons,
+    }
+
+
 def compose_eulogy(p):
     """A few kind sentences, assembled from the facts of the life."""
     life = p.lifespan_days
@@ -501,7 +610,7 @@ def _lifespan_text(p):
     return "%.1f years" % (d / 365.25)
 
 
-def render_terminal(cem):
+def render_terminal(cem, with_autopsy=False):
     out = []
     out.append("")
     out.append("=" * 64)
@@ -577,6 +686,24 @@ def render_terminal(cem):
         for h in honors:
             out.append("  ~ %s: %s. %s"
                        % (h["title"], h["project"].name, h["detail"]))
+    infamy = hall_of_infamy(cem)
+    if infamy:
+        out.append("-" * 64)
+        out.append("  HALL OF INFAMY (entered without appeal)")
+        for h in infamy:
+            out.append("  ~ %s: %s. %s"
+                       % (h["title"], h["project"].name, h["detail"]))
+    if with_autopsy:
+        subjects = cem.deceased + cem.resting
+        if subjects:
+            out.append("-" * 64)
+            out.append("  THE AUTOPSY DEPARTMENT (from the record alone)")
+            for p in subjects:
+                a = autopsy(p)
+                out.append("  * %s: %.1f commits a month while it lived; "
+                           "%s Revival: %s"
+                           % (p.name, a["pace_commits_per_month"],
+                              a["end_pattern"], a["revival_verdict"]))
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -621,6 +748,8 @@ def cemetery_dict(cem):
             "contributing_factors": p.factors,
             "survived_by": p.survived_by or None,
             "eulogy": compose_eulogy(p) if p.status == "deceased" else None,
+            "autopsy": autopsy(p) if p.status in ("deceased", "resting")
+                       else None,
         }
     return {
         "tool": "dead-projects-society",
@@ -641,6 +770,11 @@ def cemetery_dict(cem):
             {"title": h["title"], "project": h["project"].name,
              "detail": h["detail"]}
             for h in society_honors(cem)
+        ],
+        "infamy": [
+            {"title": h["title"], "project": h["project"].name,
+             "detail": h["detail"]}
+            for h in hall_of_infamy(cem)
         ],
         "projects": [pd(p) for p in cem.projects],
     }
@@ -704,6 +838,14 @@ def render_markdown(cem):
         out.append("## The Society's Honors")
         out.append("")
         for h in honors:
+            out.append("- **%s:** %s. %s"
+                       % (h["title"], h["project"].name, h["detail"]))
+        out.append("")
+    infamy = hall_of_infamy(cem)
+    if infamy:
+        out.append("## Hall of Infamy")
+        out.append("")
+        for h in infamy:
             out.append("- **%s:** %s. %s"
                        % (h["title"], h["project"].name, h["detail"]))
         out.append("")
@@ -820,6 +962,14 @@ def render_html(cem):
             for p in cem.resting)
         extra.append('<h3 class="section">AT REST: FINISHED, NOT DEAD</h3>'
                      '<div class="living">%s</div>' % rows)
+    infamy = hall_of_infamy(cem)
+    if infamy:
+        rows = "<br>".join(
+            "%s: %s. %s" % (esc(h["title"]), esc(h["project"].name),
+                            esc(h["detail"]))
+            for h in infamy)
+        extra.append('<h3 class="section">HALL OF INFAMY</h3>'
+                     '<div class="living">%s</div>' % rows)
     if cem.coma:
         rows = "<br>".join(
             "%s &mdash; last seen %s (%d days ago)"
@@ -838,6 +988,83 @@ def render_html(cem):
         resting=len(cem.resting),
         commits=cem.buried_commits, stones="\n".join(stones),
         extra="\n".join(extra))
+
+
+# ---------------------------------------------------------------------------
+# Rendering: certificates
+# ---------------------------------------------------------------------------
+
+_CERT = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>{kind_title} — {name}</title>
+<style>
+  body {{ background:#0d0f12; margin:0; padding:2.5rem 1rem;
+         font-family:Georgia, serif; color:#d8d2c2; }}
+  .cert {{ max-width:760px; margin:0 auto; border:3px double #b08d57;
+          padding:3rem 3rem 2.4rem; text-align:center;
+          background:linear-gradient(180deg,#14171c,#101216); }}
+  .society {{ letter-spacing:.35em; color:#8b96a0; font-size:.8rem; }}
+  h1 {{ font-weight:normal; letter-spacing:.14em; color:#e8e2d2;
+       margin:.8rem 0 .2rem; }}
+  .rule {{ color:#b08d57; margin:.6rem 0 1.4rem; }}
+  .name {{ font-size:1.9rem; color:#f0ead8; margin:.4rem 0; }}
+  .dates {{ color:#aeb6ae; }}
+  .field {{ margin:1.05rem auto; max-width:560px; line-height:1.55; }}
+  .label {{ display:block; letter-spacing:.25em; font-size:.68rem;
+           color:#8b96a0; margin-bottom:.25rem; }}
+  .seal {{ margin:1.8rem auto .4rem; width:74px; height:74px;
+          border:2px solid #b08d57; border-radius:50%; color:#b08d57;
+          line-height:74px; font-size:1.7rem; }}
+  .issued {{ color:#77828d; font-size:.85rem; margin-top:1.2rem; }}
+</style></head><body>
+<div class="cert">
+  <div class="society">DEAD PROJECTS SOCIETY</div>
+  <h1>{kind_title}</h1>
+  <div class="rule">✦ ✦ ✦</div>
+  <div class="field"><span class="label">THIS CERTIFIES THE RECORD OF</span>
+  <div class="name">{name}</div>
+  <div class="dates">{born} &mdash; {died} &middot; aged {lifespan}
+  &middot; {commits} commits &middot; {authors}</div></div>
+  <div class="field"><span class="label">{cause_label}</span>{cause}</div>
+  <div class="field"><span class="label">LAST WORDS</span>
+  &ldquo;{last_words}&rdquo;</div>
+  {will_block}
+  <div class="field"><span class="label">SURVIVED BY</span>{survived_by}</div>
+  <div class="seal">✦</div>
+  <div class="issued">Issued {issued} &middot; Grounds: {grounds}<br>
+  Judged locally from git history alone. No code was read.</div>
+</div>
+</body></html>
+"""
+
+
+def render_certificate(p, cem):
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    resting = p.status == "resting"
+    will_block = ""
+    if p.will_note:
+        will_block = ('<div class="field"><span class="label">FROM ITS '
+                      'WILL</span>%s</div>' % esc(p.will_note))
+    return _CERT.format(
+        kind_title="CERTIFICATE OF COMPLETION" if resting
+                   else "CERTIFICATE OF DEATH",
+        name=esc(p.name),
+        born=_fmt_date(p.born),
+        died=_fmt_date(p.died),
+        lifespan=_lifespan_text(p),
+        commits=p.commits,
+        authors="sole author" if p.authors == 1
+                else "%d authors" % p.authors,
+        cause_label="THE RECORD" if resting else "CAUSE OF DEATH",
+        cause=esc(p.cause),
+        last_words=esc(p.last_words or "(silence)"),
+        will_block=will_block,
+        survived_by=esc(p.survived_by),
+        issued=_fmt_date(cem.generated),
+        grounds=esc(cem.root),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -991,6 +1218,18 @@ def site_honors(cem):
     ]
 
 
+def site_infamy(cem):
+    return [
+        {
+            "title": h["title"],
+            "project_id": _site_slug(h["project"].name),
+            "project_name": h["project"].name,
+            "detail": h["detail"],
+        }
+        for h in hall_of_infamy(cem)
+    ]
+
+
 def _patient_description(p):
     if p.status == "coma":
         desc = ("The Society does not bury the living. %d commits; "
@@ -1056,6 +1295,12 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--autopsy", action="store_true",
+                    help="Append the Autopsy Department's findings "
+                         "(metadata only) to the terminal report")
+    ap.add_argument("--certificates", metavar="DIR",
+                    help="Write a formal certificate (HTML) for every "
+                         "buried or at-rest project into DIR")
     ap.add_argument("--version", action="version",
                     version="dead-projects-society %s" % VERSION)
     args = ap.parse_args(argv)
@@ -1072,7 +1317,17 @@ def main(argv=None):
     if args.json:
         print(json.dumps(cemetery_dict(cem), indent=2))
     else:
-        print(render_terminal(cem))
+        print(render_terminal(cem, with_autopsy=args.autopsy))
+    if args.certificates:
+        os.makedirs(args.certificates, exist_ok=True)
+        subjects = cem.deceased + cem.resting
+        for p in subjects:
+            fname = "%s-certificate.html" % _site_slug(p.name)
+            with open(os.path.join(args.certificates, fname), "w",
+                      encoding="utf-8") as fh:
+                fh.write(render_certificate(p, cem))
+        print("Certificates written to %s (%d)"
+              % (args.certificates, len(subjects)))
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
             fh.write(render_html(cem))
@@ -1098,6 +1353,10 @@ def main(argv=None):
         with open(os.path.join(args.site, "honors.json"), "w",
                   encoding="utf-8") as fh:
             json.dump(site_honors(cem), fh, indent=2)
+            fh.write("\n")
+        with open(os.path.join(args.site, "infamy.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(site_infamy(cem), fh, indent=2)
             fh.write("\n")
         print("Web graveyard data written to %s" % args.site)
     return 0
