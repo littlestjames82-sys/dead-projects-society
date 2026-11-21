@@ -1,0 +1,67 @@
+# Dead Projects Society 2.0 — Roadmap
+
+*Adopted November 21, 2026, from Ryan's review of the 2.0 vision. This
+document reconciles that vision with what is already built, and sequences
+the rest honestly.*
+
+**Vision:** the destination for abandoned software. Every project deserves
+a proper obituary. Some deserve a second life.
+
+**Principles (do not trade away):**
+- The local CLI reads git metadata only. It never reads your code and
+  never uploads anything. Any deeper analysis is a separate, opt-in mode.
+- Memorializing a project is always free.
+- The cemetery works on its own. AI is an added capability, never a
+  dependency.
+- Nobody's project is modified, claimed, or republished without its
+  owner's authorization.
+
+## The five divisions
+
+### I. The Graveyard — SHIPPED, improving
+The CLI, the verdicts, the 3D cemetery.
+- [x] Local scan, pulse bands, coroner verdicts, last words, successors
+- [x] Resurrection detection and the Society's Honors
+- [x] Terminal, Markdown, HTML, JSON, SVG card outputs
+- [x] 3D cemetery: personal grounds, the Wards, Terminal mode
+- [x] The Public Grounds: famous graves (shipped Nov 21, 2026)
+- [x] Bury a GitHub user: web demo (shipped Nov 21, 2026)
+- [ ] Hall of Infamy: the Honors pointed the other way (site + CLI)
+- [ ] Death Certificates: the formal, frameable artifact
+- [ ] Cemetery sections by language and era
+
+### II. The Autopsy Department — NEXT
+Why did it die, and what would revival take? Evidence-based, and careful
+about the Society's oldest mistake: silence is not abandonment.
+- [ ] Finished, not dead: completion verdicts and At Rest (CLI v0.7.0)
+- [ ] The Project Will: an owner leaves a PROJECT_WILL.md; the Society
+      honors it (CLI v0.7.0)
+- [ ] Autopsy report from metadata: patterns of decline, bus factor,
+      README and remote neglect, dependency-era signals
+- [ ] Opt-in deep autopsy (code-aware) as a separate mode, later
+
+### III. The Resurrection Department — LATER
+AI-assisted revival under governance: isolated workspace, autopsy first,
+a plan the owner approves, repairs by governed agents, verification, and
+a resurrection certificate. Ghost Developer Studio supplies the
+intelligence; the Society stays standalone. Requires the Autopsy
+Department and an audience asking for it.
+
+### IV. The Society — LATER
+Members, submissions, adoption applications, competitions (Phoenix
+Award, Lazarus Challenge, Digital Archaeologist), rankings, stories.
+Requires the public platform work in the Afterlife Network and people
+to compete.
+
+### V. The Afterlife Network — LATER
+Public API, embeddable badges, the adoption marketplace, the historical
+archive (the Graveyard of the Internet: discontinued apps, frameworks,
+APIs, games), preservation services. Requires accounts and hosting,
+which are Ryan's spending and identity decisions, not engineering ones.
+
+## Sequence from here
+1. Launch the current product (PyPI + posts). An audience is the input
+   every later division consumes.
+2. Autopsy Department, metadata edition (v0.7.0 and following).
+3. Hall of Infamy and Death Certificates on the site.
+4. Revisit the platform divisions with real usage numbers in hand.

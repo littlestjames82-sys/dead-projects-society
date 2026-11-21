@@ -78,6 +78,20 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - Every report ends with **the Society's Honors**: the Marathoner, the
   Mayfly, the Loudest Exit, the Coldest Case, and, when one exists, the
   Phoenix. Awarded without appeal.
+- Silence is not abandonment. A project whose last words read like a
+  farewell gets the verdict **Finished, by the look of it**, and a project
+  that left a **Project Will** is honored exactly as written:
+
+  ```markdown
+  # PROJECT_WILL.md
+  Status: complete        (or: adoptable)
+  Successor: new-project  (who carries the work on)
+  Note: It did everything it was ever going to do.
+  ```
+
+  A will that says *complete* moves the project to **At Rest**: finished,
+  not dead, and the Society does not bury the finished. A will that says
+  *adoptable* stays buried, with the appeal for a new keeper on record.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

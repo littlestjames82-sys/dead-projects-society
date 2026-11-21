@@ -428,3 +428,72 @@ class TestHtmlAndCardParity(FixtureBase):
         cem = dps.build_cemetery(self.tmp, dead_days=90, depth=1)
         card = dps.render_card(cem)
         self.assertIn("Back from the dead: phoenix, after 151 days.", card)
+
+
+class TestWills(FixtureBase):
+    """v0.7.0: PROJECT_WILL.md, completion verdicts, At Rest."""
+
+    def _repo(self, name="donetools", last="work twelve"):
+        path = os.path.join(self.tmp, name)
+        dates = ["2025-03-01", "2025-03-15", "2025-04-01", "2025-04-15",
+                 "2025-05-01", "2025-05-15", "2025-05-20", "2025-05-24",
+                 "2025-05-27", "2025-05-29", "2025-05-31"]
+        commits = [("2025-%sT10:00:00" % d[5:], "work %d" % i)
+                   for i, d in enumerate(dates, 1)]
+        commits.append(("2025-06-01T10:00:00", last))
+        return make_repo(path, commits)
+
+    def _will(self, path, text):
+        with open(os.path.join(path, "PROJECT_WILL.md"), "w") as fh:
+            fh.write(text)
+
+    def test_will_complete_moves_to_resting(self):
+        path = self._repo()
+        self._will(path, "# Will\nStatus: complete\n"
+                         "Note: It did everything it was going to do.\n")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.resting), 1)
+        self.assertEqual(len(cem.deceased), 0)
+        p = cem.resting[0]
+        self.assertEqual(p.will_status, "complete")
+        self.assertIn("does not bury the finished", p.cause)
+        self.assertIn("AT REST", dps.render_terminal(cem))
+        data = dps.cemetery_dict(cem)
+        self.assertEqual(data["summary"]["at_rest"], 1)
+        self.assertEqual(data["projects"][0]["will_status"], "complete")
+        self.assertIn("At Rest: donetools", dps.render_markdown(cem))
+        self.assertIn("AT REST: FINISHED, NOT DEAD",
+                      dps.render_html(cem))
+
+    def test_will_successor_and_note(self):
+        path = self._repo()
+        self._will(path, "Status: finished\nSuccessor: newthing\n"
+                         "Note: Be kind to it.\n")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        p = cem.resting[0]
+        self.assertEqual(p.survived_by,
+                         "Survived by newthing, named in its will.")
+        self.assertEqual(p.will_note, "Be kind to it.")
+
+    def test_will_adoptable_stays_buried_with_factor(self):
+        path = self._repo()
+        self._will(path, "Status: adoptable\n")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.deceased), 1)
+        self.assertEqual(len(cem.resting), 0)
+        self.assertTrue(any("Left for adoption" in f
+                            for f in cem.deceased[0].factors))
+
+    def test_completion_last_words_without_will(self):
+        self._repo(last="v1.0.0: final release")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.deceased), 1)
+        self.assertTrue(cem.deceased[0].cause.startswith(
+            "Finished, by the look of it."))
+
+    def test_no_will_no_change(self):
+        self._repo()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.deceased), 1)
+        self.assertEqual(cem.deceased[0].will_status, "")
+        self.assertEqual(dps.cemetery_dict(cem)["summary"]["at_rest"], 0)

@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -59,6 +59,9 @@ class Project:
     survived_by: str = ""
     resurrections: int = 0      # flatlines >= the death line, then a commit
     longest_flatline: int = 0   # longest mid-life silence, in days
+    will_status: str = ""       # from PROJECT_WILL.md: complete | adoptable
+    will_successor: str = ""    # named in the will, if anyone was
+    will_note: str = ""         # a line from the will, in the author's words
 
     @property
     def lifespan_days(self):
@@ -83,6 +86,10 @@ class Cemetery:
     @property
     def alive(self):
         return [p for p in self.projects if p.status == "alive"]
+
+    @property
+    def resting(self):
+        return [p for p in self.projects if p.status == "resting"]
 
     @property
     def buried_commits(self):
@@ -188,6 +195,7 @@ def read_project(path, now):
                 gaps.append(gap)
         prev = when
 
+    will_status, will_successor, will_note = _read_will(path)
     authors_raw = _git(path, "log", "--format=%an")
     authors = len({a for a in (authors_raw or "").splitlines() if a.strip()})
     remotes = _git(path, "remote")
@@ -210,7 +218,54 @@ def read_project(path, now):
         has_remote=has_remote,
         silence_days=max(0, (now - died).days),
         gaps=gaps,
+        will_status=will_status,
+        will_successor=will_successor,
+        will_note=will_note,
     )
+
+
+_WILL_FILES = ("PROJECT_WILL.md", "PROJECT_WILL", "project_will.md")
+
+
+def _read_will(path):
+    """Read a project's will, if it left one.
+
+    A will is a small file the author writes for whoever finds the
+    project later (the Society's own convention). Only three lines are
+    read: Status, Successor, Note. A will that says the work is
+    complete is authoritative: the Society does not bury the finished.
+    """
+    for fname in _WILL_FILES:
+        fpath = os.path.join(path, fname)
+        if not os.path.isfile(fpath):
+            continue
+        try:
+            with open(fpath, "r", encoding="utf-8",
+                      errors="replace") as fh:
+                text = fh.read(4096)
+        except OSError:
+            return "", "", ""
+        status = successor = note = ""
+        for line in text.splitlines():
+            key, sep, val = line.partition(":")
+            if not sep:
+                continue
+            k = key.strip().lower().lstrip("#").strip()
+            v = val.strip().strip("*").strip()
+            if k == "status" and not status:
+                status = v.lower()
+            elif k == "successor" and not successor:
+                successor = v
+            elif k == "note" and not note:
+                note = v
+        normalized = ""
+        if any(w in status for w in ("complete", "finish", "done",
+                                     "retired")):
+            normalized = "complete"
+        elif "adopt" in status:
+            normalized = "adoptable"
+        return normalized, successor, note
+    return "", "", ""
 
 
 # ---------------------------------------------------------------------------
@@ -222,6 +277,11 @@ _WIP_RE = re.compile(r"^(wip|temp|tmp|test|testing|asdf|checkpoint|save)\b",
 _FIX_RE = re.compile(r"\bfix", re.IGNORECASE)
 _REFACTOR_RE = re.compile(
     r"\b(refactor|cleanup|clean up|reorganiz\w*|restructur\w*|tidy)\b",
+    re.IGNORECASE)
+_COMPLETE_RE = re.compile(
+    r"(final release|stable release|release\s+v?\d|v?\d+\.\d+(\.\d+)?"
+    r"\s+release|farewell|goodbye|project (is )?complete|archiv\w*|"
+    r"sunset|end of life)",
     re.IGNORECASE)
 
 
@@ -254,6 +314,9 @@ def cause_of_death(p):
     if _REFACTOR_RE.search(msg) and p.commits >= 10:
         return ("Died in a refactor. It was going to be cleaner. "
                 "It was going to be beautiful.")
+    if _COMPLETE_RE.search(msg) and p.commits >= 10:
+        return ("Finished, by the look of it. The last words read like "
+                "a farewell, not a collapse.")
     if p.commits >= 100:
         return ("Sudden cardiac arrest. %d commits, then silence."
                 % p.commits)
@@ -276,6 +339,8 @@ def contributing_factors(p):
         f.append("Never left the house. No remote; nobody ever saw it.")
     if p.authors == 1:
         f.append("No witnesses. Sole author throughout.")
+    if p.will_status == "adoptable":
+        f.append("Left for adoption. Its will asks for a new keeper.")
     return f
 
 
@@ -318,11 +383,21 @@ def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
         classify(p, dead_days)
         p.longest_flatline = max(p.gaps, default=0)
         p.resurrections = sum(1 for g in p.gaps if g >= dead_days)
+        if p.status == "deceased" and p.will_status == "complete":
+            p.status = "resting"
+            p.cause = ("Completed. The author left a will, and the will "
+                       "says finished. The Society does not bury the "
+                       "finished.")
+            p.factors = contributing_factors(p)
         if p.status == "deceased":
             p.cause = cause_of_death(p)
             p.factors = contributing_factors(p)
         cem.projects.append(p)
     assign_succession(cem.projects)
+    for p in cem.projects:
+        if p.will_successor and p.status in ("deceased", "resting"):
+            p.survived_by = ("Survived by %s, named in its will."
+                             % p.will_successor)
     cem.projects.sort(key=lambda p: p.died)
     return cem
 
@@ -435,8 +510,11 @@ def render_terminal(cem):
                " whether you like it or not.")
     out.append("=" * 64)
     out.append("  Grounds: %s" % cem.root)
-    out.append("  Buried: %d   In a coma: %d   Still breathing: %d"
-               % (len(cem.deceased), len(cem.coma), len(cem.alive)))
+    counts = ("  Buried: %d   In a coma: %d   Still breathing: %d"
+              % (len(cem.deceased), len(cem.coma), len(cem.alive)))
+    if cem.resting:
+        counts += "   At rest: %d" % len(cem.resting)
+    out.append(counts)
     if cem.deceased:
         out.append("  Commits buried: %d   Average lifespan: %s"
                    % (cem.buried_commits,
@@ -456,6 +534,17 @@ def render_terminal(cem):
                        % p.longest_flatline)
         for f in p.factors:
             out.append("  Contributing: %s" % f)
+        out.append("  %s" % p.survived_by)
+    for p in cem.resting:
+        out.append("-" * 64)
+        out.append("  AT REST  %s" % p.name)
+        out.append("  %s to %s  (aged %s, %d commits)"
+                   % (_fmt_date(p.born), _fmt_date(p.died),
+                      _lifespan_text(p), p.commits))
+        out.append('  Last words: "%s"' % (p.last_words or "(silence)"))
+        out.append("  %s" % p.cause)
+        if p.will_note:
+            out.append("  From its will: %s" % p.will_note)
         out.append("  %s" % p.survived_by)
     if cem.coma:
         out.append("-" * 64)
@@ -525,6 +614,9 @@ def cemetery_dict(cem):
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
             "status": p.status,
+            "will_status": p.will_status or None,
+            "will_successor": p.will_successor or None,
+            "will_note": p.will_note or None,
             "cause_of_death": p.cause or None,
             "contributing_factors": p.factors,
             "survived_by": p.survived_by or None,
@@ -539,6 +631,7 @@ def cemetery_dict(cem):
             "buried": len(cem.deceased),
             "coma": len(cem.coma),
             "alive": len(cem.alive),
+            "at_rest": len(cem.resting),
             "buried_commits": cem.buried_commits,
             "average_lifespan_days": round(cem.avg_lifespan, 1),
             "back_from_the_dead": sum(
@@ -562,10 +655,12 @@ def render_markdown(cem):
     out = ["# Dead Projects Society", ""]
     out.append("Grounds: `%s`" % cem.root)
     out.append("")
-    out.append("**Buried: %d** · In a coma: %d · Still breathing: %d · "
-               "Commits buried: %d"
-               % (len(cem.deceased), len(cem.coma), len(cem.alive),
-                  cem.buried_commits))
+    counts = ("**Buried: %d** · In a coma: %d · Still breathing: %d"
+              % (len(cem.deceased), len(cem.coma), len(cem.alive)))
+    if cem.resting:
+        counts += " · At rest: %d" % len(cem.resting)
+    counts += " · Commits buried: %d" % cem.buried_commits
+    out.append(counts)
     out.append("")
     for p in cem.deceased:
         out.append("## R.I.P. %s" % p.name)
@@ -586,6 +681,22 @@ def render_markdown(cem):
             out.append("")
         for f in p.factors:
             out.append("- Contributing: %s" % f)
+        out.append("- %s" % p.survived_by)
+        out.append("")
+    for p in cem.resting:
+        out.append("## At Rest: %s" % p.name)
+        out.append("")
+        out.append("%s to %s · aged %s · %d commits"
+                   % (_fmt_date(p.born), _fmt_date(p.died),
+                      _lifespan_text(p), p.commits))
+        out.append("")
+        out.append('> Last words: "%s"' % (p.last_words or "(silence)"))
+        out.append("")
+        out.append("**%s**" % p.cause)
+        out.append("")
+        if p.will_note:
+            out.append("From its will: %s" % p.will_note)
+            out.append("")
         out.append("- %s" % p.survived_by)
         out.append("")
     honors = society_honors(cem)
@@ -655,7 +766,8 @@ _HTML = """<!DOCTYPE html>
 <h1>DEAD PROJECTS SOCIETY</h1>
 <div class="sub">est. the day you ran this command</div>
 <div class="stats">Buried: {buried} &middot; In a coma: {coma} &middot;
-Still breathing: {alive} &middot; Commits buried: {commits}</div>
+Still breathing: {alive} &middot; At rest: {resting} &middot;
+Commits buried: {commits}</div>
 <div class="grid">
 {stones}
 </div>
@@ -702,6 +814,12 @@ def render_html(cem):
             for h in honors)
         extra.append('<h3 class="section">THE SOCIETY&rsquo;S HONORS</h3>'
                      '<div class="living">%s</div>' % rows)
+    if cem.resting:
+        rows = "<br>".join(
+            "%s &mdash; %s" % (esc(p.name), esc(p.cause))
+            for p in cem.resting)
+        extra.append('<h3 class="section">AT REST: FINISHED, NOT DEAD</h3>'
+                     '<div class="living">%s</div>' % rows)
     if cem.coma:
         rows = "<br>".join(
             "%s &mdash; last seen %s (%d days ago)"
@@ -717,6 +835,7 @@ def render_html(cem):
                      '<div class="living">%s</div>' % rows)
     return _HTML.format(
         buried=len(cem.deceased), coma=len(cem.coma), alive=len(cem.alive),
+        resting=len(cem.resting),
         commits=cem.buried_commits, stones="\n".join(stones),
         extra="\n".join(extra))
 
@@ -762,6 +881,8 @@ def render_card(cem):
         ("IN A COMA", str(len(cem.coma))),
         ("STILL BREATHING", str(len(cem.alive))),
     ]
+    if cem.resting:
+        stats.append(("AT REST", str(len(cem.resting))))
     x = 600 - (len(stats) - 1) * 140
     for i, (label, val) in enumerate(stats):
         cx = x + i * 280
