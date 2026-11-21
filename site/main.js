@@ -89,6 +89,50 @@ function makeMoonSprite() {
 }
 scene.add(makeMoonSprite());
 
+// ---------- stars ----------
+function makeStars(count) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 90 + Math.random() * 60;
+    pos[i * 3] = Math.cos(angle) * radius;
+    pos[i * 3 + 1] = 12 + Math.random() * 70;
+    pos[i * 3 + 2] = Math.sin(angle) * radius;
+  }
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color: 0xcdd9ea, size: 1.6, sizeAttenuation: false,
+    transparent: true, opacity: 0.8, fog: false, depthWrite: false });
+  return new THREE.Points(geo, mat);
+}
+scene.add(makeStars(700));
+
+// ---------- ground mist ----------
+const mistSprites = [];
+function makeMist() {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 128;
+  const g = c.getContext("2d");
+  const grad = g.createRadialGradient(128, 64, 8, 128, 64, 120);
+  grad.addColorStop(0, "rgba(190,205,220,0.55)");
+  grad.addColorStop(1, "rgba(190,205,220,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 256, 128);
+  const tex = new THREE.CanvasTexture(c);
+  for (let i = 0; i < 9; i++) {
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthWrite: false,
+      opacity: 0.05 + Math.random() * 0.05 }));
+    spr.scale.set(16 + Math.random() * 14, 4.5 + Math.random() * 2, 1);
+    spr.position.set((Math.random() - 0.5) * 30, 0.8, (Math.random() - 0.5) * 30 - 4);
+    spr.userData.speed = 0.08 + Math.random() * 0.12;
+    mistSprites.push(spr);
+    scene.add(spr);
+  }
+}
+makeMist();
+
 // ---------- ground ----------
 const ground = new THREE.Mesh(
   new THREE.CircleGeometry(70, 48),
@@ -209,15 +253,27 @@ function raiseStone(project, position, decorative) {
   const body = new THREE.Mesh(stoneGeometry, stoneMat);
   body.castShadow = true;
   body.receiveShadow = true;
+  body.userData.baseColor = stoneMat.color.clone();
   group.add(body);
 
   if (!decorative) {
+    // Weathering: the longer a project has been dead, the more its stone
+    // leans and the fainter its engraving gets.
+    const diedYear = parseInt(project.died, 10);
+    const yearsDead = Number.isFinite(diedYear)
+      ? Math.max(0, new Date().getFullYear() - diedYear) : 0;
+    group.rotation.z += Math.min(0.09, yearsDead * 0.012) *
+      (Math.random() < 0.5 ? -1 : 1);
     const plaque = new THREE.Mesh(
       new THREE.PlaneGeometry(0.94, 1.18),
       new THREE.MeshBasicMaterial({
-        map: makePlaqueTexture(project), transparent: true }));
+        map: makePlaqueTexture(project), transparent: true,
+        opacity: Math.max(0.5, 1 - yearsDead * 0.05) }));
     plaque.position.set(0, 0.82, 0.098);
     group.add(plaque);
+    group.userData.plaque = plaque;
+    group.userData.body = body;
+    group.userData.baseOpacity = plaque.material.opacity;
     body.userData.project = project;
     interactive.push(body);
     stoneGroups.set(project.id, group);
@@ -255,9 +311,20 @@ function makeFireflies(count) {
 const fireflies = makeFireflies(130);
 scene.add(fireflies);
 
+function setDimmed(project, dim) {
+  const group = stoneGroups.get(project.id);
+  if (!group || !group.userData.plaque) return;
+  group.userData.plaque.material.opacity =
+    dim ? group.userData.baseOpacity * 0.12 : group.userData.baseOpacity;
+  const body = group.userData.body;
+  body.material.color.copy(body.userData.baseColor)
+    .multiplyScalar(dim ? 0.3 : 1);
+}
+
 // ---------- panel ----------
 const el = (id) => document.getElementById(id);
 let selectedId = null;
+let allProjects = [];
 
 function openPanel(project) {
   selectedId = project.id;
@@ -290,8 +357,43 @@ function openPanel(project) {
 function closePanel() {
   selectedId = null;
   panel.hidden = true;
+  document.querySelectorAll(".registry-list button.selected")
+    .forEach((b) => b.classList.remove("selected"));
 }
 el("panel-close").addEventListener("click", closePanel);
+
+// ---------- visiting a grave (click, registry, random, keys) ----------
+let desiredCamPos = null;
+
+function visitProject(project) {
+  openPanel(project);
+  const group = stoneGroups.get(project.id);
+  if (!group) return;
+  document.querySelectorAll(".registry-list button").forEach((b) => {
+    b.classList.toggle("selected", b.dataset.id === project.id);
+  });
+  const p = group.position;
+  desiredTarget.copy(p).add(new THREE.Vector3(0, 0.9, 0));
+  // Stand on the path side of the stone, close enough to read it.
+  const toward = new THREE.Vector3(-Math.sign(p.x), 0, 0.35).normalize();
+  desiredCamPos = p.clone().add(toward.multiplyScalar(3.4));
+  desiredCamPos.y = 1.9;
+  userDrove = false;
+  controls.autoRotate = false;
+}
+
+function cycleProject(step) {
+  if (!allProjects.length) return;
+  const idx = allProjects.findIndex((p) => p.id === selectedId);
+  const next = allProjects[(idx + step + allProjects.length) % allProjects.length];
+  visitProject(next);
+}
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowRight") cycleProject(1);
+  else if (event.key === "ArrowLeft") cycleProject(-1);
+  else if (event.key === "Escape") closePanel();
+});
 
 // ---------- picking ----------
 const raycaster = new THREE.Raycaster();
@@ -302,6 +404,7 @@ let userDrove = false;
 
 controls.addEventListener("start", () => {
   userDrove = true;
+  desiredCamPos = null;
   controls.autoRotate = false;
   hintEl.classList.add("faded");
 });
@@ -330,17 +433,59 @@ renderer.domElement.addEventListener("pointerup", (event) => {
   if (moved > 6) return; // it was a drag, not a click
   const hit = castAt(event);
   if (hit) {
-    const project = hit.userData.project;
-    openPanel(project);
-    const group = stoneGroups.get(project.id);
-    if (group) {
-      desiredTarget.copy(group.position).add(new THREE.Vector3(0, 0.9, 0));
-    }
+    visitProject(hit.userData.project);
   } else {
     closePanel();
+    desiredCamPos = null;
     desiredTarget.set(0, 1.1, 0);
   }
 });
+
+// ---------- registry ----------
+function buildRegistry(projects) {
+  const registry = el("registry");
+  const list = el("registry-list");
+  for (const project of projects) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.dataset.id = project.id;
+    btn.textContent = project.name;
+    const years = document.createElement("span");
+    years.className = "reg-years";
+    years.textContent = project.born === project.died
+      ? String(project.born) : project.born + " — " + project.died;
+    btn.appendChild(years);
+    btn.addEventListener("click", () => visitProject(project));
+    li.appendChild(btn);
+    list.appendChild(li);
+  }
+
+  const filters = el("cause-filters");
+  const causes = ["All", ...new Set(projects.map((p) => p.cause || "Cause unknown"))];
+  for (const cause of causes) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "filter-chip" + (cause === "All" ? " active" : "");
+    chip.textContent = cause;
+    chip.addEventListener("click", () => {
+      filters.querySelectorAll(".filter-chip")
+        .forEach((c) => c.classList.toggle("active", c === chip));
+      for (const p of projects) {
+        setDimmed(p, cause !== "All" && (p.cause || "Cause unknown") !== cause);
+      }
+    });
+    filters.appendChild(chip);
+  }
+
+  el("random-grave").addEventListener("click", () => {
+    const pool = projects.filter((p) => p.id !== selectedId);
+    const pick = pool[Math.floor(Math.random() * pool.length)] || projects[0];
+    if (pick) visitProject(pick);
+  });
+
+  registry.hidden = false;
+}
 
 // ---------- build the grounds ----------
 async function build() {
@@ -382,6 +527,9 @@ async function build() {
       .lookAt(0, 0, z + 4);
   }
 
+  allProjects = projects;
+  buildRegistry(projects);
+
   const totalCommits = projects.reduce((n, p) => n + (p.commits || 0), 0);
   statsEl.textContent = totalCommits
     ? "Now resting: " + projects.length + " projects · " +
@@ -392,11 +540,18 @@ build();
 
 // ---------- animate ----------
 const clock = new THREE.Clock();
+let prevT = 0;
 function animate() {
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
+  const dt = Math.min(0.05, t - prevT);
+  prevT = t;
 
   if (!reducedMotion) {
+    for (const spr of mistSprites) {
+      spr.position.x += spr.userData.speed * dt;
+      if (spr.position.x > 22) spr.position.x = -22;
+    }
     const pos = fireflies.geometry.attributes.position;
     const base = fireflies.userData.base;
     for (let i = 0; i < pos.count; i++) {
@@ -421,6 +576,10 @@ function animate() {
 
   if (!userDrove || selectedId) {
     controls.target.lerp(desiredTarget, 0.04);
+  }
+  if (desiredCamPos) {
+    camera.position.lerp(desiredCamPos, 0.045);
+    if (camera.position.distanceTo(desiredCamPos) < 0.06) desiredCamPos = null;
   }
   controls.update();
   renderer.render(scene, camera);

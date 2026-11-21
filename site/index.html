@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dead Projects Society — The Graveyard</title>
 <meta name="description" content="A 3D graveyard for abandoned side projects. Walk the grounds, read the tombstones.">
+<meta property="og:title" content="Dead Projects Society — The Graveyard">
+<meta property="og:description" content="Every abandoned side project deserves a tombstone. Walk the grounds, read the last words.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://littlestjames82-sys.github.io/dead-projects-society/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 95 V45 A30 30 0 0 1 80 45 V95 Z' fill='%236a737c'/%3E%3Ctext x='50' y='62' font-size='26' text-anchor='middle' fill='%23cfd6dd' font-family='Georgia'%3ERIP%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 {
@@ -17,6 +22,14 @@
 </head>
 <body>
 <div id="scene-container"></div>
+<div class="vignette"></div>
+
+<nav id="registry" class="registry" hidden>
+  <div class="registry-title">The Registry</div>
+  <div id="cause-filters" class="cause-filters"></div>
+  <ul id="registry-list" class="registry-list"></ul>
+  <button id="random-grave" class="random-grave" type="button">Visit a random grave</button>
+</nav>
 
 <header class="masthead">
   <h1>DEAD PROJECTS SOCIETY</h1>

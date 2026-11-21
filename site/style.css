@@ -29,6 +29,111 @@ html, body {
   display: block;
 }
 
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+/* ---------- registry ---------- */
+
+.registry {
+  position: fixed;
+  top: 50%;
+  left: 1.4rem;
+  transform: translateY(-50%);
+  width: 218px;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  padding: 1rem 1rem 1.1rem;
+  z-index: 9;
+  backdrop-filter: blur(6px);
+}
+
+.registry-title {
+  letter-spacing: 0.24em;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+}
+
+.cause-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.8rem;
+}
+
+.filter-chip {
+  border: 1px solid var(--panel-edge);
+  background: none;
+  color: var(--ink-dim);
+  border-radius: 999px;
+  padding: 0.14rem 0.6rem;
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.filter-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.registry-list {
+  list-style: none;
+  margin: 0 0 0.9rem;
+  padding: 0;
+}
+
+.registry-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.92rem;
+  padding: 0.34rem 0.5rem;
+  cursor: pointer;
+  word-break: break-word;
+}
+
+.registry-list button:hover { background: rgba(255, 255, 255, 0.04); }
+
+.registry-list button.selected {
+  border-left-color: var(--accent);
+  color: #fff;
+}
+
+.registry-list .reg-years {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.76rem;
+}
+
+.random-grave {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.random-grave:hover { background: rgba(176, 141, 87, 0.12); }
+
 /* ---------- masthead ---------- */
 
 .masthead {
@@ -243,4 +348,14 @@ html, body {
   }
 
   .hint { bottom: auto; top: 6.2rem; }
+
+  .registry {
+    top: auto;
+    bottom: 0.8rem;
+    left: 0.7rem;
+    transform: none;
+    width: 168px;
+    max-height: 38vh;
+    padding: 0.7rem;
+  }
 }
