@@ -83,8 +83,8 @@ function makeMoonSprite() {
   const tex = new THREE.CanvasTexture(c);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({
     map: tex, transparent: true, depthWrite: false, fog: false }));
-  spr.scale.set(15, 15, 1);
-  spr.position.set(-13, 12.5, -38);
+  spr.scale.set(13, 13, 1);
+  spr.position.set(-7, 13, -42);
   return spr;
 }
 scene.add(makeMoonSprite());
@@ -189,12 +189,21 @@ function makePlaqueTexture(project) {
 
   engrave("R . I . P .", 92, "34px Georgia, serif", dim);
 
-  g.font = "bold 44px Georgia, serif";
-  const nameLines = wrapText(g, project.name, 420).slice(0, 3);
+  // Shrink the name until its widest wrapped line fits the stone.
+  let nameSize = 44;
+  let nameLines = [];
+  while (nameSize >= 28) {
+    g.font = "bold " + nameSize + "px Georgia, serif";
+    nameLines = wrapText(g, project.name, 420).slice(0, 3);
+    const widest = Math.max(...nameLines.map((l) => g.measureText(l).width));
+    if (widest <= 420) break;
+    nameSize -= 4;
+  }
+  const nameFont = "bold " + nameSize + "px Georgia, serif";
   let y = 168;
   for (const line of nameLines) {
-    engrave(line, y, "bold 44px Georgia, serif", pale);
-    y += 52;
+    engrave(line, y, nameFont, pale);
+    y += nameSize + 8;
   }
 
   g.strokeStyle = "rgba(178,188,198,0.5)";
