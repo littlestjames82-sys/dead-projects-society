@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -883,6 +883,21 @@ def render_terminal(cem, with_autopsy=False):
     return "\n".join(out)
 
 
+def _sections(cem):
+    """The cemetery, sectioned: the buried and the resting, counted
+    by the era they died in and the language they were written in."""
+    by_era, by_language = {}, {}
+    for p in cem.deceased + cem.resting:
+        era = "%ds" % (p.died.year // 10 * 10)
+        by_era[era] = by_era.get(era, 0) + 1
+        if p.language:
+            by_language[p.language] = by_language.get(p.language, 0) + 1
+    return {
+        "by_era": dict(sorted(by_era.items())),
+        "by_language": dict(sorted(by_language.items())),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Rendering: JSON
 # ---------------------------------------------------------------------------
@@ -932,6 +947,7 @@ def cemetery_dict(cem):
             "average_lifespan_days": round(cem.avg_lifespan, 1),
             "back_from_the_dead": sum(
                 1 for p in cem.projects if p.resurrections >= 1),
+            "sections": _sections(cem),
         },
         "honors": [
             {"title": h["title"], "project": h["project"].name,
@@ -1429,6 +1445,7 @@ def site_wards(cem):
             "died": p.died.strftime("%Y"),
             "epitaph": p.last_words or "",
             "description": _patient_description(p),
+            "tech": [p.language] if p.language else [],
             "silence_days": p.silence_days,
             "commits": p.commits,
             "resurrections": p.resurrections,

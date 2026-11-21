@@ -78,6 +78,12 @@ html, body {
 .registry-search::placeholder { color: var(--ink-faint); font-style: italic; }
 .registry-search:focus { outline: 1px solid var(--accent); }
 
+.section-title {
+  margin-top: 0.1rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.68rem;
+}
+
 .cause-filters {
   display: flex;
   flex-wrap: wrap;

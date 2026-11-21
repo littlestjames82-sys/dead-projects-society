@@ -1036,7 +1036,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=19");
+    const res = await fetch("wards.json?v=20");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1096,6 +1096,76 @@ async function buildWards() {
   }
 }
 
+// ---------- sections: the cemetery by era and by language ----------
+let activeCause = "All";
+const sectionFilters = { era: "All", language: "All" };
+
+function projectEra(p) {
+  const y = parseInt(p.died, 10);
+  return isNaN(y) ? null : Math.floor(y / 10) * 10 + "s";
+}
+
+function projectLanguage(p) {
+  if (p.famous) return null; // the famous are products, not codebases
+  return (p.tech && p.tech.length) ? p.tech[0] : null;
+}
+
+function matchesSections(p) {
+  if (sectionFilters.era !== "All" && projectEra(p) !== sectionFilters.era)
+    return false;
+  if (sectionFilters.language !== "All" &&
+      projectLanguage(p) !== sectionFilters.language)
+    return false;
+  return true;
+}
+
+function applyFilters() {
+  const pool = [...allProjects, ...allPublic];
+  for (const p of pool) {
+    const causeMiss = !p.famous && activeCause !== "All" &&
+      (p.cause || "Cause unknown") !== activeCause;
+    setDimmed(p, causeMiss || !matchesSections(p));
+  }
+  for (const listId of ["registry-list", "public-list"]) {
+    const list = el(listId);
+    if (!list) continue;
+    list.querySelectorAll("li").forEach((li) => {
+      const btn = li.querySelector("button");
+      const p = pool.find((x) => x.id === (btn && btn.dataset.id));
+      li.style.display = !p || matchesSections(p) ? "" : "none";
+    });
+  }
+}
+
+function buildSectionFilters() {
+  const pool = [...allProjects, ...allPublic];
+  const eras = [...new Set(pool.map(projectEra).filter(Boolean))].sort();
+  const langs = [...new Set(pool.map(projectLanguage).filter(Boolean))].sort();
+  const rows = [
+    ["era-filters", "era", eras],
+    ["language-filters", "language", langs],
+  ];
+  for (const [rowId, key, values] of rows) {
+    const row = el(rowId);
+    if (!row) continue;
+    row.innerHTML = "";
+    for (const value of ["All", ...values]) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "filter-chip" +
+        (sectionFilters[key] === value ? " active" : "");
+      chip.textContent = value;
+      chip.addEventListener("click", () => {
+        sectionFilters[key] = value;
+        row.querySelectorAll(".filter-chip")
+          .forEach((c) => c.classList.toggle("active", c === chip));
+        applyFilters();
+      });
+      row.appendChild(chip);
+    }
+  }
+}
+
 // ---------- registry ----------
 function buildRegistry(projects) {
   const registry = el("registry");
@@ -1126,9 +1196,8 @@ function buildRegistry(projects) {
     chip.addEventListener("click", () => {
       filters.querySelectorAll(".filter-chip")
         .forEach((c) => c.classList.toggle("active", c === chip));
-      for (const p of projects) {
-        setDimmed(p, cause !== "All" && (p.cause || "Cause unknown") !== cause);
-      }
+      activeCause = cause;
+      applyFilters();
     });
     filters.appendChild(chip);
   }
@@ -1177,6 +1246,7 @@ function buildRegistry(projects) {
     });
   });
 
+  buildSectionFilters();
   registry.hidden = false;
 }
 
@@ -1184,7 +1254,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=19");
+    const res = await fetch("projects.json?v=20");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1245,7 +1315,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=19");
+    const res = await fetch("honors.json?v=20");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1277,7 +1347,7 @@ loadHonors();
 
 async function loadInfamy() {
   try {
-    const res = await fetch("infamy.json?v=19");
+    const res = await fetch("infamy.json?v=20");
     if (!res.ok) return;
     const infamy = await res.json();
     if (!Array.isArray(infamy) || !infamy.length) return;
@@ -1313,7 +1383,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=19");
+    const res = await fetch("public.json?v=20");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {
@@ -1349,6 +1419,8 @@ async function loadPublicGrounds() {
     list.appendChild(li);
   }
   el("public-section").hidden = false;
+  buildSectionFilters();
+  applyFilters();
   statsEl.textContent += " · " + allPublic.length +
     " famous graves in the Public Grounds";
   const m = location.hash.match(/#grave=([^&]+)/);

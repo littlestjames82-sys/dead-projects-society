@@ -29,8 +29,9 @@ The CLI, the verdicts, the 3D cemetery.
 - [x] Hall of Infamy: the Honors pointed the other way (site + CLI,
       v0.8.0)
 - [x] Death Certificates: the formal, frameable artifact (v0.8.0)
-- [ ] Cemetery sections by language and era (language detection
-      shipped v0.11.0; the sections themselves are still to build)
+- [x] Cemetery sections by language and era (language detection
+      v0.11.0; Registry section filters and the JSON sections summary
+      v0.13.0)
 
 ### II. The Autopsy Department — NEXT
 Why did it die, and what would revival take? Evidence-based, and careful

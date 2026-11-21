@@ -109,6 +109,10 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).
+- The cemetery keeps **sections**: the JSON report counts the buried
+  by era and by language, and the 3D cemetery's Registry can section
+  the grounds the same way, by the decade a project died in or the
+  language it was written in.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

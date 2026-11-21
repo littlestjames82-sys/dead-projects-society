@@ -768,3 +768,31 @@ class TestDeepAutopsy(unittest.TestCase):
         self.assertIn("autopsy", stones[0])
         self.assertIn("momentum", stones[0]["autopsy"])
         self.assertIn("revival_verdict", stones[0]["autopsy"])
+
+
+class TestSections(FixtureBase):
+    """v0.13.0: the cemetery, sectioned by era and language."""
+
+    def test_sections_count_the_dead(self):
+        path = os.path.join(self.tmp, "poly")
+        make_repo(path, [("2025-02-01T09:00:00", "a"),
+                         ("2025-02-03T09:00:00", "b")])
+        for name in ("a.py", "b.py", "c.js"):
+            with open(os.path.join(path, name), "w") as fh:
+                fh.write("x")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        sections = dps.cemetery_dict(cem)["summary"]["sections"]
+        self.assertEqual(sections["by_era"], {"2020s": 1})
+        self.assertEqual(sections["by_language"], {"Python": 1})
+
+    def test_wards_carry_tech(self):
+        path = os.path.join(self.tmp, "sick")
+        make_repo(path, [("2026-10-20T09:00:00", "a"),
+                         ("2026-10-25T09:00:00", "b")])
+        with open(os.path.join(path, "app.js"), "w") as fh:
+            fh.write("x")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        wards = dps.site_wards(cem)
+        entries = wards["intensive_care"] + wards["still_breathing"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["tech"], ["JavaScript"])
