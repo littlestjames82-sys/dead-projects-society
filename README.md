@@ -24,6 +24,21 @@ Society does not bury the living.
   the timing.
 ```
 
+## Walk the grounds
+
+The Society keeps a **3D graveyard** on the web: a Three.js cemetery where
+every buried project gets a stone you can click to read its story.
+
+**[Enter the graveyard](https://littlestjames82-sys.github.io/dead-projects-society/)**
+
+The stones there are generated from a real run. To raise your own, feed the
+CLI's JSON through the converter and drop the result in `site/projects.json`:
+
+```bash
+dead-projects-society ~/projects --json > cemetery.json
+python3 tools/to_site_json.py cemetery.json site/projects.json
+```
+
 ## Install
 
 ```bash
