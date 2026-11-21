@@ -368,12 +368,16 @@ function openPanel(project) {
 }
 
 function closePanel() {
+  stopTour();
   selectedId = null;
   panel.hidden = true;
   document.querySelectorAll(".registry-list button.selected")
     .forEach((b) => b.classList.remove("selected"));
 }
 el("panel-close").addEventListener("click", closePanel);
+
+el("panel-prev").addEventListener("click", () => { stopTour(); cycleProject(-1); });
+el("panel-next").addEventListener("click", () => { stopTour(); cycleProject(1); });
 
 el("panel-share").addEventListener("click", async () => {
   if (!selectedId) return;
@@ -419,6 +423,28 @@ function cycleProject(step) {
   visitProject(next);
 }
 
+// ---------- the tour ----------
+let tourTimer = null;
+function stopTour() {
+  if (tourTimer) {
+    clearInterval(tourTimer);
+    tourTimer = null;
+  }
+  const btn = el("tour-btn");
+  if (btn) {
+    btn.textContent = "Take the tour";
+    btn.classList.remove("active");
+  }
+}
+function startTour() {
+  if (!allProjects.length) return;
+  const btn = el("tour-btn");
+  btn.textContent = "Stop the tour";
+  btn.classList.add("active");
+  cycleProject(1);
+  tourTimer = setInterval(() => cycleProject(1), 6500);
+}
+
 window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") cycleProject(1);
   else if (event.key === "ArrowLeft") cycleProject(-1);
@@ -435,6 +461,7 @@ let userDrove = false;
 controls.addEventListener("start", () => {
   userDrove = true;
   desiredCamPos = null;
+  stopTour();
   controls.autoRotate = false;
   hintEl.classList.add("faded");
 });
@@ -514,7 +541,8 @@ function makeWardPlaqueTexture(entry, label, accent) {
   return tex;
 }
 
-function makeSign(text) {
+function makeSign(text, width) {
+  const w = width || 3.6;
   const c = document.createElement("canvas");
   c.width = 1024;
   c.height = 224;
@@ -525,24 +553,38 @@ function makeSign(text) {
   g.lineWidth = 6;
   g.strokeRect(14, 14, 996, 196);
   g.fillStyle = "rgba(226,231,236,0.92)";
-  g.font = "64px Georgia, serif";
   g.textAlign = "center";
-  g.fillText(text.split("").join(" "), 512, 138);
+  let size = 64;
+  const spaced = text.split("").join("\u200a");
+  while (size > 30) {
+    g.font = size + "px Georgia, serif";
+    if (g.measureText(spaced).width <= 940) break;
+    size -= 4;
+  }
+  g.fillText(spaced, 512, 138);
   const tex = new THREE.CanvasTexture(c);
   const group = new THREE.Group();
+  const boardH = w * (224 / 1024);
+  const boardY = 1.15 + boardH / 2;
   const board = new THREE.Mesh(
-    new THREE.PlaneGeometry(3.6, 0.79),
+    new THREE.PlaneGeometry(w, boardH),
     new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9 }));
-  board.position.y = 1.55;
+  board.position.y = boardY;
   group.add(board);
   const postMat = new THREE.MeshStandardMaterial({ color: 0x241c12, roughness: 1 });
-  for (const px of [-1.5, 1.5]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.6, 8), postMat);
-    post.position.set(px, 0.8, -0.03);
+  for (const px of [-(w / 2 - 0.25), w / 2 - 0.25]) {
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, boardY, 8), postMat);
+    post.position.set(px, boardY / 2, -0.03);
     group.add(post);
   }
   return group;
 }
+
+// The entrance gate over the path.
+const gate = makeSign("DEAD PROJECTS SOCIETY", 5.6);
+gate.position.set(0, 0, 7.6);
+scene.add(gate);
 
 function raiseWardStone(entry, label, accent, position, faceAngle) {
   const group = new THREE.Group();
@@ -565,7 +607,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=5");
+    const res = await fetch("wards.json?v=6");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -646,9 +688,15 @@ function buildRegistry(projects) {
   }
 
   el("random-grave").addEventListener("click", () => {
+    stopTour();
     const pool = projects.filter((p) => p.id !== selectedId);
     const pick = pool[Math.floor(Math.random() * pool.length)] || projects[0];
     if (pick) visitProject(pick);
+  });
+
+  el("tour-btn").addEventListener("click", () => {
+    if (tourTimer) stopTour();
+    else startTour();
   });
 
   registry.hidden = false;
@@ -658,7 +706,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=5");
+    const res = await fetch("projects.json?v=6");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {

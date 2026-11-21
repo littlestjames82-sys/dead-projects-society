@@ -134,6 +134,41 @@ html, body {
 
 .random-grave:hover { background: rgba(176, 141, 87, 0.12); }
 
+.tour-btn {
+  width: 100%;
+  margin-top: 0.45rem;
+  background: none;
+  border: 1px solid var(--panel-edge);
+  color: var(--ink-dim);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.tour-btn:hover { color: #fff; }
+.tour-btn.active { border-color: var(--accent); color: var(--accent); }
+
+.panel-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.2rem 0.1rem;
+}
+
+.nav-btn:hover { color: #fff; }
+
 /* ---------- masthead ---------- */
 
 .masthead {
