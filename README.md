@@ -113,6 +113,15 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   by era and by language, and the 3D cemetery's Registry can section
   the grounds the same way, by the decade a project died in or the
   language it was written in.
+- The autopsy reads **dependency-era signals** from the commit record:
+  how much of a life was bumps, upgrades, and migrations. A project
+  whose final chapter is mostly upkeep earns the verdict it deserves:
+  *Died maintaining.*
+- `--diff` keeps the **Groundskeeper's Log**: run it against the same
+  grounds over time and it reports what changed since your last visit:
+  newly buried, newly at rest, risen, stirred in their graves, newly
+  born. Visits are recorded locally in
+  `~/.dead-projects-society/state.json` (or `--state FILE`).
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,

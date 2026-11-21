@@ -796,3 +796,70 @@ class TestSections(FixtureBase):
         entries = wards["intensive_care"] + wards["still_breathing"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["tech"], ["JavaScript"])
+
+
+class TestDependencyEraAndLog(FixtureBase):
+    """v0.14.0: dependency-era signals and the Groundskeeper's Log."""
+
+    def test_died_maintaining(self):
+        commits = [("2025-01-05T09:00:00", "initial commit"),
+                   ("2025-02-05T09:00:00", "core feature"),
+                   ("2025-03-05T09:00:00", "another feature"),
+                   ("2025-04-05T09:00:00", "bump lodash"),
+                   ("2025-04-20T09:00:00", "upgrade react"),
+                   ("2025-05-05T09:00:00", "dependabot: bump axios"),
+                   ("2025-05-20T09:00:00", "update dependencies"),
+                   ("2025-06-05T09:00:00", "migration to new api"),
+                   ("2025-06-20T09:00:00", "bump typescript"),
+                   ("2025-07-05T09:00:00", "upgrade dependencies")]
+        make_repo(os.path.join(self.tmp, "upkeep"), commits)
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        p = cem.deceased[0]
+        self.assertGreaterEqual(p.dep_tail_share, 0.7)
+        self.assertTrue(p.cause.startswith("Died maintaining"))
+
+    def test_autopsy_dependency_finding(self):
+        p = _proj("era", "2024-01-01", "2025-06-01", 100)
+        p.dep_commits = 45
+        a = dps.autopsy(p)
+        self.assertTrue(any(f.startswith("Dependency era: 45 of 100")
+                            for f in a["findings"]))
+        self.assertEqual(a["dependency_commits"], 45)
+
+    def test_log_first_visit_and_changes(self):
+        from datetime import datetime, timezone
+        dead = _proj("gone", "2025-01-01", "2025-05-01", 30)
+        alive = _proj("alive", "2025-01-01", "2025-05-01", 30,
+                      status="alive")
+        cem = dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90,
+            projects=[dead, alive])
+        first = dps.groundskeeper_log(None, cem)
+        self.assertTrue(first["first_visit"])
+        prev = dps._snapshot(cem)
+        # Time passes: the living one dies, the dead one rises.
+        dead2 = _proj("gone", "2025-01-01", "2025-05-01", 31,
+                      status="alive")
+        alive2 = _proj("alive", "2025-01-01", "2025-05-01", 30,
+                       status="deceased")
+        cem2 = dps.Cemetery(root="/x", generated=datetime(
+            2026, 6, 1, tzinfo=timezone.utc), dead_days=90,
+            projects=[dead2, alive2])
+        log = dps.groundskeeper_log(prev, cem2)
+        self.assertEqual(log["risen"], ["gone"])
+        self.assertEqual(log["newly_buried"], ["alive"])
+        text = dps.render_groundskeeper_log(log)
+        self.assertIn("Newly buried: alive", text)
+        self.assertIn("Risen: gone", text)
+
+    def test_diff_main_records_state(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+        ])
+        state = os.path.join(self.tmp, "state.json")
+        rc = dps.main([self.tmp, "--diff", "--state", state])
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.isfile(state))
+        rc = dps.main([self.tmp, "--diff", "--state", state])
+        self.assertEqual(rc, 0)

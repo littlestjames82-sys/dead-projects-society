@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.13.0"
+VERSION = "0.14.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -61,6 +61,8 @@ class Project:
     longest_flatline: int = 0   # longest mid-life silence, in days
     activity: list = field(default_factory=list)  # commits per month
     language: str = ""          # top language, from file names only
+    dep_commits: int = 0        # commits about dependencies/upkeep
+    dep_tail_share: float = 0.0  # dep share of the newest 10 commits
     will_status: str = ""       # from PROJECT_WILL.md: complete | adoptable
     will_successor: str = ""    # named in the will, if anyone was
     will_note: str = ""         # a line from the will, in the author's words
@@ -209,6 +211,15 @@ def read_project(path, now):
             if m > 12:
                 y, m = y + 1, 1
 
+    msgs = []
+    for line in lines:
+        _, m = parse(line)
+        msgs.append(m)
+    dep_hits = [1 if _DEP_RE.search(m) else 0 for m in msgs]
+    dep_commits = sum(dep_hits)
+    tail = dep_hits[:10]
+    dep_tail_share = (sum(tail) / len(tail)) if tail else 0.0
+
     will_status, will_successor, will_note = _read_will(path)
     language = _detect_language(path)
     authors_raw = _git(path, "log", "--format=%an")
@@ -235,6 +246,8 @@ def read_project(path, now):
         gaps=gaps,
         activity=activity,
         language=language,
+        dep_commits=dep_commits,
+        dep_tail_share=dep_tail_share,
         will_status=will_status,
         will_successor=will_successor,
         will_note=will_note,
@@ -343,6 +356,10 @@ _WAIT_RE = re.compile(r"\b(todo|blocked|waiting on|waiting for|pending)\b",
 _SEQUEL_RE = re.compile(
     r"\b(v2|rewrite|rewriting|new version|next gen|rebuilt|2\.0)\b",
     re.IGNORECASE)
+_DEP_RE = re.compile(
+    r"\b(dependabot|bump\w*|upgrad\w*|dependencies|dependency|deps|"
+    r"migrat\w*)\b",
+    re.IGNORECASE)
 _COMPLETE_RE = re.compile(
     r"(final release|stable release|release\s+v?\d|v?\d+\.\d+(\.\d+)?"
     r"\s+release|farewell|goodbye|project (is )?complete|archiv\w*|"
@@ -370,6 +387,10 @@ def cause_of_death(p):
         return "Died mid-sentence. Its final commit was never finished."
     if msg.lower().startswith("merge "):
         return "Died in a merge. The paperwork was impeccable."
+    if p.commits >= 10 and p.dep_tail_share >= 0.7:
+        return ("Died maintaining. Its final chapter was dependency "
+                "bumps, upgrades, and migrations; the work became "
+                "upkeep, and then it stopped.")
     if _WAIT_RE.search(msg):
         return ("Died waiting. The thing it was waiting for never came.")
     if _RENAME_RE.search(msg) and p.commits >= 5:
@@ -658,6 +679,13 @@ def autopsy(p):
     if p.longest_flatline >= 30:
         findings.append("Longest premortem silence: %d days."
                         % p.longest_flatline)
+    if p.commits >= 10 and p.dep_commits:
+        dep_share = p.dep_commits / p.commits * 100.0
+        if dep_share >= 30:
+            findings.append(
+                "Dependency era: %d of %d commits (%.0f%%) were bumps, "
+                "upgrades, and migrations."
+                % (p.dep_commits, p.commits, dep_share))
     if not p.has_readme:
         findings.append("No README: a stranger arriving now gets no "
                         "explanation.")
@@ -710,6 +738,8 @@ def autopsy(p):
         "peak_share_percent": round(peak_share, 1),
         "momentum": momentum,
         "findings": findings,
+        "dependency_commits": p.dep_commits,
+        "dependency_tail_share": round(p.dep_tail_share, 2),
         "end_pattern": end,
         "revival_score": score,
         "revival_verdict": verdict,
@@ -932,6 +962,8 @@ def cemetery_dict(cem):
                        else None,
             "activity_monthly": p.activity,
             "language": p.language or None,
+            "dependency_commits": p.dep_commits,
+            "dependency_tail_share": round(p.dep_tail_share, 2),
         }
     return {
         "tool": "dead-projects-society",
@@ -1584,6 +1616,98 @@ def wrapped_text(cem, year):
     return "\n".join(lines) + "\n"
 
 
+def _snapshot(cem):
+    return {
+        p.name: {
+            "status": p.status,
+            "died": p.died.date().isoformat(),
+            "commits": p.commits,
+        }
+        for p in cem.projects
+    }
+
+
+def groundskeeper_log(prev, cem):
+    """What changed in the grounds since the last recorded visit.
+
+    prev is the snapshot dict from the previous --diff run for this
+    root, or None on the first visit.
+    """
+    cur = _snapshot(cem)
+    if prev is None:
+        return {"first_visit": True, "newly_buried": [],
+                "newly_resting": [], "risen": [], "stirred": [],
+                "newly_born": sorted(cur), "still_buried": 0}
+    newly_buried, newly_resting, risen, stirred, newly_born = [], [], [], [], []
+    still_buried = 0
+    for name, now_s in cur.items():
+        before = prev.get(name)
+        if before is None:
+            newly_born.append(name)
+            continue
+        was_dead = before.get("status") in ("deceased", "resting")
+        is_dead = now_s["status"] in ("deceased", "resting")
+        if is_dead and not was_dead:
+            if now_s["status"] == "resting":
+                newly_resting.append(name)
+            else:
+                newly_buried.append(name)
+        elif was_dead and not is_dead:
+            risen.append(name)
+        elif was_dead and is_dead and now_s["died"] != before.get("died"):
+            stirred.append(name)
+        elif was_dead and is_dead:
+            still_buried += 1
+    return {"first_visit": False,
+            "newly_buried": sorted(newly_buried),
+            "newly_resting": sorted(newly_resting),
+            "risen": sorted(risen),
+            "stirred": sorted(stirred),
+            "newly_born": sorted(newly_born),
+            "still_buried": still_buried}
+
+
+def render_groundskeeper_log(log):
+    lines = ["-" * 64,
+             "  THE GROUNDSKEEPER'S LOG (since your last visit)"]
+    if log["first_visit"]:
+        lines.append("  No previous visit on record. The log begins "
+                     "today; %d projects entered into it."
+                     % len(log["newly_born"]))
+        return "\n".join(lines)
+    rows = [("Newly buried", log["newly_buried"]),
+            ("Finished, and at rest", log["newly_resting"]),
+            ("Risen", log["risen"]),
+            ("Stirred in their graves", log["stirred"]),
+            ("Newly born", log["newly_born"])]
+    if not any(names for _, names in rows):
+        lines.append("  Nothing changed. The grounds are as you "
+                     "left them.")
+    for label, names in rows:
+        if names:
+            lines.append("  * %s: %s" % (label, ", ".join(names)))
+    lines.append("  Still buried, undisturbed: %d."
+                 % log["still_buried"])
+    return "\n".join(lines)
+
+
+def _load_state(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_state(path, state):
+    folder = os.path.dirname(path)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(state, fh, indent=1, sort_keys=True)
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -1625,6 +1749,14 @@ def main(argv=None):
     ap.add_argument("--certificates", metavar="DIR",
                     help="Write a formal certificate (HTML) for every "
                          "buried or at-rest project into DIR")
+    ap.add_argument("--diff", action="store_true",
+                    help="Compare this scan with the last recorded "
+                         "visit to these grounds and report what "
+                         "changed (the Groundskeeper's Log); records "
+                         "this visit either way")
+    ap.add_argument("--state", metavar="FILE", default=None,
+                    help="State file for --diff (default: "
+                         "~/.dead-projects-society/state.json)")
     ap.add_argument("--version", action="version",
                     version="dead-projects-society %s" % VERSION)
     args = ap.parse_args(argv)
@@ -1638,10 +1770,27 @@ def main(argv=None):
               % cem.root)
         return 2
 
+    log = None
+    if args.diff:
+        state_path = args.state or os.path.join(
+            os.path.expanduser("~"), ".dead-projects-society",
+            "state.json")
+        state = _load_state(state_path)
+        entry = state.get(cem.root) or {}
+        log = groundskeeper_log(entry.get("projects"), cem)
+        state[cem.root] = {"visited": cem.generated.isoformat(),
+                           "projects": _snapshot(cem)}
+        _save_state(state_path, state)
+
     if args.json:
-        print(json.dumps(cemetery_dict(cem), indent=2))
+        data = cemetery_dict(cem)
+        if log is not None:
+            data["groundskeeper_log"] = log
+        print(json.dumps(data, indent=2))
     else:
         print(render_terminal(cem, with_autopsy=args.autopsy))
+        if log is not None:
+            print(render_groundskeeper_log(log))
     if args.certificates:
         os.makedirs(args.certificates, exist_ok=True)
         subjects = cem.deceased + cem.resting
