@@ -907,3 +907,27 @@ class TestResurrectionCertificates(FixtureBase):
             2026, 1, 1, tzinfo=timezone.utc), dead_days=90, projects=[p])
         html = dps.render_resurrection_certificate(p, cem)
         self.assertIn("Currently among the living", html)
+
+
+class TestSquareCard(FixtureBase):
+    """v0.16.0: the 1080x1080 social-feed card."""
+
+    def test_square_card_shape_and_counts(self):
+        make_repo(os.path.join(self.tmp, "gone"),
+                  [("2025-01-05T09:00:00", "start"),
+                   ("2025-01-20T09:00:00", "wip")])
+        make_repo(os.path.join(self.tmp, "alive"),
+                  [(NOW.strftime("%Y-%m-%dT09:00:00"), "today")])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        svg = dps.render_square_card(cem)
+        self.assertIn('width="1080" height="1080"', svg)
+        self.assertIn("1 buried", svg)
+        self.assertIn("BURIED", svg)
+
+    def test_square_cli_writes_file(self):
+        make_repo(os.path.join(self.tmp, "gone"),
+                  [("2025-01-05T09:00:00", "start")])
+        out = os.path.join(self.tmp, "square.svg")
+        self.assertEqual(dps.main([self.tmp, "--square", out]), 0)
+        with open(out) as fh:
+            self.assertIn("DEAD PROJECTS SOCIETY", fh.read())

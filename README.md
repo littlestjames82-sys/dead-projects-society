@@ -46,6 +46,20 @@ the ones still alive. Every grave also gets a deep link
 
 ## Install
 
+Try it without installing anything (needs [uv](https://docs.astral.sh/uv/)):
+
+```bash
+uvx dead-projects-society ~/projects
+```
+
+Or keep it (needs [pipx](https://pipx.pypa.io/)):
+
+```bash
+pipx install dead-projects-society
+```
+
+Or the classic way:
+
 ```bash
 pip install dead-projects-society
 ```
@@ -109,6 +123,8 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   or fell a second time. The return is on the record.
 - `--badge FILE` writes a shields-style badge with the state of your
   grounds, for a README.
+- `--square FILE` writes a 1080x1080 card sized for social feeds (the
+  `--card` SVG stays the wide link-preview size).
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).

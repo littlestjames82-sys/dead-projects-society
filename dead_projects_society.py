@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1568,6 +1568,75 @@ def site_wards(cem):
     }
 
 
+def render_square_card(cem):
+    """The 1080x1080 card, sized for social feeds (research, Nov 2026:
+    square cards are the shareable unit there; the wide card stays
+    the link-preview size)."""
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    counts = "%d buried \u00b7 %d in a coma \u00b7 %d breathing" % (
+        len(cem.deceased), len(cem.coma), len(cem.alive))
+    if cem.resting:
+        counts += " \u00b7 %d at rest" % len(cem.resting)
+    lines = []
+    if cem.deceased:
+        worst = max(cem.deceased, key=lambda p: p.silence_days)
+        lines.append("Longest silence: %s, %d days."
+                     % (worst.name, worst.silence_days))
+    risen = [p for p in cem.projects if p.resurrections >= 1]
+    if risen:
+        p = max(risen, key=lambda x: x.longest_flatline)
+        lines.append("Back from the dead: %s, after %d days."
+                     % (p.name, p.longest_flatline))
+    elif cem.deceased:
+        marathoner = max(cem.deceased, key=lambda p: p.lifespan_days)
+        lines.append("The Marathoner: %s, %s."
+                     % (marathoner.name,
+                        _site_life_text(marathoner.lifespan_days)))
+    parts = []
+    parts.append(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1080" '
+        'height="1080" viewBox="0 0 1080 1080">')
+    parts.append('<rect width="1080" height="1080" fill="#101418"/>')
+    parts.append('<rect x="30" y="30" width="1020" height="1020" rx="20" '
+                 'fill="none" stroke="#333d46" stroke-width="2"/>')
+    parts.append('<rect x="44" y="44" width="992" height="992" rx="14" '
+                 'fill="none" stroke="#232a31" stroke-width="1"/>')
+    parts.append(
+        '<text x="540" y="215" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="44" letter-spacing="10" fill="#8b96a0">'
+        'DEAD PROJECTS SOCIETY</text>')
+    parts.append(
+        '<text x="540" y="300" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="31" fill="#c9cfc4">My side projects, '
+        'formally buried.</text>')
+    parts.append(
+        '<text x="540" y="520" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="230" fill="#e8e2d2">%d</text>'
+        % len(cem.deceased))
+    parts.append(
+        '<text x="540" y="590" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="34" letter-spacing="6" fill="#b08d57">'
+        'BURIED</text>')
+    parts.append(
+        '<text x="540" y="680" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="30" fill="#aeb6ae">%s</text>' % esc(counts))
+    y = 770
+    for line in lines:
+        parts.append(
+            '<text x="540" y="%d" text-anchor="middle" '
+            'font-family="Georgia, serif" font-size="30" '
+            'fill="#c9cfc4">%s</text>' % (y, esc(line)))
+        y += 52
+    parts.append(
+        '<text x="540" y="985" text-anchor="middle" font-family="Georgia, '
+        'serif" font-size="24" fill="#77828d">Judged locally from git '
+        'metadata. Your code is never read.</text>')
+    parts.append('</svg>')
+    return "".join(parts)
+
+
 def render_badge(cem):
     """A shields-style badge for a README: the state of the grounds."""
     def esc(s):
@@ -1803,6 +1872,8 @@ def main(argv=None):
                     help="Write a walkable HTML graveyard")
     ap.add_argument("--card", metavar="FILE",
                     help="Write an SVG share card")
+    ap.add_argument("--square", metavar="FILE",
+                    help="Write a 1080x1080 SVG card for social feeds")
     ap.add_argument("--badge", metavar="FILE",
                     help="Write an SVG status badge for a README")
     ap.add_argument("--wrapped-kit", metavar="DIR",
@@ -1890,6 +1961,10 @@ def main(argv=None):
         with open(args.card, "w", encoding="utf-8") as fh:
             fh.write(render_card(cem))
         print("Share card written to %s" % args.card)
+    if args.square:
+        with open(args.square, "w", encoding="utf-8") as fh:
+            fh.write(render_square_card(cem))
+        print("Square card written to %s" % args.square)
     if args.badge:
         with open(args.badge, "w", encoding="utf-8") as fh:
             fh.write(render_badge(cem))
