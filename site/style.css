@@ -463,3 +463,34 @@ html, body {
     padding: 0.7rem;
   }
 }
+
+/* ---------- Bury a GitHub user ---------- */
+.bury-main { max-width: 760px; margin: 0 auto; padding: 24px 20px 60px; }
+.bury-row { display: flex; gap: 10px; margin-top: 8px; }
+#bury-input { flex: 1; background: #12161d; border: 1px solid #2c3542;
+  border-radius: 8px; color: #e8e4da; padding: 12px 14px; font-size: 16px; }
+#bury-go { background: #c9a959; color: #14100a; border: 0; border-radius: 8px;
+  padding: 12px 18px; font-weight: 700; cursor: pointer; }
+.bury-note { color: #9aa3ad; font-size: 13px; margin-top: 12px; line-height: 1.5; }
+.bury-note a { color: #c9a959; }
+.bury-status { color: #e8e4da; margin-top: 20px; }
+.bury-summary { color: #c9cdd4; font-size: 17px; }
+.bury-h { color: #c9a959; margin: 26px 0 8px; font-size: 15px;
+  letter-spacing: 0.08em; text-transform: uppercase; }
+.bury-list { list-style: none; margin: 0; padding: 0; }
+.bury-list li { padding: 7px 0; border-bottom: 1px solid #1d232d;
+  display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.bury-list a { color: #e8e4da; font-weight: 600; text-decoration: none; }
+.bury-list a:hover { color: #c9a959; }
+.bury-meta { color: #9aa3ad; font-size: 13px; }
+.bury-none { color: #9aa3ad; }
+.bury-honors { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0 4px; }
+.bury-honor { background: #12161d; border: 1px solid #2c3542; border-radius: 8px;
+  padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+.bury-honor-title { color: #c9a959; font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; }
+.bury-honor-name { font-weight: 700; }
+.bury-honor-detail { color: #9aa3ad; font-size: 13px; }
+.bury-actions { margin-top: 24px; display: flex; gap: 12px; align-items: center; }
+#bury-copy { background: #1a212c; color: #e8e4da; border: 1px solid #2c3542;
+  border-radius: 8px; padding: 10px 16px; cursor: pointer; }

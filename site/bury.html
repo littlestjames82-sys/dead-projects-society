@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bury a GitHub User — Dead Projects Society</title>
+<meta name="description" content="Type any GitHub username. The Society reads the public record and pronounces on every repo: buried, in intensive care, or still breathing.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪦</text></svg>">
+<link rel="stylesheet" href="style.css?v=15">
+</head>
+<body class="bury-page">
+<header id="site-header">
+  <div>
+    <h1>Bury a GitHub User</h1>
+    <p class="tagline">The Society reads the public record and pronounces.</p>
+  </div>
+  <div class="header-actions">
+    <a class="tour-btn" href="./">Walk the graveyard</a>
+  </div>
+</header>
+
+<main class="bury-main">
+  <form id="bury-form">
+    <label for="bury-input">GitHub username</label>
+    <div class="bury-row">
+      <input id="bury-input" type="text" placeholder="e.g. littlestjames82-sys"
+        autocomplete="off" spellcheck="false">
+      <button type="submit" id="bury-go">Hold the service</button>
+    </div>
+    <p class="bury-note">Judged by public push dates, the way the Society judges a
+    folder by commit dates. Forks are excused. Silence past 90 days is pronounced
+    dead; 31 to 90 is intensive care.</p>
+  </form>
+
+  <p id="bury-status" class="bury-status" hidden></p>
+
+  <section id="bury-results" hidden>
+    <h2 id="bury-headline"></h2>
+    <p id="bury-summary" class="bury-summary"></p>
+    <div id="bury-honors" class="bury-honors"></div>
+    <h3 class="bury-h">The Buried</h3>
+    <ul id="bury-dead" class="bury-list"></ul>
+    <h3 class="bury-h">Intensive Care</h3>
+    <ul id="bury-coma" class="bury-list"></ul>
+    <h3 class="bury-h">Still Breathing</h3>
+    <ul id="bury-alive" class="bury-list"></ul>
+    <div class="bury-actions">
+      <button type="button" id="bury-copy">Copy the verdict</button>
+      <span id="bury-copied" class="copied-note" hidden>Copied.</span>
+    </div>
+    <p class="bury-note">The full autopsy, with last words, causes of death and
+    resurrection records, runs on your own machine:
+    <a href="https://github.com/littlestjames82-sys/dead-projects-society">Dead
+    Projects Society on GitHub</a>.</p>
+  </section>
+</main>
+
+<script src="bury.js?v=15"></script>
+</body>
+</html>
