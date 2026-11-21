@@ -103,7 +103,10 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   the neglect findings: no README, no remote, a bus factor of one. The
   same notes appear on each grave in the 3D cemetery.
 - `--certificates DIR` issues a formal **Certificate of Death** (or of
-  Completion, for the finished) for every project that earned one.
+  Completion, for the finished) for every project that earned one, and
+  a **Certificate of Resurrection** for every project that flatlined
+  past the death line and committed again, whether it is living still
+  or fell a second time. The return is on the record.
 - `--badge FILE` writes a shields-style badge with the state of your
   grounds, for a README.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG

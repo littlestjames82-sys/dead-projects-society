@@ -863,3 +863,47 @@ class TestDependencyEraAndLog(FixtureBase):
         self.assertTrue(os.path.isfile(state))
         rc = dps.main([self.tmp, "--diff", "--state", state])
         self.assertEqual(rc, 0)
+
+
+class TestResurrectionCertificates(FixtureBase):
+    """v0.15.0: the other certificate."""
+
+    def _risen_repo(self):
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2025-01-05T09:00:00", "a"),
+            ("2025-01-15T09:00:00", "b"),
+            ("2025-06-20T09:00:00", "it lives"),
+            ("2025-06-25T09:00:00", "c"),
+        ])
+
+    def test_risen_project_detected(self):
+        self._risen_repo()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        p = cem.projects[0]
+        self.assertEqual(p.resurrections, 1)
+        self.assertGreaterEqual(p.longest_flatline, 90)
+
+    def test_certificates_include_resurrection(self):
+        self._risen_repo()
+        out = os.path.join(self.tmp, "certs")
+        rc = dps.main([self.tmp, "--certificates", out])
+        self.assertEqual(rc, 0)
+        files = sorted(os.listdir(out))
+        self.assertEqual(files, ["phoenix-certificate.html",
+                                 "phoenix-resurrection-certificate.html"])
+        with open(os.path.join(out,
+                               "phoenix-resurrection-certificate.html")) as fh:
+            html = fh.read()
+        self.assertIn("CERTIFICATE OF RESURRECTION", html)
+        self.assertIn("It has risen once.", html)
+        self.assertIn("fell again", html)
+
+    def test_living_condition_wording(self):
+        from datetime import datetime, timezone
+        p = _proj("risen", "2025-01-01", "2025-06-01", 40,
+                  status="alive", resurrections=1, flatline=120,
+                  silence=3)
+        cem = dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90, projects=[p])
+        html = dps.render_resurrection_certificate(p, cem)
+        self.assertIn("Currently among the living", html)

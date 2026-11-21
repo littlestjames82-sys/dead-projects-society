@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1282,6 +1282,80 @@ def render_certificate(p, cem):
     )
 
 
+_RESURRECTION_CERT = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>CERTIFICATE OF RESURRECTION \u2014 {name}</title>
+<style>
+  body {{ background:#0c100c; margin:0; padding:2.5rem 1rem;
+         font-family:Georgia, serif; color:#d5ddc9; }}
+  .cert {{ max-width:760px; margin:0 auto; border:3px double #8fae6b;
+          padding:3rem 3rem 2.4rem; text-align:center;
+          background:linear-gradient(180deg,#141a13,#0f130e); }}
+  .society {{ letter-spacing:.35em; color:#93a189; font-size:.8rem; }}
+  h1 {{ font-weight:normal; letter-spacing:.14em; color:#eef3df;
+       margin:.8rem 0 .2rem; }}
+  .rule {{ color:#8fae6b; margin:.6rem 0 1.4rem; }}
+  .name {{ font-size:1.9rem; color:#f4f8e8; margin:.4rem 0; }}
+  .dates {{ color:#b3bfa5; }}
+  .field {{ margin:1.05rem auto; max-width:560px; line-height:1.55; }}
+  .label {{ display:block; letter-spacing:.25em; font-size:.68rem;
+           color:#93a189; margin-bottom:.25rem; }}
+  .seal {{ margin:1.8rem auto .4rem; width:74px; height:74px;
+          border:2px solid #8fae6b; border-radius:50%; color:#8fae6b;
+          line-height:74px; font-size:1.7rem; }}
+  .issued {{ color:#77816e; font-size:.85rem; margin-top:1.2rem; }}
+</style></head><body>
+<div class="cert">
+  <div class="society">DEAD PROJECTS SOCIETY</div>
+  <h1>CERTIFICATE OF RESURRECTION</h1>
+  <div class="rule">\u2726 \u2726 \u2726</div>
+  <div class="field"><span class="label">THIS CERTIFIES THAT</span>
+  <div class="name">{name}</div>
+  <div class="dates">{born} &mdash; {died} &middot; {commits} commits</div></div>
+  <div class="field"><span class="label">THE RETURN</span>{return_line}</div>
+  <div class="field"><span class="label">PRESENT CONDITION</span>{condition}</div>
+  <div class="seal">\u2726</div>
+  <div class="issued">Issued {issued} &middot; Grounds: {grounds}<br>
+  Judged locally from git history alone. No code was read.</div>
+</div>
+</body></html>
+"""
+
+
+def render_resurrection_certificate(p, cem):
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    times = ("once" if p.resurrections == 1
+             else "%d times" % p.resurrections)
+    return_line = ("It flatlined for %d days, past every line the "
+                   "Society draws, and then it committed again. "
+                   "It has risen %s."
+                   % (p.longest_flatline, times))
+    if p.status in ("alive", "coma"):
+        condition = ("Currently among the living. Last seen %d days "
+                     "ago. The grave dug for it stands empty, and "
+                     "the Society keeps the stone, just in case."
+                     % p.silence_days)
+    elif p.status == "resting":
+        condition = ("It rose, finished its work, and rests on its "
+                     "own terms. The Society does not begrudge it.")
+    else:
+        condition = ("It rose, and then it fell again. It rests once "
+                     "more, but the return is on the record, and the "
+                     "record stands.")
+    return _RESURRECTION_CERT.format(
+        name=esc(p.name),
+        born=_fmt_date(p.born),
+        died=_fmt_date(p.died),
+        commits=p.commits,
+        return_line=esc(return_line),
+        condition=esc(condition),
+        issued=_fmt_date(cem.generated),
+        grounds=esc(cem.root),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Rendering: SVG share card
 # ---------------------------------------------------------------------------
@@ -1799,8 +1873,15 @@ def main(argv=None):
             with open(os.path.join(args.certificates, fname), "w",
                       encoding="utf-8") as fh:
                 fh.write(render_certificate(p, cem))
-        print("Certificates written to %s (%d)"
-              % (args.certificates, len(subjects)))
+        risen = [p for p in cem.projects if p.resurrections >= 1]
+        for p in risen:
+            fname = "%s-resurrection-certificate.html" % _site_slug(p.name)
+            with open(os.path.join(args.certificates, fname), "w",
+                      encoding="utf-8") as fh:
+                fh.write(render_resurrection_certificate(p, cem))
+        print("Certificates written to %s (%d death or completion, "
+              "%d resurrection)"
+              % (args.certificates, len(subjects), len(risen)))
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
             fh.write(render_html(cem))
