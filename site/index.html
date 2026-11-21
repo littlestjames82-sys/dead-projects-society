@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Projects Society — The Graveyard</title>
+<meta name="description" content="A 3D graveyard for abandoned side projects. Walk the grounds, read the tombstones.">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="scene-container"></div>
+
+<header class="masthead">
+  <h1>DEAD PROJECTS SOCIETY</h1>
+  <p class="tagline">est. the day you ran the command</p>
+  <p id="grounds-stats" class="stats">Opening the gates&hellip;</p>
+</header>
+
+<div class="hint" id="hint">Drag to look around &middot; Scroll to zoom &middot; Click a tombstone to pay respects</div>
+
+<aside id="panel" class="panel" hidden>
+  <button id="panel-close" class="panel-close" aria-label="Close">&times;</button>
+  <div class="panel-rip">R.I.P.</div>
+  <h2 id="panel-name"></h2>
+  <div id="panel-years" class="panel-years"></div>
+  <span id="panel-cause" class="cause-tag"></span>
+  <blockquote id="panel-epitaph" class="panel-epitaph"></blockquote>
+  <p id="panel-description" class="panel-description"></p>
+  <div id="panel-tech" class="tech-row"></div>
+  <a id="panel-url" class="remains-link" href="#" target="_blank" rel="noopener" hidden>View remains &rarr;</a>
+</aside>
+
+<div id="fallback" class="fallback" hidden>
+  <h2>The gates are stuck</h2>
+  <p id="fallback-text">The 3D grounds could not open in this browser. The departed are still listed with the
+  <a href="https://github.com/littlestjames82-sys/dead-projects-society">Society's CLI</a>.</p>
+</div>
+
+<footer class="colophon">
+  Judged locally from git history alone &middot; The Society does not bury the living &middot;
+  <a href="https://github.com/littlestjames82-sys/dead-projects-society">GitHub</a>
+</footer>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

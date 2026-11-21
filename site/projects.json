@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ghost-developer-studio-repo",
+    "name": "ghost-developer-studio-repo",
+    "born": "2026",
+    "died": "2026",
+    "cause": "Died in a merge",
+    "epitaph": "Merge pull request #14",
+    "description": "48 commits over 4 days. Died in a merge. The paperwork was impeccable. Survived by useagent, born 27 days later. The Society notes the timing.",
+    "tech": [],
+    "commits": 48,
+    "url": "https://github.com/gdev6145/Ghost-developer-studio"
+  },
+  {
+    "id": "ghostcut",
+    "name": "ghostcut",
+    "born": "2025",
+    "died": "2026",
+    "cause": "Sudden cardiac arrest",
+    "epitaph": "docs: readme",
+    "description": "1567 commits over 11 months. Sudden cardiac arrest. 1567 commits, then silence. Survived by useagent, born 22 days later. The Society notes the timing.",
+    "tech": [
+      "TypeScript",
+      "Rust"
+    ],
+    "commits": 1567,
+    "url": "https://github.com/littlestjames82-sys/ghostcut"
+  }
+]
