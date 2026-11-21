@@ -407,11 +407,15 @@ function visitProject(project) {
     b.classList.toggle("selected", b.dataset.id === project.id);
   });
   const p = group.position;
-  desiredTarget.copy(p).add(new THREE.Vector3(0, 0.9, 0));
+  // On portrait screens the panel is a bottom sheet covering the lower
+  // half of the view, so aim lower on the stone: the engraving then sits
+  // in the visible upper frame instead of behind the panel.
+  const portrait = window.innerHeight > window.innerWidth;
+  desiredTarget.copy(p).add(new THREE.Vector3(0, portrait ? 0.45 : 0.9, 0));
   // Stand on the path side of the stone, close enough to read it.
   const toward = new THREE.Vector3(-Math.sign(p.x), 0, 0.35).normalize();
-  desiredCamPos = p.clone().add(toward.multiplyScalar(4.8));
-  desiredCamPos.y = 2.2;
+  desiredCamPos = p.clone().add(toward.multiplyScalar(portrait ? 5.2 : 4.8));
+  desiredCamPos.y = portrait ? 2.0 : 2.2;
   userDrove = false;
   controls.autoRotate = false;
 }
@@ -449,6 +453,15 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") cycleProject(1);
   else if (event.key === "ArrowLeft") cycleProject(-1);
   else if (event.key === "Escape") closePanel();
+});
+
+// A shared link followed while the grounds are already open should still
+// walk to that grave, without a reload.
+window.addEventListener("hashchange", () => {
+  const m = location.hash.match(/grave=([^&]+)/);
+  if (!m || !allProjects.length) return;
+  const target = allProjects.find((p) => p.id === decodeURIComponent(m[1]));
+  if (target && target.id !== selectedId) visitProject(target);
 });
 
 // ---------- picking ----------
@@ -607,7 +620,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=6");
+    const res = await fetch("wards.json?v=7");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -706,7 +719,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=6");
+    const res = await fetch("projects.json?v=7");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
