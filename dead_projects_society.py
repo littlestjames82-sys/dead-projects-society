@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -59,6 +59,7 @@ class Project:
     survived_by: str = ""
     resurrections: int = 0      # flatlines >= the death line, then a commit
     longest_flatline: int = 0   # longest mid-life silence, in days
+    activity: list = field(default_factory=list)  # commits per month
     will_status: str = ""       # from PROJECT_WILL.md: complete | adoptable
     will_successor: str = ""    # named in the will, if anyone was
     will_note: str = ""         # a line from the will, in the author's words
@@ -184,16 +185,28 @@ def read_project(path, now):
     # Mid-life silences: gaps between consecutive commits (log is
     # newest-first). Only gaps past the coma line are worth recording.
     gaps = []
+    months = {}
     prev = None
     for line in lines:
         when, _ = parse(line)
         if when is None:
             continue
+        key = (when.year, when.month)
+        months[key] = months.get(key, 0) + 1
         if prev is not None:
             gap = (prev - when).days
             if gap > COMA_DAYS:
                 gaps.append(gap)
         prev = when
+    activity = []
+    if months:
+        y, m = oldest[0].year, oldest[0].month
+        end = (newest[0].year, newest[0].month)
+        while (y, m) <= end and len(activity) < 240:
+            activity.append(months.get((y, m), 0))
+            m += 1
+            if m > 12:
+                y, m = y + 1, 1
 
     will_status, will_successor, will_note = _read_will(path)
     authors_raw = _git(path, "log", "--format=%an")
@@ -218,6 +231,7 @@ def read_project(path, now):
         has_remote=has_remote,
         silence_days=max(0, (now - died).days),
         gaps=gaps,
+        activity=activity,
         will_status=will_status,
         will_successor=will_successor,
         will_note=will_note,
@@ -278,6 +292,16 @@ _FIX_RE = re.compile(r"\bfix", re.IGNORECASE)
 _REFACTOR_RE = re.compile(
     r"\b(refactor|cleanup|clean up|reorganiz\w*|restructur\w*|tidy)\b",
     re.IGNORECASE)
+_RENAME_RE = re.compile(
+    r"\b(rename|renamed|renaming|migrat\w+|moved to|switching to)\b",
+    re.IGNORECASE)
+_DOCS_RE = re.compile(r"\b(readme|docs?|documentation|changelog)\b",
+                      re.IGNORECASE)
+_WAIT_RE = re.compile(r"\b(todo|blocked|waiting on|waiting for|pending)\b",
+                      re.IGNORECASE)
+_SEQUEL_RE = re.compile(
+    r"\b(v2|rewrite|rewriting|new version|next gen|rebuilt|2\.0)\b",
+    re.IGNORECASE)
 _COMPLETE_RE = re.compile(
     r"(final release|stable release|release\s+v?\d|v?\d+\.\d+(\.\d+)?"
     r"\s+release|farewell|goodbye|project (is )?complete|archiv\w*|"
@@ -305,12 +329,19 @@ def cause_of_death(p):
         return "Died mid-sentence. Its final commit was never finished."
     if msg.lower().startswith("merge "):
         return "Died in a merge. The paperwork was impeccable."
+    if _WAIT_RE.search(msg):
+        return ("Died waiting. The thing it was waiting for never came.")
+    if _RENAME_RE.search(msg) and p.commits >= 5:
+        return "Killed by a rename. It answers to something else now."
     if p.born.month == 1 and life <= 45:
         return "New Year's resolution. You know how those go."
     if life <= 3 and p.commits <= 15:
         return "Weekend fling. It was never going to be a thing."
     if _FIX_RE.search(msg) and p.commits >= 20:
         return "Died as it lived: one more fix."
+    if _DOCS_RE.search(msg) and p.commits >= 20:
+        return ("Died writing the manual. The last thing it did was "
+                "explain itself.")
     if _REFACTOR_RE.search(msg) and p.commits >= 10:
         return ("Died in a refactor. It was going to be cleaner. "
                 "It was going to be beautiful.")
@@ -398,6 +429,11 @@ def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
         if p.will_successor and p.status in ("deceased", "resting"):
             p.survived_by = ("Survived by %s, named in its will."
                              % p.will_successor)
+        if (p.status == "deceased" and p.survived_by
+                and not p.survived_by.startswith("Survived by no one")
+                and _SEQUEL_RE.search(p.last_words or "")):
+            p.cause = ("Died of a sequel. The replacement was already "
+                       "on the way.")
     cem.projects.sort(key=lambda p: p.died)
     return cem
 
@@ -497,6 +533,17 @@ def hall_of_infamy(cem):
                       % len(p.gaps),
         })
     return infamy
+
+
+_SPARK = " \u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"
+
+
+def sparkline(activity):
+    """A life, in one line: commits per month, flatlines visible."""
+    if not activity:
+        return ""
+    peak = max(activity) or 1
+    return "".join(_SPARK[round(v / peak * 8)] for v in activity)
 
 
 def autopsy(p):
@@ -700,10 +747,14 @@ def render_terminal(cem, with_autopsy=False):
             out.append("  THE AUTOPSY DEPARTMENT (from the record alone)")
             for p in subjects:
                 a = autopsy(p)
-                out.append("  * %s: %.1f commits a month while it lived; "
-                           "%s Revival: %s"
-                           % (p.name, a["pace_commits_per_month"],
-                              a["end_pattern"], a["revival_verdict"]))
+                line = ("  * %s: %.1f commits a month while it lived; "
+                        "%s Revival: %s"
+                        % (p.name, a["pace_commits_per_month"],
+                           a["end_pattern"], a["revival_verdict"]))
+                spark = sparkline(p.activity)
+                if spark:
+                    line += " Life: %s" % spark
+                out.append(line)
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -750,6 +801,7 @@ def cemetery_dict(cem):
             "eulogy": compose_eulogy(p) if p.status == "deceased" else None,
             "autopsy": autopsy(p) if p.status in ("deceased", "resting")
                        else None,
+            "activity_monthly": p.activity,
         }
     return {
         "tool": "dead-projects-society",
@@ -1198,6 +1250,7 @@ def site_projects(cem):
             "silence_days": p.silence_days,
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
+            "activity": p.activity,
         }
         url = _site_github_url(p.path)
         if url:
@@ -1256,6 +1309,7 @@ def site_wards(cem):
             "commits": p.commits,
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
+            "activity": p.activity,
         }
         url = _site_github_url(p.path)
         if url:

@@ -581,3 +581,61 @@ class TestInfamyAndAutopsy(unittest.TestCase):
             html = fh.read()
         self.assertIn("CERTIFICATE OF DEATH", html)
         self.assertIn("gone", html)
+
+
+class TestTimelineAndNewVerdicts(FixtureBase):
+    """v0.9.0: monthly activity, sparkline, four new verdicts."""
+
+    def test_activity_buckets_include_empty_months(self):
+        make_repo(os.path.join(self.tmp, "pulse"), [
+            ("2025-01-05T10:00:00", "a"),
+            ("2025-01-20T10:00:00", "b"),
+            ("2025-03-10T10:00:00", "c"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(cem.projects[0].activity, [2, 0, 1])
+
+    def test_sparkline_shape(self):
+        self.assertEqual(dps.sparkline([0, 5, 10]), " ▄█")
+        self.assertEqual(dps.sparkline([]), "")
+
+    def test_died_waiting(self):
+        commits = [("2025-03-%02dT10:00:00" % d, "work %d" % d)
+                   for d in (1, 5, 9, 13, 17)]
+        commits.append(("2025-03-21T10:00:00", "todo: finish the parser"))
+        make_repo(os.path.join(self.tmp, "waiter"), commits)
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertTrue(cem.deceased[0].cause.startswith("Died waiting."))
+
+    def test_killed_by_a_rename(self):
+        commits = [("2025-03-%02dT10:00:00" % d, "work %d" % d)
+                   for d in (1, 5, 9, 13, 17)]
+        commits.append(("2025-03-21T10:00:00", "rename project to newthing"))
+        make_repo(os.path.join(self.tmp, "renamed"), commits)
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertTrue(cem.deceased[0].cause.startswith(
+            "Killed by a rename."))
+
+    def test_died_writing_the_manual(self):
+        commits = [("2025-0%d-%02dT10:00:00" % (3 + i // 8, 1 + i % 27),
+                    "work %d" % i) for i in range(21)]
+        commits.append(("2025-06-01T10:00:00", "update readme"))
+        make_repo(os.path.join(self.tmp, "manual"), commits)
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertTrue(cem.deceased[0].cause.startswith(
+            "Died writing the manual."))
+
+    def test_died_of_a_sequel(self):
+        make_repo(os.path.join(self.tmp, "oldtool"), [
+            ("2025-03-01T10:00:00", "a"),
+            ("2025-03-05T10:00:00", "b"),
+            ("2025-03-09T10:00:00", "starting the v2 rewrite"),
+        ])
+        make_repo(os.path.join(self.tmp, "newtool"), [
+            ("2025-03-19T10:00:00", "first commit"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        old = [p for p in cem.projects if p.name == "oldtool"][0]
+        self.assertEqual(old.cause,
+                         "Died of a sequel. The replacement was already "
+                         "on the way.")

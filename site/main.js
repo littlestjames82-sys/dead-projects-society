@@ -519,6 +519,24 @@ function openPanel(project) {
       (project.resurrections === 1 ? "once" : project.resurrections + " times") +
       ": flatlined for " + project.longest_flatline_days + " days, then returned."
     : "";
+  const tl = el("panel-timeline");
+  const act = project.activity;
+  if (Array.isArray(act) && act.length > 1) {
+    el("panel-life").hidden = false;
+    tl.hidden = false;
+    const ctx = tl.getContext("2d");
+    ctx.clearRect(0, 0, tl.width, tl.height);
+    const peak = Math.max(...act, 1);
+    const bw = tl.width / act.length;
+    act.forEach((v, i) => {
+      const h = Math.max(2, (v / peak) * (tl.height - 6));
+      ctx.fillStyle = v === 0 ? "#2c3542" : "#c9a959";
+      ctx.fillRect(i * bw + 0.5, tl.height - h, Math.max(1, bw - 1.5), h);
+    });
+  } else {
+    el("panel-life").hidden = true;
+    tl.hidden = true;
+  }
   el("panel-cause").textContent = project.cause || "Cause unknown";
   el("panel-epitaph").textContent = project.epitaph || "";
   el("panel-epitaph").style.display = project.epitaph ? "" : "none";
@@ -1001,7 +1019,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=15");
+    const res = await fetch("wards.json?v=16");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1149,7 +1167,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=15");
+    const res = await fetch("projects.json?v=16");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1210,7 +1228,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=15");
+    const res = await fetch("honors.json?v=16");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1242,7 +1260,7 @@ loadHonors();
 
 async function loadInfamy() {
   try {
-    const res = await fetch("infamy.json?v=15");
+    const res = await fetch("infamy.json?v=16");
     if (!res.ok) return;
     const infamy = await res.json();
     if (!Array.isArray(infamy) || !infamy.length) return;
@@ -1278,7 +1296,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=15");
+    const res = await fetch("public.json?v=16");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {

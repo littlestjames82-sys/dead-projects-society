@@ -11,6 +11,9 @@
       "commits": 3,
       "resurrections": 0,
       "longest_flatline_days": 0,
+      "activity": [
+        3
+      ],
       "url": "https://github.com/browser-use/jev-ultrafast"
     },
     {
@@ -24,6 +27,10 @@
       "commits": 36,
       "resurrections": 0,
       "longest_flatline_days": 0,
+      "activity": [
+        30,
+        6
+      ],
       "url": "https://github.com/gdev6145/decksmith"
     },
     {
@@ -37,6 +44,9 @@
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
+      "activity": [
+        1
+      ],
       "url": "https://github.com/chatwoot/chatwoot"
     },
     {
@@ -50,6 +60,15 @@
       "commits": 3686,
       "resurrections": 0,
       "longest_flatline_days": 0,
+      "activity": [
+        118,
+        126,
+        393,
+        501,
+        712,
+        1688,
+        148
+      ],
       "url": "https://github.com/debpalash/VoiceStudio"
     },
     {
@@ -62,7 +81,11 @@
       "silence_days": 48,
       "commits": 5,
       "resurrections": 0,
-      "longest_flatline_days": 0
+      "longest_flatline_days": 0,
+      "activity": [
+        3,
+        2
+      ]
     },
     {
       "id": "openbot",
@@ -75,6 +98,9 @@
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
+      "activity": [
+        1
+      ],
       "url": "https://github.com/CopilotKit/OpenBot"
     },
     {
@@ -87,7 +113,10 @@
       "silence_days": 39,
       "commits": 2,
       "resurrections": 0,
-      "longest_flatline_days": 0
+      "longest_flatline_days": 0,
+      "activity": [
+        2
+      ]
     },
     {
       "id": "useagent",
@@ -100,6 +129,13 @@
       "commits": 520,
       "resurrections": 0,
       "longest_flatline_days": 80,
+      "activity": [
+        83,
+        0,
+        0,
+        199,
+        238
+      ],
       "url": "https://github.com/littlestjames82-sys/useagent"
     },
     {
@@ -113,6 +149,13 @@
       "commits": 521,
       "resurrections": 0,
       "longest_flatline_days": 80,
+      "activity": [
+        83,
+        0,
+        0,
+        199,
+        239
+      ],
       "url": "https://github.com/littlestjames82-sys/useagent"
     },
     {
@@ -125,7 +168,10 @@
       "silence_days": 38,
       "commits": 35,
       "resurrections": 0,
-      "longest_flatline_days": 0
+      "longest_flatline_days": 0,
+      "activity": [
+        35
+      ]
     }
   ],
   "still_breathing": [
@@ -139,7 +185,10 @@
       "silence_days": 18,
       "commits": 1,
       "resurrections": 0,
-      "longest_flatline_days": 0
+      "longest_flatline_days": 0,
+      "activity": [
+        1
+      ]
     }
   ]
 }

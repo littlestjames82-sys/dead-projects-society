@@ -13,6 +13,9 @@
     "silence_days": 193,
     "resurrections": 0,
     "longest_flatline_days": 0,
+    "activity": [
+      48
+    ],
     "url": "https://github.com/gdev6145/Ghost-developer-studio"
   },
   {
@@ -20,9 +23,9 @@
     "name": "ghostcut",
     "born": "2025",
     "died": "2026",
-    "cause": "Sudden cardiac arrest",
+    "cause": "Died writing the manual",
     "epitaph": "docs: readme",
-    "description": "1567 commits over 11 months. Sudden cardiac arrest. 1567 commits, then silence. Survived by useagent, born 22 days later. The Society notes the timing. It had a real season. Its 1567 commits say it was loved. The Society notes what replaced it.",
+    "description": "1567 commits over 11 months. Died writing the manual. The last thing it did was explain itself. Survived by useagent, born 22 days later. The Society notes the timing. It had a real season. Its 1567 commits say it was loved. The Society notes what replaced it.",
     "tech": [
       "TypeScript",
       "Rust"
@@ -32,6 +35,20 @@
     "silence_days": 188,
     "resurrections": 0,
     "longest_flatline_days": 68,
+    "activity": [
+      406,
+      632,
+      152,
+      19,
+      0,
+      0,
+      2,
+      11,
+      86,
+      108,
+      130,
+      21
+    ],
     "url": "https://github.com/littlestjames82-sys/ghostcut"
   }
 ]
