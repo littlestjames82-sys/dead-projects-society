@@ -137,6 +137,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--adopt papers.md` writes adoption papers for the buried: one
   honest listing per project, its assessment, what it needs, and a
   line for a new keeper to sign.
+- `--oneline` prints one line per project (name, state, silence,
+  cause) for quick scans and pipes; the full report remains the
+  ceremony.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).

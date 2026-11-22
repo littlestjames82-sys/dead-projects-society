@@ -1089,3 +1089,38 @@ class TestAdoptionPapers(FixtureBase):
         entry = (wards["intensive_care"] + wards["still_breathing"])[0]
         self.assertIn("born_full", entry)
         self.assertIn("died_full", entry)
+
+
+class TestOneline(FixtureBase):
+    """v0.20.0: one line per project."""
+
+    def test_oneline_covers_every_state(self):
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        make_repo(os.path.join(self.tmp, "fresh-tool"), [
+            ("2025-12-30T09:00:00", "initial commit"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        out = dps.render_oneline(cem)
+        lines = [l for l in out.splitlines() if l.strip()]
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(any(l.startswith("old-game - buried")
+                            for l in lines))
+        self.assertTrue(any(l.startswith("fresh-tool - still breathing")
+                            for l in lines))
+
+    def test_oneline_cli(self):
+        import io
+        from contextlib import redirect_stdout
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--oneline"])
+        self.assertEqual(rc, 0)
+        self.assertIn("old-game - buried", buf.getvalue())
+        self.assertNotIn("DEAD PROJECTS SOCIETY", buf.getvalue())

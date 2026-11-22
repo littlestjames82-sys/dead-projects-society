@@ -1204,7 +1204,7 @@ function buildRegistry(projects) {
 
   el("random-grave").addEventListener("click", () => {
     stopTour();
-    const pool = projects.filter((p) => p.id !== selectedId);
+    const pool = [...projects, ...allPublic].filter((p) => p.id !== selectedId);
     const pick = pool[Math.floor(Math.random() * pool.length)] || projects[0];
     if (pick) visitProject(pick);
   });
@@ -1239,11 +1239,16 @@ function buildRegistry(projects) {
 
   el("registry-search").addEventListener("input", (event) => {
     const q = event.target.value.trim().toLowerCase();
-    list.querySelectorAll("li").forEach((li) => {
-      const btn = li.querySelector("button");
-      li.style.display = !q || btn.dataset.id.includes(q) ||
-        btn.textContent.toLowerCase().includes(q) ? "" : "none";
-    });
+    for (const listId of ["registry-list", "public-list", "wards-list"]) {
+      const lst = el(listId);
+      if (!lst) continue;
+      lst.querySelectorAll("li").forEach((li) => {
+        const btn = li.querySelector("button");
+        if (!btn) return;
+        li.style.display = !q || btn.dataset.id.includes(q) ||
+          btn.textContent.toLowerCase().includes(q) ? "" : "none";
+      });
+    }
   });
 
   buildSectionFilters();

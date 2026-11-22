@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.19.0"
+VERSION = "0.20.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -914,6 +914,28 @@ def on_this_day(cem):
 
 def _years_text(n):
     return "1 year ago" if n == 1 else "%d years ago" % n
+
+
+_ONELINE_STATUS = {
+    "deceased": "buried",
+    "resting": "at rest",
+    "coma": "intensive care",
+    "alive": "still breathing",
+}
+
+
+def render_oneline(cem):
+    """One line per project: name, state, silence, cause. For quick
+    scans and for pipes; the full report remains the ceremony."""
+    lines = []
+    ordered = cem.deceased + cem.resting + cem.coma + cem.alive
+    for p in ordered:
+        parts = [p.name, _ONELINE_STATUS[p.status],
+                 "silent %dd" % p.silence_days]
+        if p.cause:
+            parts.append(p.cause.split(".")[0].strip())
+        lines.append(" - ".join(parts))
+    return "\n".join(lines) + ("\n" if lines else "")
 
 
 def render_terminal(cem, with_autopsy=False, with_on_this_day=False):
@@ -2030,6 +2052,9 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--oneline", action="store_true",
+                    help="Print one line per project (name, state, "
+                         "silence, cause) instead of the full report")
     ap.add_argument("--adopt", metavar="FILE", default=None,
                     help="Write adoption papers (Markdown) for the "
                          "buried: one honest listing per project, "
@@ -2086,6 +2111,10 @@ def main(argv=None):
         if args.on_this_day:
             data["on_this_day"] = on_this_day(cem)
         print(json.dumps(data, indent=2))
+    elif args.oneline:
+        print(render_oneline(cem), end="")
+        if log is not None:
+            print(render_groundskeeper_log(log))
     else:
         print(render_terminal(cem, with_autopsy=args.autopsy,
                               with_on_this_day=args.on_this_day))

@@ -4,6 +4,15 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.20.0] — 2026-11-21
+
+### Added
+- `--oneline`: one line per project (name, state, silence, cause)
+  for quick scans and pipes.
+- The graveyard's Registry search now searches the Public Grounds
+  and the Wards as well as the personal graves, and Visit a random
+  grave can land on a famous grave too.
+
 ## [0.19.0] — 2026-11-21
 
 ### Added
