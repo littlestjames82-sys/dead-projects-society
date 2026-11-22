@@ -32,8 +32,18 @@ The CLI, the verdicts, the 3D cemetery.
 - [x] Cemetery sections by language and era (language detection
       v0.11.0; Registry section filters and the JSON sections summary
       v0.13.0)
+- [x] Certificates of Resurrection: the return, on the record
+      (v0.15.0)
+- [x] The square card, 1080x1080, for social feeds (v0.16.0), and a
+      downloadable verdict card on the Bury demo itself
+- [x] On This Day in the Grounds: death and birth anniversaries
+      (v0.17.0)
+- [x] Several folders, one cemetery: multi-root scans with
+      succession judged across the union (v0.18.0)
+- [x] The Obituary Awards: year-end honors for the famous dead
+      (site, Nov 21, 2026)
 
-### II. The Autopsy Department — NEXT
+### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful
 about the Society's oldest mistake: silence is not abandonment.
 - [x] Finished, not dead: completion verdicts and At Rest (CLI v0.7.0)
