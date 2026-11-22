@@ -1138,9 +1138,14 @@ class TestFailIfNewDeaths(FixtureBase):
                              "--fail-if-new-deaths"])
 
     def test_exit_codes(self):
+        # The CLI reads the real clock, so the living fixture is
+        # dated relative to today, not the fixture NOW.
+        from datetime import datetime, timedelta, timezone
+        recent = (datetime.now(timezone.utc) - timedelta(days=2)
+                  ).strftime("%Y-%m-%dT09:00:00")
         state = os.path.join(self.tmp, "state.json")
         make_repo(os.path.join(self.tmp, "fresh-tool"), [
-            ("2025-12-30T09:00:00", "initial commit"),
+            (recent, "initial commit"),
         ])
         self.assertEqual(self._run(state), 0)   # first visit: baseline
         make_repo(os.path.join(self.tmp, "old-game"), [

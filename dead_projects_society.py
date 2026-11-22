@@ -2201,7 +2201,7 @@ def main(argv=None):
             json.dump(site_infamy(cem), fh, indent=2)
             fh.write("\n")
         print("Web graveyard data written to %s" % args.site)
-    if args.fail_if_new_deaths and log:
+    if args.fail_if_new_deaths and log and not log.get("first_visit"):
         dead_now = {p.name for p in cem.deceased}
         new_deaths = set(log.get("newly_buried", []))
         new_deaths |= set(log.get("newly_born", [])) & dead_now
