@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.16.0"
+VERSION = "0.17.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -797,7 +797,35 @@ def _lifespan_text(p):
     return "%.1f years" % (d / 365.25)
 
 
-def render_terminal(cem, with_autopsy=False):
+def on_this_day(cem):
+    """Anniversaries in the grounds: projects that died on this
+    month and day in an earlier year, and projects born on it.
+    A reason to visit the cemetery more than once."""
+    today = cem.generated.date()
+    deaths, births = [], []
+    for p in cem.deceased + cem.resting:
+        if (p.died.month, p.died.day) == (today.month, today.day) \
+                and p.died.year < today.year:
+            deaths.append({"name": p.name,
+                           "years_ago": today.year - p.died.year,
+                           "status": p.status,
+                           "cause": p.cause})
+    for p in cem.projects:
+        if (p.born.month, p.born.day) == (today.month, today.day) \
+                and p.born.year < today.year:
+            births.append({"name": p.name,
+                           "years_ago": today.year - p.born.year,
+                           "status": p.status})
+    deaths.sort(key=lambda d: -d["years_ago"])
+    births.sort(key=lambda d: -d["years_ago"])
+    return {"date": today.isoformat(), "deaths": deaths, "births": births}
+
+
+def _years_text(n):
+    return "1 year ago" if n == 1 else "%d years ago" % n
+
+
+def render_terminal(cem, with_autopsy=False, with_on_this_day=False):
     out = []
     out.append("")
     out.append("=" * 64)
@@ -899,6 +927,24 @@ def render_terminal(cem, with_autopsy=False):
                 if a["findings"]:
                     out.append("    Findings: %s"
                                % " ".join(a["findings"][:4]))
+    if with_on_this_day:
+        otd = on_this_day(cem)
+        out.append("-" * 64)
+        out.append("  ON THIS DAY IN THE GROUNDS")
+        if not otd["deaths"] and not otd["births"]:
+            out.append("  Nothing happened on this day. "
+                       "The grounds are quiet.")
+        for d in otd["deaths"]:
+            out.append("  ~ %s died on this day, %s. %s"
+                       % (d["name"], _years_text(d["years_ago"]),
+                          d["cause"]))
+        for b in otd["births"]:
+            state = ("It is still breathing." if b["status"] == "alive"
+                     else "The Society keeps its stone ready."
+                     if b["status"] == "coma"
+                     else "It rests in these grounds.")
+            out.append("  ~ %s was born on this day, %s. %s"
+                       % (b["name"], _years_text(b["years_ago"]), state))
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -1888,6 +1934,10 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--on-this-day", action="store_true",
+                    help="Append anniversaries: projects that died or "
+                         "were born on this month and day in earlier "
+                         "years")
     ap.add_argument("--autopsy", action="store_true",
                     help="Append the Autopsy Department's findings "
                          "(metadata only) to the terminal report")
@@ -1931,9 +1981,12 @@ def main(argv=None):
         data = cemetery_dict(cem)
         if log is not None:
             data["groundskeeper_log"] = log
+        if args.on_this_day:
+            data["on_this_day"] = on_this_day(cem)
         print(json.dumps(data, indent=2))
     else:
-        print(render_terminal(cem, with_autopsy=args.autopsy))
+        print(render_terminal(cem, with_autopsy=args.autopsy,
+                              with_on_this_day=args.on_this_day))
         if log is not None:
             print(render_groundskeeper_log(log))
     if args.certificates:

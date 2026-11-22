@@ -127,6 +127,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   grounds, for a README.
 - `--square FILE` writes a 1080x1080 card sized for social feeds (the
   `--card` SVG stays the wide link-preview size).
+- `--on-this-day` appends the anniversaries: projects that died on
+  this month and day in an earlier year, and projects born on it. A
+  reason to visit the grounds more than once.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).

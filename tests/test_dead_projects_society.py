@@ -931,3 +931,64 @@ class TestSquareCard(FixtureBase):
         self.assertEqual(dps.main([self.tmp, "--square", out]), 0)
         with open(out) as fh:
             self.assertIn("DEAD PROJECTS SOCIETY", fh.read())
+
+
+class TestOnThisDay(FixtureBase):
+    """v0.17.0: anniversaries in the grounds. NOW is Jan 1, 2026."""
+
+    def _anniversary_repo(self):
+        make_repo(os.path.join(self.tmp, "anniversary"), [
+            ("2024-01-01T09:00:00", "born on the day"),
+            ("2024-06-01T09:00:00", "work"),
+            ("2025-01-01T09:00:00", "died on the day"),
+        ])
+
+    def test_death_and_birth_anniversaries(self):
+        self._anniversary_repo()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        otd = dps.on_this_day(cem)
+        self.assertEqual(len(otd["deaths"]), 1)
+        self.assertEqual(otd["deaths"][0]["name"], "anniversary")
+        self.assertEqual(otd["deaths"][0]["years_ago"], 1)
+        self.assertEqual(len(otd["births"]), 1)
+        self.assertEqual(otd["births"][0]["years_ago"], 2)
+
+    def test_quiet_day(self):
+        make_repo(os.path.join(self.tmp, "plain"),
+                  [("2025-03-05T09:00:00", "start"),
+                   ("2025-03-20T09:00:00", "end")])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        otd = dps.on_this_day(cem)
+        self.assertEqual(otd["deaths"], [])
+        self.assertEqual(otd["births"], [])
+
+    def test_terminal_section_and_json(self):
+        import io
+        from contextlib import redirect_stdout
+        from datetime import datetime, timezone
+        # The CLI's "today" is the UTC date (build_cemetery's clock).
+        today = datetime.now(timezone.utc).date()
+        try:
+            died = today.replace(year=today.year - 1)
+            born = today.replace(year=today.year - 2)
+        except ValueError:  # Feb 29
+            died = today.replace(year=today.year - 1, day=28)
+            born = today.replace(year=today.year - 2, day=28)
+        fmt = "%Y-%m-%dT09:00:00"
+        make_repo(os.path.join(self.tmp, "cli-anniversary"), [
+            (born.strftime(fmt), "born on the day"),
+            (died.strftime(fmt), "died on the day"),
+        ])
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.assertEqual(dps.main([self.tmp, "--on-this-day"]), 0)
+        out = buf.getvalue()
+        self.assertIn("ON THIS DAY IN THE GROUNDS", out)
+        self.assertIn("died on this day, 1 year ago", out)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            self.assertEqual(
+                dps.main([self.tmp, "--json", "--on-this-day"]), 0)
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["on_this_day"]["deaths"][0]["name"],
+                         "cli-anniversary")
