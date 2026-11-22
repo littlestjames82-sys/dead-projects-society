@@ -1124,3 +1124,28 @@ class TestOneline(FixtureBase):
         self.assertEqual(rc, 0)
         self.assertIn("old-game - buried", buf.getvalue())
         self.assertNotIn("DEAD PROJECTS SOCIETY", buf.getvalue())
+
+
+class TestFailIfNewDeaths(FixtureBase):
+    """v0.21.0: --fail-if-new-deaths exit code with --diff."""
+
+    def _run(self, state):
+        import io
+        from contextlib import redirect_stdout
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            return dps.main([self.tmp, "--diff", "--state", state,
+                             "--fail-if-new-deaths"])
+
+    def test_exit_codes(self):
+        state = os.path.join(self.tmp, "state.json")
+        make_repo(os.path.join(self.tmp, "fresh-tool"), [
+            ("2025-12-30T09:00:00", "initial commit"),
+        ])
+        self.assertEqual(self._run(state), 0)   # first visit: baseline
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        self.assertEqual(self._run(state), 3)   # a new death appeared
+        self.assertEqual(self._run(state), 0)   # nothing new since

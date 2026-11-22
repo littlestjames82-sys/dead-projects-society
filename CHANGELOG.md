@@ -4,6 +4,18 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.21.0] — 2026-11-21
+
+### Added
+- `--fail-if-new-deaths`: with `--diff`, the CLI exits with code 3
+  when the Groundskeeper's Log finds a death it has not reported
+  before (newly buried since the last visit, or found already
+  buried on a later one), so scripts and CI can react the moment
+  something dies.
+- The Bury demo's verdict card now carries its archived count, and
+  the 3D grounds gained a Repository Wing sign where the archived
+  repositories begin.
+
 ## [0.20.0] — 2026-11-21
 
 ### Added

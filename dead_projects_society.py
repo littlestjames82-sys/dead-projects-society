@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.20.0"
+VERSION = "0.21.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -2052,6 +2052,12 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--fail-if-new-deaths", action="store_true",
+                    help="With --diff: exit with code 3 when the "
+                         "Groundskeeper's Log finds a death it has "
+                         "not reported before: a project newly buried "
+                         "since the last visit, or one found already "
+                         "buried on a later visit (for scripts and CI)")
     ap.add_argument("--oneline", action="store_true",
                     help="Print one line per project (name, state, "
                          "silence, cause) instead of the full report")
@@ -2195,6 +2201,12 @@ def main(argv=None):
             json.dump(site_infamy(cem), fh, indent=2)
             fh.write("\n")
         print("Web graveyard data written to %s" % args.site)
+    if args.fail_if_new_deaths and log:
+        dead_now = {p.name for p in cem.deceased}
+        new_deaths = set(log.get("newly_buried", []))
+        new_deaths |= set(log.get("newly_born", [])) & dead_now
+        if new_deaths:
+            return 3
     return 0
 
 

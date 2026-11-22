@@ -140,6 +140,11 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--oneline` prints one line per project (name, state, silence,
   cause) for quick scans and pipes; the full report remains the
   ceremony.
+- `--fail-if-new-deaths`, with `--diff`, exits with code 3 when the
+  Groundskeeper's Log finds a death it has not reported before: a
+  project newly buried since the last visit, or one found already
+  buried on a later visit. A script or a CI job can be told the
+  moment something dies.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).

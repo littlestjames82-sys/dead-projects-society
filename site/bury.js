@@ -179,6 +179,7 @@ form.addEventListener("submit", async (ev) => {
 
   lastResult = {
     user,
+    archived: archivedDead,
     dead: dead.length,
     coma: coma.length,
     alive: alive.length,
@@ -226,6 +227,12 @@ function drawVerdictCard() {
   ctx.font = "30px Georgia, serif";
   ctx.fillText(r.dead + " buried · " + r.coma + " in intensive care · " +
     r.alive + " still breathing", 540, 700);
+  if (r.archived) {
+    ctx.fillStyle = "#8b96a0";
+    ctx.font = "26px Georgia, serif";
+    ctx.fillText(r.archived + (r.archived === 1 ? " is" : " are") +
+      " formally archived by GitHub itself.", 540, 748);
+  }
   ctx.fillStyle = "#c9cfc4";
   ctx.font = "30px Georgia, serif";
   if (r.coldest) {

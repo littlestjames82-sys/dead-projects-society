@@ -1439,6 +1439,12 @@ async function loadPublicGrounds() {
       entry.style || styleFor(project, null));
     group.rotation.y = (Math.random() - 0.5) * 0.16;
   });
+  const firstRepo = entries.findIndex((e) => e.url);
+  if (firstRepo >= 0) {
+    const wing = makeSign("THE REPOSITORY WING", 4.4);
+    wing.position.set(0, 0, -15.0 - Math.floor(firstRepo / 6) * 3.0 + 2.6);
+    scene.add(wing);
+  }
   const list = el("public-list");
   for (const project of allPublic) {
     const li = document.createElement("li");
