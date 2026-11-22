@@ -2,6 +2,8 @@
 
 **A funeral for your abandoned side projects.**
 
+![Dead Projects Society reading the roll of the departed](assets/demo.gif)
+
 Point it at the folder where your projects go to die. It reads each git
 repository's history and builds a graveyard: a tombstone for every project
 that has gone silent, with its lifespan, its **last words** (the final
