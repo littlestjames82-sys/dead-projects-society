@@ -17,6 +17,8 @@
       "activity": [
         3
       ],
+      "born_full": "2026-09-17",
+      "died_full": "2026-09-18",
       "url": "https://github.com/browser-use/jev-ultrafast"
     },
     {
@@ -25,11 +27,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Netlify: self-contained function bundle (Prisma engine + libsql stub)",
-      "description": "The Society does not bury the living. 36 commits; last seen 56 days ago.",
+      "description": "The Society does not bury the living. 36 commits; last seen 57 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 56,
+      "silence_days": 57,
       "commits": 36,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -37,6 +39,8 @@
         30,
         6
       ],
+      "born_full": "2026-08-26",
+      "died_full": "2026-09-26",
       "url": "https://github.com/gdev6145/decksmith"
     },
     {
@@ -45,17 +49,19 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "fix: translate the conversation continuity email body (#16103)",
-      "description": "The Society does not bury the living. 1 commits; last seen 50 days ago.",
+      "description": "The Society does not bury the living. 1 commits; last seen 51 days ago.",
       "tech": [
         "Vue"
       ],
-      "silence_days": 50,
+      "silence_days": 51,
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
       "activity": [
         1
       ],
+      "born_full": "2026-10-02",
+      "died_full": "2026-10-02",
       "url": "https://github.com/chatwoot/chatwoot"
     },
     {
@@ -64,11 +70,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "fix(app): align Electron, backend, packaging and documentation (#2578)",
-      "description": "The Society does not bury the living. 3686 commits; last seen 49 days ago.",
+      "description": "The Society does not bury the living. 3686 commits; last seen 50 days ago.",
       "tech": [
         "Python"
       ],
-      "silence_days": 49,
+      "silence_days": 50,
       "commits": 3686,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -81,6 +87,8 @@
         1688,
         148
       ],
+      "born_full": "2026-04-09",
+      "died_full": "2026-10-03",
       "url": "https://github.com/debpalash/VoiceStudio"
     },
     {
@@ -89,18 +97,20 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Add GhostChat Inbox add-on selection to sales-page signup",
-      "description": "The Society does not bury the living. 5 commits; last seen 48 days ago.",
+      "description": "The Society does not bury the living. 5 commits; last seen 49 days ago.",
       "tech": [
         "JavaScript"
       ],
-      "silence_days": 48,
+      "silence_days": 49,
       "commits": 5,
       "resurrections": 0,
       "longest_flatline_days": 0,
       "activity": [
         3,
         2
-      ]
+      ],
+      "born_full": "2026-09-26",
+      "died_full": "2026-10-04"
     },
     {
       "id": "openbot",
@@ -108,17 +118,19 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Route to the coworker somebody named, and stop building a Bot four ways (#296)",
-      "description": "The Society does not bury the living. 1 commits; last seen 46 days ago.",
+      "description": "The Society does not bury the living. 1 commits; last seen 47 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 46,
+      "silence_days": 47,
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
       "activity": [
         1
       ],
+      "born_full": "2026-10-05",
+      "died_full": "2026-10-05",
       "url": "https://github.com/CopilotKit/OpenBot"
     },
     {
@@ -137,7 +149,9 @@
       "longest_flatline_days": 0,
       "activity": [
         2
-      ]
+      ],
+      "born_full": "2026-10-13",
+      "died_full": "2026-10-13"
     },
     {
       "id": "useagent",
@@ -160,6 +174,8 @@
         199,
         238
       ],
+      "born_full": "2026-06-08",
+      "died_full": "2026-10-13",
       "url": "https://github.com/littlestjames82-sys/useagent"
     },
     {
@@ -183,6 +199,8 @@
         199,
         239
       ],
+      "born_full": "2026-06-08",
+      "died_full": "2026-10-13",
       "url": "https://github.com/littlestjames82-sys/useagent"
     },
     {
@@ -201,7 +219,9 @@
       "longest_flatline_days": 0,
       "activity": [
         35
-      ]
+      ],
+      "born_full": "2026-10-12",
+      "died_full": "2026-10-14"
     }
   ],
   "still_breathing": [
@@ -221,7 +241,9 @@
       "longest_flatline_days": 0,
       "activity": [
         1
-      ]
+      ],
+      "born_full": "2026-11-03",
+      "died_full": "2026-11-03"
     }
   ]
 }

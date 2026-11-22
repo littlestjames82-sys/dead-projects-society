@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.18.0"
+VERSION = "0.19.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -770,6 +770,72 @@ def autopsy(p):
         "revival_verdict": verdict,
         "revival_reasons": reasons,
     }
+
+
+def _adoption_needs(p):
+    needs = []
+    if p.will_status == "adoptable":
+        needs.append("Only a keeper. Its will already asks for one.")
+    verdict = autopsy(p)["revival_verdict"]
+    if verdict.startswith("Worth exhuming"):
+        needs.append("Mostly a decision. The record says it was "
+                     "strong.")
+    if not p.has_remote:
+        needs.append("To be seen in public. It never left the house.")
+    if not p.has_readme:
+        needs.append("A README, and a reason.")
+    if p.authors == 1:
+        needs.append("A second pair of hands.")
+    if not needs:
+        needs.append("Time, and someone who remembers why it "
+                     "mattered.")
+    return needs
+
+
+def render_adoption_papers(cem):
+    """Adoption papers for the buried: one listing per project,
+    pitched honestly from its own record."""
+    lines = [
+        "# ADOPTION PAPERS",
+        "",
+        "Issued by the Dead Projects Society, for the grounds at %s."
+        % cem.root,
+        "",
+        "The following projects are deceased and available for "
+        "adoption. Each listing is drawn from the project's own "
+        "record; the Society varnishes nothing. Adoption is a "
+        "promise, not a download: whoever signs below takes the "
+        "project, its history, and its last words, and gives it a "
+        "future.",
+        "",
+    ]
+    buried = cem.deceased
+    if not buried:
+        lines.append("No projects are available for adoption. The "
+                     "grounds hold no one who needs a keeper.")
+    for p in buried:
+        lines += [
+            "## %s" % p.name,
+            "",
+            "- Died: %s (silent %d days). Lifespan %d days, %d "
+            "commits." % (p.died.date().isoformat(), p.silence_days,
+                          p.lifespan_days, p.commits),
+            "- Cause: %s" % (p.cause or "Cause unknown."),
+            "- Last words: \"%s\"" % (p.last_words or "(none)"),
+            "- The Society's assessment: %s"
+            % autopsy(p)["revival_verdict"],
+            "- What it needs: %s" % " ".join(_adoption_needs(p)),
+            "",
+            "Adopted by: ____________________________   Date: "
+            "____________",
+            "",
+        ]
+    lines += [
+        "---",
+        "",
+        "The Society charges nothing for adoptions. It never has.",
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def compose_eulogy(p):
@@ -1555,6 +1621,7 @@ def site_projects(cem):
             "tech": [p.language] if p.language else [],
             "commits": p.commits,
             "died_full": p.died.date().isoformat(),
+            "born_full": p.born.date().isoformat(),
             "silence_days": p.silence_days,
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
@@ -1628,6 +1695,8 @@ def site_wards(cem):
             "resurrections": p.resurrections,
             "longest_flatline_days": p.longest_flatline,
             "activity": p.activity,
+            "born_full": p.born.date().isoformat(),
+            "died_full": p.died.date().isoformat(),
         }
         url = _site_github_url(p.path)
         if url:
@@ -1961,6 +2030,10 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--adopt", metavar="FILE", default=None,
+                    help="Write adoption papers (Markdown) for the "
+                         "buried: one honest listing per project, "
+                         "with a line for a new keeper to sign")
     ap.add_argument("--on-this-day", action="store_true",
                     help="Append anniversaries: projects that died or "
                          "were born on this month and day in earlier "
@@ -2055,6 +2128,11 @@ def main(argv=None):
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(render_markdown(cem))
         print("Obituaries written to %s" % args.out)
+    if args.adopt:
+        with open(args.adopt, "w", encoding="utf-8") as fh:
+            fh.write(render_adoption_papers(cem))
+        print("Adoption papers: %s (%d projects listed)"
+              % (args.adopt, len(cem.deceased)))
     if args.wrapped_kit:
         year = args.year or cem.generated.year
         os.makedirs(args.wrapped_kit, exist_ok=True)

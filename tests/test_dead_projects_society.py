@@ -1040,3 +1040,52 @@ class TestMultipleGrounds(FixtureBase):
         self.assertEqual(rc, 0)
         data = json.loads(buf.getvalue())
         self.assertEqual(data["summary"]["buried"], 2)
+
+
+class TestAdoptionPapers(FixtureBase):
+    """v0.19.0: adoption papers and full dates in the site export."""
+
+    def _build(self):
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        rest = os.path.join(self.tmp, "resting-lib")
+        make_repo(rest, [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "final tidy"),
+        ])
+        with open(os.path.join(rest, "PROJECT_WILL.md"), "w") as fh:
+            fh.write("Status: complete\n")
+        make_repo(os.path.join(self.tmp, "fresh-tool"), [
+            ("2025-12-30T09:00:00", "initial commit"),
+        ])
+
+    def test_papers_list_the_buried_only(self):
+        self._build()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        papers = dps.render_adoption_papers(cem)
+        self.assertIn("ADOPTION PAPERS", papers)
+        self.assertIn("## old-game", papers)
+        self.assertNotIn("## resting-lib", papers)
+        self.assertIn("Adopted by:", papers)
+        self.assertIn("charges nothing for adoptions", papers)
+
+    def test_papers_pitch_from_the_record(self):
+        self._build()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        papers = dps.render_adoption_papers(cem)
+        # old-game: no README, no remote, sole author
+        self.assertIn("never left the house", papers)
+        self.assertIn("A second pair of hands", papers)
+
+    def test_site_export_carries_full_dates(self):
+        self._build()
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        stone = dps.site_projects(cem)[0]
+        self.assertIn("born_full", stone)
+        self.assertIn("died_full", stone)
+        wards = dps.site_wards(cem)
+        entry = (wards["intensive_care"] + wards["still_breathing"])[0]
+        self.assertIn("born_full", entry)
+        self.assertIn("died_full", entry)

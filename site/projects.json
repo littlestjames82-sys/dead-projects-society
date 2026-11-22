@@ -12,6 +12,7 @@
     ],
     "commits": 48,
     "died_full": "2026-05-12",
+    "born_full": "2026-05-07",
     "silence_days": 193,
     "resurrections": 0,
     "longest_flatline_days": 0,
@@ -28,7 +29,7 @@
       "peak_commits": 48,
       "peak_share_percent": 100.0
     },
-    "url": "https://github.com/gdev6145/Ghost-developer-studio"
+    "url": "https://github.com/littlestjames82-sys/ghostcut"
   },
   {
     "id": "ghostcut",
@@ -43,6 +44,7 @@
     ],
     "commits": 1567,
     "died_full": "2026-05-17",
+    "born_full": "2025-06-22",
     "silence_days": 188,
     "resurrections": 0,
     "longest_flatline_days": 68,
@@ -72,6 +74,6 @@
       "peak_commits": 632,
       "peak_share_percent": 40.3
     },
-    "url": "https://github.com/littlestjames82-sys/ghostcut"
+    "url": "https://github.com/OpenCut-app/opencut-classic"
   }
 ]

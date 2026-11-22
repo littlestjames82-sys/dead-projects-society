@@ -1036,7 +1036,7 @@ function raiseWardStone(entry, label, accent, position, faceAngle) {
 async function buildWards() {
   let wards;
   try {
-    const res = await fetch("wards.json?v=20");
+    const res = await fetch("wards.json?v=21");
     if (!res.ok) return;
     wards = await res.json();
   } catch (e) {
@@ -1254,7 +1254,7 @@ function buildRegistry(projects) {
 async function build() {
   let projects;
   try {
-    const res = await fetch("projects.json?v=20");
+    const res = await fetch("projects.json?v=21");
     if (!res.ok) throw new Error("projects.json missing");
     projects = await res.json();
   } catch (e) {
@@ -1315,7 +1315,7 @@ build();
 
 async function loadHonors() {
   try {
-    const res = await fetch("honors.json?v=20");
+    const res = await fetch("honors.json?v=21");
     if (!res.ok) return;
     const honors = await res.json();
     if (!Array.isArray(honors) || !honors.length) return;
@@ -1347,7 +1347,7 @@ loadHonors();
 
 async function loadInfamy() {
   try {
-    const res = await fetch("infamy.json?v=20");
+    const res = await fetch("infamy.json?v=21");
     if (!res.ok) return;
     const infamy = await res.json();
     if (!Array.isArray(infamy) || !infamy.length) return;
@@ -1376,6 +1376,37 @@ async function loadInfamy() {
   } catch (e) { /* infamy is optional too; the dead do not mind */ }
 }
 loadInfamy();
+
+async function loadOnThisDay() {
+  const el = document.getElementById("on-this-day");
+  if (!el) return;
+  try {
+    const [pRes, wRes] = await Promise.all([
+      fetch("projects.json?v=21"), fetch("wards.json?v=21")]);
+    const stones = pRes.ok ? await pRes.json() : [];
+    const wards = wRes.ok ? await wRes.json() : { intensive_care: [], still_breathing: [] };
+    const all = [...stones, ...(wards.intensive_care || []), ...(wards.still_breathing || [])];
+    const now = new Date();
+    const md = (iso) => {
+      if (!iso) return null;
+      const d = new Date(iso + "T12:00:00");
+      return { m: d.getMonth(), day: d.getDate(), y: d.getFullYear() };
+    };
+    const notes = [];
+    for (const p of all) {
+      const died = md(p.died_full), born = md(p.born_full);
+      if (died && died.m === now.getMonth() && died.day === now.getDate() && died.y < now.getFullYear())
+        notes.push(p.name + " died on this day in " + died.y + ".");
+      if (born && born.m === now.getMonth() && born.day === now.getDate() && born.y < now.getFullYear())
+        notes.push(p.name + " was born on this day in " + born.y + ".");
+    }
+    el.textContent = notes.length
+      ? "On this day in the grounds: " + notes.join(" ")
+      : "On this day in the grounds: quiet. Nothing was born, and nothing finished dying.";
+    el.hidden = false;
+  } catch (e) { /* the strip is a nicety; the grounds keep their silence */ }
+}
+loadOnThisDay();
 
 // ---------- the Public Grounds: famous graves ----------
 const allPublic = [];

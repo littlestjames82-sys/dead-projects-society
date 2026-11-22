@@ -4,6 +4,16 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.19.0] — 2026-11-21
+
+### Added
+- `--adopt FILE`: adoption papers for the buried. One honest
+  listing per project — cause, last words, the Society's revival
+  assessment, what it needs — and a line for a new keeper to sign.
+- The site export now carries full birth and death dates, and the
+  graveyard shows an "On this day in the grounds" line in the
+  Registry, computed from them.
+
 ## [0.18.0] — 2026-11-21
 
 ### Added

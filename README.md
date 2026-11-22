@@ -134,6 +134,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   cemetery, and succession is judged across all of them. If the
   replacement was started in a different folder, the Society will
   still note the timing.
+- `--adopt papers.md` writes adoption papers for the buried: one
+  honest listing per project, its assessment, what it needs, and a
+  line for a new keeper to sign.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).

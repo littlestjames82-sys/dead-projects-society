@@ -539,3 +539,11 @@ html, body {
   font-weight: normal; }
 .award-years { margin: 0 0 10px; color: #8b96a0; font-size: .9rem; }
 .award-cite { margin: 0; color: #c9cfc4; line-height: 1.55; }
+
+.on-this-day {
+  font-style: italic;
+  color: #b08d57;
+  font-size: 0.85rem;
+  padding: 2px 2px 8px;
+  line-height: 1.45;
+}
