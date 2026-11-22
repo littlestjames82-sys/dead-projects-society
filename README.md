@@ -140,6 +140,9 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--oneline` prints one line per project (name, state, silence,
   cause) for quick scans and pipes; the full report remains the
   ceremony.
+- The HTML graveyard report carries each stone's autopsy line
+  (pace, momentum, revival verdict), at parity with the terminal
+  report and the web graveyard.
 - `--fail-if-new-deaths`, with `--diff`, exits with code 3 when the
   Groundskeeper's Log finds a death it has not reported before: a
   project newly buried since the last visit, or one found already

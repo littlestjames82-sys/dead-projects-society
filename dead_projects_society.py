@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.21.0"
+VERSION = "0.22.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1271,6 +1271,7 @@ _HTML = """<!DOCTYPE html>
   .cause {{ color:#b08d57; font-size:.95rem; }}
   .eulogy {{ font-style:italic; color:#aeb9c2; margin-top:.55rem;
             font-size:.92rem; }}
+  .autopsy {{ color:#8b96a0; font-size:.85rem; margin-top:.55rem; }}
   .risen {{ color:#d8c58f; font-size:.85rem; margin-top:.35rem; }}
   .factor, .survived {{ color:#77828d; font-size:.85rem; margin-top:.35rem; }}
   h3.section {{ color:#e8edf1; letter-spacing:.08em; margin:2.5rem 0 1rem;
@@ -1307,6 +1308,12 @@ def render_html(cem):
             risen = ('<div class="risen">It had already flatlined for %d '
                      "days once and come back. This time it did "
                      "not.</div>" % p.longest_flatline)
+        aut = autopsy(p)
+        autopsy_line = (
+            '<div class="autopsy">Autopsy: %.1f commits a month'
+            " &middot; %s &middot; Revival: %s</div>"
+            % (aut["pace_commits_per_month"], esc(aut["momentum"]),
+               esc(aut["revival"])))
         stones.append(
             '<div class="stone"><div class="rip">R.I.P.</div>'
             "<h2>%s</h2>"
@@ -1314,12 +1321,12 @@ def render_html(cem):
             "</div>"
             '<div class="words">&ldquo;%s&rdquo;</div>'
             '<div class="cause">%s</div>'
-            '<div class="eulogy">%s</div>%s%s'
+            '<div class="eulogy">%s</div>%s%s%s'
             '<div class="survived">%s</div></div>'
             % (esc(p.name), _fmt_date(p.born), _fmt_date(p.died),
                _lifespan_text(p), p.commits,
                esc(p.last_words or "(silence)"), esc(p.cause),
-               esc(compose_eulogy(p)), risen, factors,
+               esc(compose_eulogy(p)), risen, factors, autopsy_line,
                esc(p.survived_by)))
     extra = []
     honors = society_honors(cem)

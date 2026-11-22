@@ -4,6 +4,15 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.22.0] — 2026-11-21
+
+### Added
+- The HTML graveyard report now carries each stone's autopsy line
+  (pace, momentum, revival verdict), at parity with the terminal
+  report and the web graveyard.
+- The Obituary Awards gained two Repository Wing honors: Most Stars
+  on the Stone (Atom) and Buried Beside Its Parent (Nuclide).
+
 ## [0.21.0] — 2026-11-21
 
 ### Added

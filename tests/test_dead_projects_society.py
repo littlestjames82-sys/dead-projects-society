@@ -1154,3 +1154,18 @@ class TestFailIfNewDeaths(FixtureBase):
         ])
         self.assertEqual(self._run(state), 3)   # a new death appeared
         self.assertEqual(self._run(state), 0)   # nothing new since
+
+
+class TestHtmlAutopsy(FixtureBase):
+    """v0.22.0: the HTML graveyard carries the autopsy line."""
+
+    def test_html_includes_autopsy(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "ambitious start"),
+            ("2025-02-03T09:00:00", "wip"),
+        ], readme=True, remote=True)
+        cem = dps.build_cemetery(self.tmp, now=NOW)
+        page = dps.render_html(cem)
+        self.assertIn("Autopsy:", page)
+        self.assertIn("commits a month", page)
+        self.assertIn("Revival:", page)
