@@ -130,6 +130,10 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--on-this-day` appends the anniversaries: projects that died on
   this month and day in an earlier year, and projects born on it. A
   reason to visit the grounds more than once.
+- Several folders can be named at once; they are merged into one
+  cemetery, and succession is judged across all of them. If the
+  replacement was started in a different folder, the Society will
+  still note the timing.
 - `--wrapped-kit DIR` builds the year in review: an HTML page, an SVG
   card, and post-ready text covering everything of yours that ended in
   the year (`--year` picks which).
@@ -174,6 +178,8 @@ commit every few weeks, cold cases silent for two years, and more.
 ## License
 
 MIT. By [Ghost Developer Studio](https://ghostdeveloperstudio.com).
+Changes are recorded in the [CHANGELOG](CHANGELOG.md); the Society
+keeps its own record as carefully as everyone else's.
 
 *See also: [PIP](https://github.com/littlestjames82-sys/pip-pip), which
 reviews the developer, and [Snap Judgment](https://github.com/littlestjames82-sys/snap-judgment),

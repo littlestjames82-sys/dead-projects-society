@@ -992,3 +992,51 @@ class TestOnThisDay(FixtureBase):
         data = json.loads(buf.getvalue())
         self.assertEqual(data["on_this_day"]["deaths"][0]["name"],
                          "cli-anniversary")
+
+
+class TestMultipleGrounds(FixtureBase):
+    """v0.18.0: several folders, one cemetery."""
+
+    def _two_roots(self):
+        a = os.path.join(self.tmp, "grounds-a")
+        b = os.path.join(self.tmp, "grounds-b")
+        os.makedirs(a)
+        os.makedirs(b)
+        make_repo(os.path.join(a, "old-idea"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        make_repo(os.path.join(b, "shiny-replacement"), [
+            ("2025-06-20T09:00:00", "initial commit"),
+            ("2025-07-01T09:00:00", "setup"),
+        ])
+        return a, b
+
+    def test_succession_across_roots(self):
+        a, b = self._two_roots()
+        cem = dps.build_grounds([a, b], dead_days=90, now=NOW)
+        self.assertEqual(len(cem.projects), 2)
+        dead = [p for p in cem.projects if p.name == "old-idea"][0]
+        self.assertIn("shiny-replacement", dead.survived_by)
+
+    def test_no_cross_succession_within_one_root(self):
+        a, b = self._two_roots()
+        cem = dps.build_grounds([a], dead_days=90, now=NOW)
+        dead = cem.projects[0]
+        self.assertNotIn("shiny-replacement", dead.survived_by)
+
+    def test_duplicate_roots_deduped(self):
+        a, b = self._two_roots()
+        cem = dps.build_grounds([a, a, b], dead_days=90, now=NOW)
+        self.assertEqual(len(cem.projects), 2)
+
+    def test_cli_accepts_two_paths(self):
+        import io, json
+        from contextlib import redirect_stdout
+        a, b = self._two_roots()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([a, b, "--json"])
+        self.assertEqual(rc, 0)
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["summary"]["buried"], 2)

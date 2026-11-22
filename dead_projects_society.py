@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -463,6 +463,31 @@ def assign_succession(projects):
         else:
             p.survived_by = "Survived by no one. The last of its line, " \
                             "for now."
+
+
+def build_grounds(roots, dead_days=DEFAULT_DEAD_DAYS, depth=1,
+                  now=None):
+    """One cemetery over several folders. Projects are merged,
+    duplicates (the same repo reached through two roots) are kept
+    once, and succession is judged across the whole union: the
+    Society has always suspected the replacement was started in a
+    different folder."""
+    now = now or datetime.now(timezone.utc)
+    if len(roots) == 1:
+        return build_cemetery(roots[0], dead_days=dead_days,
+                              depth=depth, now=now)
+    seen = {}
+    for root in roots:
+        part = build_cemetery(root, dead_days=dead_days, depth=depth,
+                              now=now)
+        for p in part.projects:
+            seen[os.path.abspath(p.path)] = p
+    projects = sorted(seen.values(), key=lambda p: p.born)
+    assign_succession(projects)
+    label = "%d grounds (%s)" % (
+        len(roots), ", ".join(os.path.abspath(r) for r in roots))
+    return Cemetery(root=label, generated=now, dead_days=dead_days,
+                    projects=projects)
 
 
 def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
@@ -1907,8 +1932,10 @@ def main(argv=None):
         prog="dead-projects-society",
         description="A funeral for your abandoned side projects. Reads "
                     "git history locally and builds the graveyard.")
-    ap.add_argument("path", nargs="?", default=".",
-                    help="Folder to scan (default: current folder)")
+    ap.add_argument("path", nargs="*", default=None,
+                    help="Folder(s) to scan (default: current folder). "
+                         "Several folders are merged into one cemetery, "
+                         "and succession is judged across all of them.")
     ap.add_argument("--days", type=int, default=DEFAULT_DEAD_DAYS,
                     help="Days of silence before a project is pronounced "
                          "dead (default: %d)" % DEFAULT_DEAD_DAYS)
@@ -1956,10 +1983,12 @@ def main(argv=None):
                     version="dead-projects-society %s" % VERSION)
     args = ap.parse_args(argv)
 
-    if not os.path.isdir(args.path):
-        print("No such folder: %s" % args.path, file=sys.stderr)
-        return 2
-    cem = build_cemetery(args.path, dead_days=args.days, depth=args.depth)
+    roots = args.path or ["."]
+    for root in roots:
+        if not os.path.isdir(root):
+            print("No such folder: %s" % root, file=sys.stderr)
+            return 2
+    cem = build_grounds(roots, dead_days=args.days, depth=args.depth)
     if not cem.projects:
         print("No bodies found. No git repositories under %s."
               % cem.root)
