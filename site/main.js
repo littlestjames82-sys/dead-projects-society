@@ -1419,7 +1419,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=22");
+    const res = await fetch("public.json?v=23");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {
@@ -1434,7 +1434,7 @@ async function loadPublicGrounds() {
     allPublic.push(project);
     const row = Math.floor(i / 6), col = i % 6;
     const x = -13.5 + col * 5.4 + (Math.random() - 0.5) * 0.7;
-    const z = -15.0 - row * 3.2 + (Math.random() - 0.5) * 0.5;
+    const z = -15.0 - row * 3.0 + (Math.random() - 0.5) * 0.5;
     const group = raiseStone(project, new THREE.Vector3(x, 0, z), false,
       entry.style || styleFor(project, null));
     group.rotation.y = (Math.random() - 0.5) * 0.16;

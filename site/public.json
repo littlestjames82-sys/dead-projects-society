@@ -675,5 +675,140 @@
    "Mobile web"
   ],
   "url": "https://github.com/ftlabs/fastclick"
+ },
+ {
+  "born": "2013",
+  "cause": "Died of a sequel",
+  "description": "The linter that kept TypeScript honest for years, from Palantir. In 2019 its own makers deprecated it and pointed everyone to ESLint, which had grown the architecture TSLint lacked. The repository was archived with 5,891 stars. Few tools get an obituary written by their own authors. This one did.",
+  "died": "2019",
+  "epitaph": "Linted, then left.",
+  "id": "tslint",
+  "name": "TSLint",
+  "silence_days": 2067,
+  "tech": [
+   "TypeScript",
+   "Tooling"
+  ],
+  "url": "https://github.com/palantir/tslint"
+ },
+ {
+  "born": "2015",
+  "cause": "Killed by its own family",
+  "description": "Facebook's open IDE, built on Atom and beloved by the React Native generation. Facebook discontinued it in December 2018. Its foundation, Atom, lies elsewhere in these grounds; the Society has placed the stones within sight of each other, because that is how it happened.",
+  "died": "2018",
+  "epitaph": "Built on Atom. Buried near it.",
+  "id": "nuclide",
+  "name": "Nuclide",
+  "silence_days": 2901,
+  "tech": [
+   "JavaScript",
+   "Editor"
+  ],
+  "url": "https://github.com/facebook/nuclide"
+ },
+ {
+  "born": "2015",
+  "cause": "Cancelled by its maker",
+  "description": "HashiCorp announced Otto in 2015 as the successor to Vagrant: one tool from development to deployment. A year later HashiCorp cancelled it, honestly and in public, and went back to its other tools. The repository lingered until 2020, as repositories do. The idea was not wrong. The timing was the whole story.",
+  "died": "2016",
+  "epitaph": "The successor to Vagrant, briefly.",
+  "id": "otto",
+  "name": "Otto",
+  "silence_days": 2339,
+  "tech": [
+   "DevOps",
+   "HashiCorp"
+  ],
+  "url": "https://github.com/hashicorp/otto"
+ },
+ {
+  "born": "2012",
+  "cause": "Died with its subject",
+  "description": "Mozilla's audacious project to run Flash content in pure JavaScript, no plugin. It worked better than anyone expected, and it did not matter: the web was leaving Flash behind anyway, and Mozilla shelved Shumway in 2016. Flash itself is buried in these grounds. Interpreter and subject, reunited.",
+  "died": "2016",
+  "epitaph": "It played Flash without Flash.",
+  "id": "shumway",
+  "name": "Shumway",
+  "silence_days": 2773,
+  "tech": [
+   "TypeScript",
+   "Mozilla"
+  ],
+  "url": "https://github.com/mozilla/shumway"
+ },
+ {
+  "born": "2006",
+  "cause": "Killed by a rename",
+  "description": "The enterprise PHP framework of its era, from the company behind PHP itself. In 2019 the project moved to the Linux Foundation and continued as Laminas; the code lives on under the new name. What is buried here is the name, with full honors, the way the Society buries all its renames.",
+  "died": "2019",
+  "epitaph": "Renamed, rehomed, released.",
+  "id": "zend-framework",
+  "name": "Zend Framework",
+  "silence_days": 2740,
+  "tech": [
+   "PHP",
+   "Framework"
+  ],
+  "url": "https://github.com/zendframework/zendframework"
+ },
+ {
+  "born": "2013",
+  "cause": "Outpaced",
+  "description": "Google's compiler for writing tomorrow's JavaScript today, before Babel took that job and kept it. Traceur was superseded for years before Google archived the repository; the stone is dated by the paperwork, and the Society notes the gap between the death and the filing, because the gap is the story of most tools.",
+  "died": "2024",
+  "epitaph": "Tomorrow's JavaScript, yesterday.",
+  "id": "traceur",
+  "name": "Traceur",
+  "silence_days": 711,
+  "tech": [
+   "JavaScript",
+   "Compiler"
+  ],
+  "url": "https://github.com/google/traceur-compiler"
+ },
+ {
+  "born": "2008",
+  "cause": "Dropped by its maker",
+  "description": "The original promise of hybrid apps: build with web technology, ship to every phone. Adobe acquired its maker in 2011 and ended PhoneGap in August 2020. The main repository had fallen silent in 2015 while the tooling lived on elsewhere; its engine, Cordova, still breathes under Apache's care. The name is buried here.",
+  "died": "2020",
+  "epitaph": "Write once. Ship everywhere.",
+  "id": "phonegap",
+  "name": "PhoneGap",
+  "silence_days": 4279,
+  "tech": [
+   "JavaScript",
+   "Mobile"
+  ],
+  "url": "https://github.com/phonegap/phonegap"
+ },
+ {
+  "born": "2014",
+  "cause": "Died of a sequel",
+  "description": "Microsoft's framework for building native apps for every platform from one C# codebase. It was succeeded by .NET MAUI, and Microsoft ended Xamarin support on May 1, 2024. The repository was archived days before the end. A recent grave, and a well-kept one.",
+  "died": "2024",
+  "epitaph": "One codebase, every platform.",
+  "id": "xamarin-forms",
+  "name": "Xamarin.Forms",
+  "silence_days": 936,
+  "tech": [
+   "C#",
+   "Mobile"
+  ],
+  "url": "https://github.com/xamarin/Xamarin.Forms"
+ },
+ {
+  "born": "2014",
+  "cause": "Outpaced",
+  "description": "Docker's original standalone orchestrator, from the years when the container wars were undecided. Kubernetes decided them. This stone is for the standalone Swarm, archived in 2020; the swarm mode built into Docker Engine is a different creature and lives on, and the Society does not bury the living.",
+  "died": "2020",
+  "epitaph": "Outclustered.",
+  "id": "docker-swarm",
+  "name": "Docker Swarm",
+  "silence_days": 2354,
+  "tech": [
+   "Go",
+   "Containers"
+  ],
+  "url": "https://github.com/docker/swarm"
  }
 ]
