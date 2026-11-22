@@ -1313,7 +1313,7 @@ def render_html(cem):
             '<div class="autopsy">Autopsy: %.1f commits a month'
             " &middot; %s &middot; Revival: %s</div>"
             % (aut["pace_commits_per_month"], esc(aut["momentum"]),
-               esc(aut["revival"])))
+               esc(aut["revival_verdict"])))
         stones.append(
             '<div class="stone"><div class="rip">R.I.P.</div>'
             "<h2>%s</h2>"
