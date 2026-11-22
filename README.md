@@ -33,6 +33,14 @@ every buried project gets a stone you can click to read its story.
 
 **[Enter the graveyard](https://littlestjames82-sys.github.io/dead-projects-society/)**
 
+Beyond the personal rows stand the **Public Grounds**: 55 famous
+graves, the products the internet has lost (Google Reader, Vine,
+Napster, Skype) and a Repository Wing of archived repositories
+(Atom, AngularJS, PhantomJS), every one verified before burial.
+And if you would like a verdict on a GitHub account instead of a
+folder, the Society will **[bury a GitHub user](https://littlestjames82-sys.github.io/dead-projects-society/bury.html)**
+by public push dates, archived paperwork included.
+
 The stones there are generated from a real run. To raise your own, feed the
 CLI's JSON through the converter and drop the result in `site/projects.json`:
 

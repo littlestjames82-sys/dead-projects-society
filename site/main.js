@@ -750,33 +750,45 @@ function visitProject(project) {
   controls.autoRotate = false;
 }
 
-function cycleProject(step) {
-  if (!allProjects.length) return;
-  const idx = allProjects.findIndex((p) => p.id === selectedId);
-  const next = allProjects[(idx + step + allProjects.length) % allProjects.length];
+function cycleProject(step, list) {
+  const pool = list || allProjects;
+  if (!pool.length) return;
+  const idx = pool.findIndex((p) => p.id === selectedId);
+  const next = pool[(idx + step + pool.length) % pool.length];
   visitProject(next);
 }
 
 // ---------- the tour ----------
 let tourTimer = null;
+let tourList = null;
 function stopTour() {
   if (tourTimer) {
     clearInterval(tourTimer);
     tourTimer = null;
   }
-  const btn = el("tour-btn");
-  if (btn) {
-    btn.textContent = "Take the tour";
-    btn.classList.remove("active");
+  tourList = null;
+  const b1 = el("tour-btn");
+  if (b1) {
+    b1.textContent = "Take the tour";
+    b1.classList.remove("active");
+  }
+  const b2 = el("tour-public-btn");
+  if (b2) {
+    b2.textContent = "Tour the Public Grounds";
+    b2.classList.remove("active");
   }
 }
-function startTour() {
-  if (!allProjects.length) return;
-  const btn = el("tour-btn");
-  btn.textContent = "Stop the tour";
-  btn.classList.add("active");
-  cycleProject(1);
-  tourTimer = setInterval(() => cycleProject(1), 6500);
+function startTour(list, btnId) {
+  if (!list || !list.length) return;
+  stopTour();
+  tourList = list;
+  const btn = el(btnId);
+  if (btn) {
+    btn.textContent = "Stop the tour";
+    btn.classList.add("active");
+  }
+  cycleProject(1, tourList);
+  tourTimer = setInterval(() => cycleProject(1, tourList), 6500);
 }
 
 window.addEventListener("keydown", (event) => {
@@ -790,7 +802,8 @@ window.addEventListener("keydown", (event) => {
     const pick = pool[Math.floor(Math.random() * pool.length)];
     if (pick) { stopTour(); visitProject(pick); }
   } else if (event.key === "t" || event.key === "T") {
-    if (tourTimer) stopTour(); else startTour();
+    if (tourTimer) stopTour();
+    else startTour(allProjects, "tour-btn");
   }
 });
 
@@ -1211,7 +1224,12 @@ function buildRegistry(projects) {
 
   el("tour-btn").addEventListener("click", () => {
     if (tourTimer) stopTour();
-    else startTour();
+    else startTour(allProjects, "tour-btn");
+  });
+
+  el("tour-public-btn").addEventListener("click", () => {
+    if (tourTimer && tourList === allPublic) stopTour();
+    else startTour(allPublic, "tour-public-btn");
   });
 
   let terminalMode = false;
