@@ -525,5 +525,155 @@
    "Music",
    "Streaming"
   ]
+ },
+ {
+  "born": "2014",
+  "cause": "Killed by its own family",
+  "description": "GitHub's own editor: hackable to the core, beloved, and the proving ground for Electron. GitHub sunset it on December 15, 2022 to bet on VS Code, and archived the repository with 60,688 stars on the stone. The Society records the number because the number was real.",
+  "died": "2022",
+  "epitaph": "Hackable to the core.",
+  "id": "atom",
+  "name": "Atom",
+  "silence_days": 1418,
+  "tech": [
+   "JavaScript",
+   "Editor"
+  ],
+  "url": "https://github.com/atom/atom"
+ },
+ {
+  "born": "2009",
+  "cause": "Died of a sequel",
+  "description": "The framework that taught a generation of developers to build apps in the browser. Google ended its life on December 31, 2021, years after its successor, Angular, had replaced it in everything but name recognition. The Society has a verdict for exactly this, and it is carved on the stone.",
+  "died": "2021",
+  "epitaph": "HTML, enhanced.",
+  "id": "angularjs",
+  "name": "AngularJS",
+  "silence_days": 953,
+  "tech": [
+   "JavaScript",
+   "Framework"
+  ],
+  "url": "https://github.com/angular/angular.js"
+ },
+ {
+  "born": "2011",
+  "cause": "Outpaced",
+  "description": "A headless browser before browsers came headless: it powered a decade of testing, scraping, and screenshots. When Chrome shipped its own headless mode, the maintainer stepped down and development was suspended in 2018. The repository is archived. The ghost was outlived by its use case.",
+  "died": "2018",
+  "epitaph": "The headless ghost.",
+  "id": "phantomjs",
+  "name": "PhantomJS",
+  "silence_days": 1456,
+  "tech": [
+   "C++",
+   "Browser automation"
+  ],
+  "url": "https://github.com/ariya/phantomjs"
+ },
+ {
+  "born": "2011",
+  "cause": "Dropped by its maker",
+  "description": "Adobe's open editor, built in the very languages it edited, with live preview before live preview was common. Adobe ended support on September 1, 2021. The community carried the code away to a new home; the original repository, 32,963 stars, is archived here.",
+  "died": "2021",
+  "epitaph": "An editor built in what it edited.",
+  "id": "brackets",
+  "name": "Brackets",
+  "silence_days": 1623,
+  "tech": [
+   "JavaScript",
+   "Editor"
+  ],
+  "url": "https://github.com/adobe/brackets"
+ },
+ {
+  "born": "2010",
+  "cause": "Faded away quietly",
+  "description": "jQuery's answer to the touch era: one framework for every phone browser of 2011. The platform grew up, responsive design took its job, and it was deprecated on October 7, 2021, the very day of its repository's last commit. The record and the stone agree to the day.",
+  "died": "2021",
+  "epitaph": "Write less, do more.",
+  "id": "jquery-mobile",
+  "name": "jQuery Mobile",
+  "silence_days": 1871,
+  "tech": [
+   "JavaScript",
+   "Mobile web"
+  ],
+  "url": "https://github.com/jquery/jquery-mobile"
+ },
+ {
+  "born": "2014",
+  "cause": "Outpaced",
+  "description": "Docker's tool for conjuring machines to run containers on: create, manage, connect. Desktop and contexts absorbed its work, Docker deprecated it, and the repository was archived after a last commit in February 2022.",
+  "died": "2022",
+  "epitaph": "It made the machines.",
+  "id": "docker-machine",
+  "name": "Docker Machine",
+  "silence_days": 1742,
+  "tech": [
+   "Go",
+   "Containers"
+  ],
+  "url": "https://github.com/docker/machine"
+ },
+ {
+  "born": "2009",
+  "cause": "Killed by its own family",
+  "description": "Google's battle-tested JavaScript library, a foundation under Gmail and Docs, maintained long after the ecosystem moved on. Google deprecated it in 2023 and archived the repository in August 2024. Few stones in these grounds carried more production weight.",
+  "died": "2024",
+  "epitaph": "The library behind Gmail.",
+  "id": "closure-library",
+  "name": "Closure Library",
+  "silence_days": 842,
+  "tech": [
+   "JavaScript",
+   "Library"
+  ],
+  "url": "https://github.com/google/closure-library"
+ },
+ {
+  "born": "2008",
+  "cause": "Died of a sequel",
+  "description": "The port that brought Processing sketches to the web. Its own team wound it down as p5.js, its spiritual successor, took the mission forward. The repository was archived after a last commit in December 2018. Survived by p5.js, and the timing is noted with affection.",
+  "died": "2018",
+  "epitaph": "Processing, in the browser.",
+  "id": "processing-js",
+  "name": "Processing.js",
+  "silence_days": 2909,
+  "tech": [
+   "Processing",
+   "Graphics"
+  ],
+  "url": "https://github.com/processing-js/processing-js"
+ },
+ {
+  "born": "2014",
+  "cause": "Killed by its own family",
+  "description": "Facebook's application architecture, the pattern that taught the web unidirectional data flow and the idea Redux ran away with. Facebook pointed developers elsewhere for years before archiving the repository in 2023, 17,435 stars on the stone. The pattern outlived the library everywhere.",
+  "died": "2023",
+  "epitaph": "Unidirectional data flow.",
+  "id": "flux",
+  "name": "Flux",
+  "silence_days": 1341,
+  "tech": [
+   "JavaScript",
+   "Architecture"
+  ],
+  "url": "https://github.com/facebook/flux"
+ },
+ {
+  "born": "2011",
+  "cause": "Died of progress",
+  "description": "FT Labs' tiny library that removed the 300ms tap delay from mobile browsers, installed on a generation of sites. Then the browsers fixed the delay themselves, and FastClick's own README pronounced it unnecessary. Few projects get to die because the world improved.",
+  "died": "2021",
+  "epitaph": "No more 300ms.",
+  "id": "fastclick",
+  "name": "FastClick",
+  "silence_days": 1926,
+  "tech": [
+   "JavaScript",
+   "Mobile web"
+  ],
+  "url": "https://github.com/ftlabs/fastclick"
  }
 ]

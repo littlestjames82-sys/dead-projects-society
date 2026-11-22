@@ -976,10 +976,10 @@ for (let i = 0; i < 18; i++) {
 {
   const silMat = new THREE.MeshBasicMaterial({ color: 0x161d26, fog: false });
   for (let x = -38; x <= 38; x += 5 + Math.random() * 3) {
-    const h = 9 + Math.random() * 8;
+    const h = 10 + Math.random() * 9;
     const tower = new THREE.Mesh(
       new THREE.BoxGeometry(3 + Math.random() * 2.5, h, 2), silMat);
-    tower.position.set(x, h / 2 - 0.5, -38 + (Math.random() - 0.5) * 3);
+    tower.position.set(x, h / 2 - 0.5, -45 + (Math.random() - 0.5) * 3);
     scene.add(tower);
     if (Math.random() < 0.65) {
       const spire = new THREE.Mesh(
@@ -1419,7 +1419,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=21");
+    const res = await fetch("public.json?v=22");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {
@@ -1434,7 +1434,7 @@ async function loadPublicGrounds() {
     allPublic.push(project);
     const row = Math.floor(i / 6), col = i % 6;
     const x = -13.5 + col * 5.4 + (Math.random() - 0.5) * 0.7;
-    const z = -15.5 - row * 3.4 + (Math.random() - 0.5) * 0.5;
+    const z = -15.0 - row * 3.2 + (Math.random() - 0.5) * 0.5;
     const group = raiseStone(project, new THREE.Vector3(x, 0, z), false,
       entry.style || styleFor(project, null));
     group.rotation.y = (Math.random() - 0.5) * 0.16;
