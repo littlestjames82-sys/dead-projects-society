@@ -1419,7 +1419,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=20");
+    const res = await fetch("public.json?v=21");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {

@@ -180,183 +180,350 @@
   ]
  },
  {
+  "born": "1994",
+  "cause": "Neighborhood demolished",
+  "description": "A third of the early web lived here: neighborhoods of hand-built pages, guestbooks, MIDI, and glitter text. Yahoo bought it for billions and closed the US service in October 2009. Volunteers archived a million pages before the bulldozers. It had a real season, and the season was the whole early internet.",
+  "died": "2009",
+  "epitaph": "Under construction.",
   "id": "geocities",
   "name": "GeoCities",
-  "born": "1994",
-  "died": "2009",
-  "cause": "Neighborhood demolished",
-  "epitaph": "Under construction.",
-  "description": "A third of the early web lived here: neighborhoods of hand-built pages, guestbooks, MIDI, and glitter text. Yahoo bought it for billions and closed the US service in October 2009. Volunteers archived a million pages before the bulldozers. It had a real season, and the season was the whole early internet.",
+  "silence_days": 6250,
+  "style": "gothic",
   "tech": [
    "Web",
    "Hosting"
-  ],
-  "silence_days": 6250,
-  "style": "gothic"
+  ]
  },
  {
+  "born": "1999",
+  "cause": "Died in court",
+  "description": "Sixty million people sharing music from their dorm rooms, and the entire recording industry in court over it. The original service was shut down in July 2001. It burned fast. Everything about how music moves now was decided in its two years.",
+  "died": "2001",
+  "epitaph": "Download complete.",
   "id": "napster",
   "name": "Napster",
-  "born": "1999",
-  "died": "2001",
-  "cause": "Died in court",
-  "epitaph": "Download complete.",
-  "description": "Sixty million people sharing music from their dorm rooms, and the entire recording industry in court over it. The original service was shut down in July 2001. It burned fast. Everything about how music moves now was decided in its two years.",
+  "silence_days": 9300,
+  "style": "tablet",
   "tech": [
    "P2P",
    "Music"
-  ],
-  "silence_days": 9300,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "1995",
+  "cause": "Faded away quietly",
+  "description": "For a few years this was how you found anything: the biggest index on Earth, queried by people who still said 'the Net.' Sold, resold, folded into Yahoo, and switched off in July 2013, by then a footnote in its own results.",
+  "died": "2013",
+  "epitaph": "The guide to the Net.",
   "id": "altavista",
   "name": "AltaVista",
-  "born": "1995",
-  "died": "2013",
-  "cause": "Faded away quietly",
-  "epitaph": "The guide to the Net.",
-  "description": "For a few years this was how you found anything: the biggest index on Earth, queried by people who still said 'the Net.' Sold, resold, folded into Yahoo, and switched off in July 2013, by then a footnote in its own results.",
+  "silence_days": 4700,
+  "style": "gothic",
   "tech": [
    "Search",
    "Web"
-  ],
-  "silence_days": 4700,
-  "style": "gothic"
+  ]
  },
  {
+  "born": "2002",
+  "cause": "Survived by everyone",
+  "description": "The first of its kind, with millions of members before the word 'social network' settled. Slow pages and fake profiles drove its crowd to younger rivals; it relaunched as a games site in 2011 and suspended for good in 2015. The Society notes what replaced it: everyone.",
+  "died": "2011",
+  "epitaph": "The original social network.",
   "id": "friendster",
   "name": "Friendster",
-  "born": "2002",
-  "died": "2011",
-  "cause": "Survived by everyone",
-  "epitaph": "The original social network.",
-  "description": "The first of its kind, with millions of members before the word 'social network' settled. Slow pages and fake profiles drove its crowd to younger rivals; it relaunched as a games site in 2011 and suspended for good in 2015. The Society notes what replaced it: everyone.",
+  "silence_days": 5500,
+  "style": "tablet",
   "tech": [
    "Social",
    "Web"
-  ],
-  "silence_days": 5500,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "2009",
+  "cause": "Died ahead of its time",
+  "description": "A real-time, threaded, collaborative everything, unveiled to applause and abandoned within a year of launch. Read-only in 2012. Half its ideas quietly moved into documents and chat tools that arrived later and explained themselves better.",
+  "died": "2012",
+  "epitaph": "Email, if it were invented today.",
   "id": "google-wave",
   "name": "Google Wave",
-  "born": "2009",
-  "died": "2012",
-  "cause": "Died ahead of its time",
-  "epitaph": "Email, if it were invented today.",
-  "description": "A real-time, threaded, collaborative everything, unveiled to applause and abandoned within a year of launch. Read-only in 2012. Half its ideas quietly moved into documents and chat tools that arrived later and explained themselves better.",
+  "silence_days": 5100,
+  "style": "gothic",
   "tech": [
    "Collaboration",
    "Web"
-  ],
-  "silence_days": 5100,
-  "style": "gothic"
+  ]
  },
  {
+  "born": "2004",
+  "cause": "Died abroad, beloved",
+  "description": "A footnote in its home country and a phenomenon in Brazil and India, where for years it simply was social networking. Google closed it in September 2014. Its mourners were counted in tens of millions, an ocean away from the headquarters that ended it.",
+  "died": "2014",
+  "epitaph": "Scrap me.",
   "id": "orkut",
   "name": "Orkut",
-  "born": "2004",
-  "died": "2014",
-  "cause": "Died abroad, beloved",
-  "epitaph": "Scrap me.",
-  "description": "A footnote in its home country and a phenomenon in Brazil and India, where for years it simply was social networking. Google closed it in September 2014. Its mourners were counted in tens of millions, an ocean away from the headquarters that ended it.",
+  "silence_days": 4450,
+  "style": "tablet",
   "tech": [
    "Social",
    "Web"
-  ],
-  "silence_days": 4450,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "2003",
+  "cause": "Starved",
+  "description": "Social bookmarking before the feed ate the web: your links, tagged and shared, a library of what the internet thought was worth keeping. Sold twice, neglected, and made read-only in 2017. The bookmarks outlived the bookmarker.",
+  "died": "2017",
+  "epitaph": "Keep, share, discover.",
   "id": "delicious",
   "name": "Delicious",
-  "born": "2003",
-  "died": "2017",
-  "cause": "Starved",
-  "epitaph": "Keep, share, discover.",
-  "description": "Social bookmarking before the feed ate the web: your links, tagged and shared, a library of what the internet thought was worth keeping. Sold twice, neglected, and made read-only in 2017. The bookmarks outlived the bookmarker.",
+  "silence_days": 3300,
+  "style": "gothic",
   "tech": [
    "Bookmarks",
    "Web"
-  ],
-  "silence_days": 3300,
-  "style": "gothic"
+  ]
  },
  {
+  "born": "2001",
+  "cause": "Died in a pivot",
+  "description": "One button and the interesting internet arrived at random, back when randomness was a feature. Fifteen years of serendipity ended in June 2018 when its users were moved to a successor most never asked for. The slot it filled is still open.",
+  "died": "2018",
+  "epitaph": "Stumble!",
   "id": "stumbleupon",
   "name": "StumbleUpon",
-  "born": "2001",
-  "died": "2018",
-  "cause": "Died in a pivot",
-  "epitaph": "Stumble!",
-  "description": "One button and the interesting internet arrived at random, back when randomness was a feature. Fifteen years of serendipity ended in June 2018 when its users were moved to a successor most never asked for. The slot it filled is still open.",
+  "silence_days": 3050,
+  "style": "tablet",
   "tech": [
    "Discovery",
    "Web"
-  ],
-  "silence_days": 3050,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "2004",
+  "cause": "Died in a redesign",
+  "description": "The front page of the internet, voted on by its readers, until a 2010 redesign so hated that the readers left in a weekend and founded the competition's traffic. Sold for parts in 2012. The redesign is still taught as a warning.",
+  "died": "2012",
+  "epitaph": "Digg it.",
   "id": "digg",
   "name": "Digg",
-  "born": "2004",
-  "died": "2012",
-  "cause": "Died in a redesign",
-  "epitaph": "Digg it.",
-  "description": "The front page of the internet, voted on by its readers, until a 2010 redesign so hated that the readers left in a weekend and founded the competition's traffic. Sold for parts in 2012. The redesign is still taught as a warning.",
+  "silence_days": 5100,
+  "style": "gothic",
   "tech": [
    "News",
    "Social"
-  ],
-  "silence_days": 5100,
-  "style": "gothic"
+  ]
  },
  {
+  "born": "1997",
+  "cause": "Cold case",
+  "description": "The music player of a generation: skinnable, beloved, and bundled with everyone's MP3 library. AOL, which paid 80 million dollars for its maker, announced its end in 2013. The llama outlived the roadmap.",
+  "died": "2013",
+  "epitaph": "It really whips the llama's ass.",
   "id": "winamp",
   "name": "Winamp",
-  "born": "1997",
-  "died": "2013",
-  "cause": "Cold case",
-  "epitaph": "It really whips the llama's ass.",
-  "description": "The music player of a generation: skinnable, beloved, and bundled with everyone's MP3 library. AOL, which paid 80 million dollars for its maker, announced its end in 2013. The llama outlived the roadmap.",
+  "silence_days": 4700,
+  "style": "tablet",
   "tech": [
    "Music",
    "Desktop"
-  ],
-  "silence_days": 4700,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "2013",
+  "cause": "Died of exposure",
+  "description": "A computer on your face, years before the world had decided how it felt about that. The consumer version ended in 2015 amid a privacy backlash; the enterprise edition carried on quietly until 2023. It had two lives and was early for both.",
+  "died": "2023",
+  "epitaph": "Okay, Glass.",
   "id": "google-glass",
   "name": "Google Glass",
-  "born": "2013",
-  "died": "2023",
-  "cause": "Died of exposure",
-  "epitaph": "Okay, Glass.",
-  "description": "A computer on your face, years before the world had decided how it felt about that. The consumer version ended in 2015 amid a privacy backlash; the enterprise edition carried on quietly until 2023. It had two lives and was early for both.",
+  "silence_days": 1330,
+  "style": "tablet",
   "tech": [
    "Wearables",
    "Hardware"
-  ],
-  "silence_days": 1330,
-  "style": "tablet"
+  ]
  },
  {
+  "born": "1996",
+  "cause": "Died in a merger",
+  "description": "The PalmPilot put a computer in a shirt pocket a decade before the smartphone settled, and webOS was the most elegant mobile system of its year. HP bought Palm for 1.2 billion dollars and discontinued the devices sixteen months later. Survived by every phone now in every pocket.",
+  "died": "2011",
+  "epitaph": "HotSync complete.",
   "id": "palm",
   "name": "Palm",
-  "born": "1996",
-  "died": "2011",
-  "cause": "Died in a merger",
-  "epitaph": "HotSync complete.",
-  "description": "The PalmPilot put a computer in a shirt pocket a decade before the smartphone settled, and webOS was the most elegant mobile system of its year. HP bought Palm for 1.2 billion dollars and discontinued the devices sixteen months later. Survived by every phone now in every pocket.",
+  "silence_days": 5500,
+  "style": "gothic",
   "tech": [
    "Mobile",
    "Hardware"
-  ],
-  "silence_days": 5500,
-  "style": "gothic"
+  ]
+ },
+ {
+  "born": "1985",
+  "cause": "Died of convenience",
+  "description": "The Friday-night empire: thousands of stores at its peak, and a business model partly built on late fees. Netflix offered no fees, then streaming. Blockbuster filed for bankruptcy in September 2010. The last store, in Bend, Oregon, keeps the lights on as a memorial.",
+  "died": "2010",
+  "epitaph": "Be kind. Rewind.",
+  "id": "blockbuster",
+  "name": "Blockbuster Video",
+  "silence_days": 5903,
+  "tech": [
+   "Video rental",
+   "Retail"
+  ]
+ },
+ {
+  "born": "1991",
+  "cause": "Faded away quietly",
+  "description": "The sound of the internet arriving: a screech, a handshake, and a voice saying you had mail. At its peak it carried tens of millions of households online. Broadband made it a museum piece, and the service ended on September 30, 2025, after thirty-four years. The longest goodbye in the grounds.",
+  "died": "2025",
+  "epitaph": "You've got mail. No more.",
+  "id": "aol-dialup",
+  "name": "AOL Dial-Up",
+  "silence_days": 417,
+  "tech": [
+   "Internet",
+   "Dial-up"
+  ]
+ },
+ {
+  "born": "1999",
+  "cause": "Died in a merger",
+  "description": "Where a generation learned to type fast and feel things in status messages. Microsoft folded it into Skype in April 2013. The Society notes the timing: the successor that absorbed it is buried in these same grounds, and outlived it by only twelve years.",
+  "died": "2013",
+  "epitaph": "brb.",
+  "id": "msn-messenger",
+  "name": "MSN Messenger",
+  "silence_days": 4975,
+  "tech": [
+   "Messaging",
+   "Microsoft"
+  ]
+ },
+ {
+  "born": "1996",
+  "cause": "Killed by a rename",
+  "description": "You asked a butler, in full sentences, and he fetched the web. Search learned to prefer keywords, and in 2006 the company retired Jeeves and became Ask.com. The name died so the engine could live. The Society has a verdict for exactly this, and it is carved on the stone.",
+  "died": "2006",
+  "epitaph": "The butler was dismissed.",
+  "id": "ask-jeeves",
+  "name": "Ask Jeeves",
+  "silence_days": 7520,
+  "tech": [
+   "Search"
+  ]
+ },
+ {
+  "born": "2012",
+  "cause": "Died in an acquisition",
+  "description": "The crowdfunding darling that proved the smartwatch before the giants arrived: a week of battery and an e-paper face. Fitbit bought the software in December 2016 and the watches were left to fade. Its fans kept its memory running for years. The record says it was loved.",
+  "died": "2016",
+  "epitaph": "Time ran out.",
+  "id": "pebble",
+  "name": "Pebble",
+  "silence_days": 3636,
+  "tech": [
+   "Wearables",
+   "Kickstarter"
+  ]
+ },
+ {
+  "born": "2014",
+  "cause": "Killed by its own family",
+  "description": "Gmail's experimental sibling: bundles, reminders, and the snooze the whole industry copied. Google shut it in April 2019 and folded the best ideas back into Gmail. The family plot gains another stone. The family keeps digging.",
+  "died": "2019",
+  "epitaph": "Snoozed forever.",
+  "id": "google-inbox",
+  "name": "Google Inbox",
+  "silence_days": 2790,
+  "tech": [
+   "Email",
+   "Google"
+  ]
+ },
+ {
+  "born": "2015",
+  "cause": "Killed by its own family",
+  "description": "Twitter bought it before it launched, and for a while anyone could broadcast to the world from a phone. The feature moved into the main app, and the standalone service closed in March 2021. It is survived by every Go Live button everywhere.",
+  "died": "2021",
+  "epitaph": "Live. Then not.",
+  "id": "periscope",
+  "name": "Periscope",
+  "silence_days": 2061,
+  "tech": [
+   "Livestreaming",
+   "Twitter"
+  ]
+ },
+ {
+  "born": "2013",
+  "cause": "Killed by its own family",
+  "description": "Google's third or fourth attempt at one messaging app, depending on how the counting is done. It was replaced by Google Chat in November 2022. The Society keeps a standing section for this family. Regulars know the way.",
+  "died": "2022",
+  "epitaph": "Moved to Chat.",
+  "id": "google-hangouts",
+  "name": "Google Hangouts",
+  "silence_days": 1481,
+  "tech": [
+   "Messaging",
+   "Google"
+  ]
+ },
+ {
+  "born": "2011",
+  "cause": "Died in an acquisition",
+  "description": "The to-do list people genuinely loved: simple, everywhere, and finished. Microsoft bought its maker in 2015, built To Do with the same team, and switched Wunderlist off in May 2020. Every list it ever held ends the same way now. Complete.",
+  "died": "2020",
+  "epitaph": "All tasks complete.",
+  "id": "wunderlist",
+  "name": "Wunderlist",
+  "silence_days": 2390,
+  "tech": [
+   "Productivity",
+   "Microsoft"
+  ]
+ },
+ {
+  "born": "2007",
+  "cause": "Died in court",
+  "description": "Upload any song, hear any song: beloved by users and sued by every major label. It closed on April 30, 2015 under a legal settlement, apologizing on the way out. Napster, elsewhere in these grounds, could have told it how the case ends.",
+  "died": "2015",
+  "epitaph": "Settlement reached.",
+  "id": "grooveshark",
+  "name": "Grooveshark",
+  "silence_days": 4223,
+  "tech": [
+   "Music",
+   "Streaming"
+  ]
+ },
+ {
+  "born": "1999",
+  "cause": "Killed by a touchscreen",
+  "description": "The keyboard in every boardroom, and the signature line under a decade of email. The touchscreen changed the question, and BlackBerry never answered it. The company lives on in software; the phones' services ended on January 4, 2022, and it is the phones that are buried here.",
+  "died": "2022",
+  "epitaph": "Sent from my BlackBerry.",
+  "id": "blackberry",
+  "name": "BlackBerry",
+  "silence_days": 1782,
+  "tech": [
+   "Mobile",
+   "Hardware"
+  ]
+ },
+ {
+  "born": "2010",
+  "cause": "Starved",
+  "description": "From the founders of Skype: a beautiful, social music service that critics adored and the market outspent. Rdio filed for bankruptcy in November 2015 and Pandora bought the pieces. The design is still missed. The record says so, in those words, often.",
+  "died": "2015",
+  "epitaph": "The music stopped.",
+  "id": "rdio",
+  "name": "Rdio",
+  "silence_days": 3987,
+  "tech": [
+   "Music",
+   "Streaming"
+  ]
  }
 ]
