@@ -1468,6 +1468,26 @@ async function loadPublicGrounds() {
 }
 loadPublicGrounds();
 
+const pubFilters = document.getElementById("public-filters");
+if (pubFilters) {
+  pubFilters.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-pub]");
+    if (!btn) return;
+    pubFilters.querySelectorAll(".filter-chip").forEach((c) =>
+      c.classList.toggle("active", c === btn));
+    const mode = btn.dataset.pub;
+    const match = (p) => mode === "all" ||
+      (mode === "repos" ? !!p.url : !p.url);
+    for (const p of allPublic) setDimmed(p, !match(p));
+    const list = document.getElementById("public-list");
+    if (list) list.querySelectorAll("li").forEach((li) => {
+      const b = li.querySelector("button");
+      const p = allPublic.find((x) => x.id === (b && b.dataset.id));
+      li.style.display = !p || match(p) ? "" : "none";
+    });
+  });
+}
+
 // ---------- animate ----------
 const clock = new THREE.Clock();
 let prevT = 0;

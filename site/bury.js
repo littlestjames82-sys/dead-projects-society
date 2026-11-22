@@ -53,7 +53,8 @@ function liFor(repo, kind) {
   if (kind === "dead") {
     meta.textContent = repo.created.getFullYear() + " — " +
       repo.pushed.getFullYear() + " · " + coroner(repo) +
-      " · silent " + repo.silence.toLocaleString() + " days";
+      " · silent " + repo.silence.toLocaleString() + " days" +
+      (repo.archived ? " · archived" : "");
   } else if (kind === "coma") {
     meta.textContent = "last push " + repo.silence + " days ago · lifespan " +
       fmtSpan((repo.pushed - repo.created) / DAY);
@@ -100,6 +101,7 @@ form.addEventListener("submit", async (ev) => {
   const repos = raw.filter((r) => !r.fork).map((r) => ({
     name: r.name,
     url: r.html_url,
+    archived: !!r.archived,
     created: new Date(r.created_at),
     pushed: new Date(r.pushed_at),
     silence: Math.max(0, Math.floor((now - new Date(r.pushed_at)) / DAY)),
@@ -120,7 +122,10 @@ form.addEventListener("submit", async (ev) => {
   const summary = dead.length + " buried · " + coma.length +
     " in intensive care · " + alive.length + " still breathing, of " +
     repos.length + " repos examined.";
-  document.getElementById("bury-summary").textContent = summary;
+  const archivedDead = dead.filter((r) => r.archived).length;
+  document.getElementById("bury-summary").textContent = summary +
+    (archivedDead ? " " + archivedDead + (archivedDead === 1
+      ? " is" : " are") + " formally archived by GitHub itself." : "");
 
   const honors = [];
   if (dead.length) {
