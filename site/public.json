@@ -1,814 +1,833 @@
 [
- {
-  "born": "2005",
-  "cause": "Killed by its own family",
-  "description": "The feed reader everyone actually used, shut down on July 1, 2013 despite a devoted cult and a petition signed by well over a hundred thousand readers. Google wanted the team on other things. It had a real season. Its readers say it was loved. The Society notes what replaced it: an algorithmic feed, forever.",
-  "died": "2013",
-  "epitaph": "A second spring of cleaning.",
-  "id": "google-reader",
-  "name": "Google Reader",
-  "silence_days": 4890,
-  "style": "cross",
-  "tech": [
-   "RSS",
-   "Web"
-  ]
- },
- {
-  "born": "2020",
-  "cause": "Weekend fling, at scale",
-  "description": "Raised about 1.75 billion dollars to put ten-minute shows on phones, launched in April 2020, and was gone by December. It burned fast. Its backers say it was more than an idea. Nothing replaced it. The slot, and the money, are still open.",
-  "died": "2020",
-  "epitaph": "Quick bites. Big stories.",
-  "id": "quibi",
-  "name": "Quibi",
-  "silence_days": 2180,
-  "style": "tablet",
-  "tech": [
-   "Streaming",
-   "Mobile"
-  ]
- },
- {
-  "born": "2013",
-  "cause": "Starved by its parent",
-  "description": "Six seconds at a time, Vine taught the internet a new grammar and launched a generation of creators. Twitter bought it before launch, never figured out how it made money, and shut it down in January 2017. Survived by TikTok, born the following year. The Society notes the timing.",
-  "died": "2017",
-  "epitaph": "Do it for the Vine.",
-  "id": "vine",
-  "name": "Vine",
-  "silence_days": 3230,
-  "style": "gothic",
-  "tech": [
-   "Video",
-   "Mobile"
-  ]
- },
- {
-  "born": "2019",
-  "cause": "Died in a pivot",
-  "description": "Google's cloud gaming service streamed big games to any screen, then closed its own studios, then closed entirely in January 2023. To its credit, Google refunded the hardware and the games. The last thing ever released on it was a Snake clone the team had used for testing.",
-  "died": "2023",
-  "epitaph": "Worm Game.",
-  "id": "google-stadia",
-  "name": "Google Stadia",
-  "silence_days": 1400,
-  "style": "tablet",
-  "tech": [
-   "Cloud",
-   "Gaming"
-  ]
- },
- {
-  "born": "1995",
-  "cause": "Faded away quietly",
-  "description": "Once carried roughly 95 percent of the web and came preinstalled on nearly every computer on Earth. Then came a decade of being the browser you used to download another browser. Retired June 15, 2022. It had a long life, by any standard. Nothing replaced it that was not already there.",
-  "died": "2022",
-  "epitaph": "It is time to move to Edge.",
-  "id": "internet-explorer",
-  "name": "Internet Explorer",
-  "silence_days": 1620,
-  "style": "gothic",
-  "tech": [
-   "Browser",
-   "Windows"
-  ]
- },
- {
-  "born": "1996",
-  "cause": "Cold case, closed by the coroner",
-  "description": "Flash animated the early web: the games, the cartoons, the video players, the menus that should never have been menus. An open letter in 2010 began the end, phones refused to carry it, and support stopped on the last day of 2020. A whole era of the internet is archived in its file format.",
-  "died": "2020",
-  "epitaph": "No longer supported after December 2020.",
-  "id": "adobe-flash",
-  "name": "Adobe Flash",
-  "silence_days": 2150,
-  "style": "gothic",
-  "tech": [
-   "Plugin",
-   "Web"
-  ]
- },
- {
-  "born": "2003",
-  "cause": "Died as it lived: one more call",
-  "description": "Skype made the world talk for free, carried a huge share of all international calls, and became a verb. Microsoft bought it for 8.5 billion dollars, slowly rebuilt it several times, and retired it in May 2025 in favor of Teams. Its ringtone is in a museum of the mind.",
-  "died": "2025",
-  "epitaph": "The whole world can talk for free.",
-  "id": "skype",
-  "name": "Skype",
-  "silence_days": 565,
-  "style": "tablet",
-  "tech": [
-   "VoIP",
-   "Messaging"
-  ]
- },
- {
-  "born": "2001",
-  "cause": "Survived by its own successor",
-  "description": "A thousand songs in your pocket rewired the music industry and saved its company. Over 450 million were sold. Then the iPhone absorbed it whole, and the last model was discontinued in May 2022. It had a long life, by side-project standards. The Society notes what replaced it, because it is the same logo.",
-  "died": "2022",
-  "epitaph": "1,000 songs in your pocket.",
-  "id": "ipod",
-  "name": "iPod",
-  "silence_days": 1655,
-  "style": "gothic",
-  "tech": [
-   "Hardware",
-   "Music"
-  ]
- },
- {
-  "born": "2011",
-  "cause": "One more fix, then the plug",
-  "description": "Google's fourth attempt at a social network was wired into everything its maker owned, which is exactly what people resented. A data exposure in 2018 moved the funeral up; the doors closed April 2, 2019. Its best ideas, circles and hangouts, were survived by everyone else's products.",
-  "died": "2019",
-  "epitaph": "Real-life sharing, rethought for the web.",
-  "id": "google-plus",
-  "name": "Google+",
-  "silence_days": 2425,
-  "style": "tablet",
-  "tech": [
-   "Social",
-   "Web"
-  ]
- },
- {
-  "born": "1997",
-  "cause": "Away message: permanent",
-  "description": "AOL Instant Messenger was the social network before the word existed: screen names, buddy lists, away messages as literature, and a running man who meant your friends were home. It shut down on December 15, 2017. A generation's first audience is still out there, just on other services now.",
-  "died": "2017",
-  "epitaph": "Away message: gone forever.",
-  "id": "aim",
-  "name": "AIM",
-  "silence_days": 3265,
-  "style": "gothic",
-  "tech": [
-   "Messaging",
-   "Desktop"
-  ]
- },
- {
-  "born": "2010",
-  "cause": "Died in a merge of strategies",
-  "description": "The most beautiful phone interface of its era, with an app store the world never moved into. Microsoft bought Nokia's phone business, wrote it down for 7.6 billion dollars, and confirmed the end in 2017; support finished in 2019. Reviewers loved it. There were simply never enough of them.",
-  "died": "2017",
-  "epitaph": "Put people first.",
-  "id": "windows-phone",
-  "name": "Windows Phone",
-  "silence_days": 3330,
-  "style": "tablet",
-  "tech": [
-   "Mobile",
-   "OS"
-  ]
- },
- {
-  "born": "1994",
-  "cause": "Sudden cardiac arrest, browser war",
-  "description": "Netscape Navigator was the first web browser most people ever touched, and its maker helped invent JavaScript and the secure web along the way. The browser war was lost to a rival that shipped free with the operating system. Support ended in 2008. Survived, in spirit and in code, by Firefox.",
-  "died": "2008",
-  "epitaph": "Netscape Now!",
-  "id": "netscape",
-  "name": "Netscape",
-  "silence_days": 6840,
-  "style": "gothic",
-  "tech": [
-   "Browser",
-   "Web"
-  ]
- },
- {
-  "born": "1994",
-  "cause": "Neighborhood demolished",
-  "description": "A third of the early web lived here: neighborhoods of hand-built pages, guestbooks, MIDI, and glitter text. Yahoo bought it for billions and closed the US service in October 2009. Volunteers archived a million pages before the bulldozers. It had a real season, and the season was the whole early internet.",
-  "died": "2009",
-  "epitaph": "Under construction.",
-  "id": "geocities",
-  "name": "GeoCities",
-  "silence_days": 6250,
-  "style": "gothic",
-  "tech": [
-   "Web",
-   "Hosting"
-  ]
- },
- {
-  "born": "1999",
-  "cause": "Died in court",
-  "description": "Sixty million people sharing music from their dorm rooms, and the entire recording industry in court over it. The original service was shut down in July 2001. It burned fast. Everything about how music moves now was decided in its two years.",
-  "died": "2001",
-  "epitaph": "Download complete.",
-  "id": "napster",
-  "name": "Napster",
-  "silence_days": 9300,
-  "style": "tablet",
-  "tech": [
-   "P2P",
-   "Music"
-  ]
- },
- {
-  "born": "1995",
-  "cause": "Faded away quietly",
-  "description": "For a few years this was how you found anything: the biggest index on Earth, queried by people who still said 'the Net.' Sold, resold, folded into Yahoo, and switched off in July 2013, by then a footnote in its own results.",
-  "died": "2013",
-  "epitaph": "The guide to the Net.",
-  "id": "altavista",
-  "name": "AltaVista",
-  "silence_days": 4700,
-  "style": "gothic",
-  "tech": [
-   "Search",
-   "Web"
-  ]
- },
- {
-  "born": "2002",
-  "cause": "Survived by everyone",
-  "description": "The first of its kind, with millions of members before the word 'social network' settled. Slow pages and fake profiles drove its crowd to younger rivals; it relaunched as a games site in 2011 and suspended for good in 2015. The Society notes what replaced it: everyone.",
-  "died": "2011",
-  "epitaph": "The original social network.",
-  "id": "friendster",
-  "name": "Friendster",
-  "silence_days": 5500,
-  "style": "tablet",
-  "tech": [
-   "Social",
-   "Web"
-  ]
- },
- {
-  "born": "2009",
-  "cause": "Died ahead of its time",
-  "description": "A real-time, threaded, collaborative everything, unveiled to applause and abandoned within a year of launch. Read-only in 2012. Half its ideas quietly moved into documents and chat tools that arrived later and explained themselves better.",
-  "died": "2012",
-  "epitaph": "Email, if it were invented today.",
-  "id": "google-wave",
-  "name": "Google Wave",
-  "silence_days": 5100,
-  "style": "gothic",
-  "tech": [
-   "Collaboration",
-   "Web"
-  ]
- },
- {
-  "born": "2004",
-  "cause": "Died abroad, beloved",
-  "description": "A footnote in its home country and a phenomenon in Brazil and India, where for years it simply was social networking. Google closed it in September 2014. Its mourners were counted in tens of millions, an ocean away from the headquarters that ended it.",
-  "died": "2014",
-  "epitaph": "Scrap me.",
-  "id": "orkut",
-  "name": "Orkut",
-  "silence_days": 4450,
-  "style": "tablet",
-  "tech": [
-   "Social",
-   "Web"
-  ]
- },
- {
-  "born": "2003",
-  "cause": "Starved",
-  "description": "Social bookmarking before the feed ate the web: your links, tagged and shared, a library of what the internet thought was worth keeping. Sold twice, neglected, and made read-only in 2017. The bookmarks outlived the bookmarker.",
-  "died": "2017",
-  "epitaph": "Keep, share, discover.",
-  "id": "delicious",
-  "name": "Delicious",
-  "silence_days": 3300,
-  "style": "gothic",
-  "tech": [
-   "Bookmarks",
-   "Web"
-  ]
- },
- {
-  "born": "2001",
-  "cause": "Died in a pivot",
-  "description": "One button and the interesting internet arrived at random, back when randomness was a feature. Fifteen years of serendipity ended in June 2018 when its users were moved to a successor most never asked for. The slot it filled is still open.",
-  "died": "2018",
-  "epitaph": "Stumble!",
-  "id": "stumbleupon",
-  "name": "StumbleUpon",
-  "silence_days": 3050,
-  "style": "tablet",
-  "tech": [
-   "Discovery",
-   "Web"
-  ]
- },
- {
-  "born": "2004",
-  "cause": "Died in a redesign",
-  "description": "The front page of the internet, voted on by its readers, until a 2010 redesign so hated that the readers left in a weekend and founded the competition's traffic. Sold for parts in 2012. The redesign is still taught as a warning.",
-  "died": "2012",
-  "epitaph": "Digg it.",
-  "id": "digg",
-  "name": "Digg",
-  "silence_days": 5100,
-  "style": "gothic",
-  "tech": [
-   "News",
-   "Social"
-  ]
- },
- {
-  "born": "1997",
-  "cause": "Cold case",
-  "description": "The music player of a generation: skinnable, beloved, and bundled with everyone's MP3 library. AOL, which paid 80 million dollars for its maker, announced its end in 2013. The llama outlived the roadmap.",
-  "died": "2013",
-  "epitaph": "It really whips the llama's ass.",
-  "id": "winamp",
-  "name": "Winamp",
-  "silence_days": 4700,
-  "style": "tablet",
-  "tech": [
-   "Music",
-   "Desktop"
-  ]
- },
- {
-  "born": "2013",
-  "cause": "Died of exposure",
-  "description": "A computer on your face, years before the world had decided how it felt about that. The consumer version ended in 2015 amid a privacy backlash; the enterprise edition carried on quietly until 2023. It had two lives and was early for both.",
-  "died": "2023",
-  "epitaph": "Okay, Glass.",
-  "id": "google-glass",
-  "name": "Google Glass",
-  "silence_days": 1330,
-  "style": "tablet",
-  "tech": [
-   "Wearables",
-   "Hardware"
-  ]
- },
- {
-  "born": "1996",
-  "cause": "Died in a merger",
-  "description": "The PalmPilot put a computer in a shirt pocket a decade before the smartphone settled, and webOS was the most elegant mobile system of its year. HP bought Palm for 1.2 billion dollars and discontinued the devices sixteen months later. Survived by every phone now in every pocket.",
-  "died": "2011",
-  "epitaph": "HotSync complete.",
-  "id": "palm",
-  "name": "Palm",
-  "silence_days": 5500,
-  "style": "gothic",
-  "tech": [
-   "Mobile",
-   "Hardware"
-  ]
- },
- {
-  "born": "1985",
-  "cause": "Died of convenience",
-  "description": "The Friday-night empire: thousands of stores at its peak, and a business model partly built on late fees. Netflix offered no fees, then streaming. Blockbuster filed for bankruptcy in September 2010. The last store, in Bend, Oregon, keeps the lights on as a memorial.",
-  "died": "2010",
-  "epitaph": "Be kind. Rewind.",
-  "id": "blockbuster",
-  "name": "Blockbuster Video",
-  "silence_days": 5903,
-  "tech": [
-   "Video rental",
-   "Retail"
-  ]
- },
- {
-  "born": "1991",
-  "cause": "Faded away quietly",
-  "description": "The sound of the internet arriving: a screech, a handshake, and a voice saying you had mail. At its peak it carried tens of millions of households online. Broadband made it a museum piece, and the service ended on September 30, 2025, after thirty-four years. The longest goodbye in the grounds.",
-  "died": "2025",
-  "epitaph": "You've got mail. No more.",
-  "id": "aol-dialup",
-  "name": "AOL Dial-Up",
-  "silence_days": 417,
-  "tech": [
-   "Internet",
-   "Dial-up"
-  ]
- },
- {
-  "born": "1999",
-  "cause": "Died in a merger",
-  "description": "Where a generation learned to type fast and feel things in status messages. Microsoft folded it into Skype in April 2013. The Society notes the timing: the successor that absorbed it is buried in these same grounds, and outlived it by only twelve years.",
-  "died": "2013",
-  "epitaph": "brb.",
-  "id": "msn-messenger",
-  "name": "MSN Messenger",
-  "silence_days": 4975,
-  "tech": [
-   "Messaging",
-   "Microsoft"
-  ]
- },
- {
-  "born": "1996",
-  "cause": "Killed by a rename",
-  "description": "You asked a butler, in full sentences, and he fetched the web. Search learned to prefer keywords, and in 2006 the company retired Jeeves and became Ask.com. The name died so the engine could live. The Society has a verdict for exactly this, and it is carved on the stone.",
-  "died": "2006",
-  "epitaph": "The butler was dismissed.",
-  "id": "ask-jeeves",
-  "name": "Ask Jeeves",
-  "silence_days": 7520,
-  "tech": [
-   "Search"
-  ]
- },
- {
-  "born": "2012",
-  "cause": "Died in an acquisition",
-  "description": "The crowdfunding darling that proved the smartwatch before the giants arrived: a week of battery and an e-paper face. Fitbit bought the software in December 2016 and the watches were left to fade. Its fans kept its memory running for years. The record says it was loved.",
-  "died": "2016",
-  "epitaph": "Time ran out.",
-  "id": "pebble",
-  "name": "Pebble",
-  "silence_days": 3636,
-  "tech": [
-   "Wearables",
-   "Kickstarter"
-  ]
- },
- {
-  "born": "2014",
-  "cause": "Killed by its own family",
-  "description": "Gmail's experimental sibling: bundles, reminders, and the snooze the whole industry copied. Google shut it in April 2019 and folded the best ideas back into Gmail. The family plot gains another stone. The family keeps digging.",
-  "died": "2019",
-  "epitaph": "Snoozed forever.",
-  "id": "google-inbox",
-  "name": "Google Inbox",
-  "silence_days": 2790,
-  "tech": [
-   "Email",
-   "Google"
-  ]
- },
- {
-  "born": "2015",
-  "cause": "Killed by its own family",
-  "description": "Twitter bought it before it launched, and for a while anyone could broadcast to the world from a phone. The feature moved into the main app, and the standalone service closed in March 2021. It is survived by every Go Live button everywhere.",
-  "died": "2021",
-  "epitaph": "Live. Then not.",
-  "id": "periscope",
-  "name": "Periscope",
-  "silence_days": 2061,
-  "tech": [
-   "Livestreaming",
-   "Twitter"
-  ]
- },
- {
-  "born": "2013",
-  "cause": "Killed by its own family",
-  "description": "Google's third or fourth attempt at one messaging app, depending on how the counting is done. It was replaced by Google Chat in November 2022. The Society keeps a standing section for this family. Regulars know the way.",
-  "died": "2022",
-  "epitaph": "Moved to Chat.",
-  "id": "google-hangouts",
-  "name": "Google Hangouts",
-  "silence_days": 1481,
-  "tech": [
-   "Messaging",
-   "Google"
-  ]
- },
- {
-  "born": "2011",
-  "cause": "Died in an acquisition",
-  "description": "The to-do list people genuinely loved: simple, everywhere, and finished. Microsoft bought its maker in 2015, built To Do with the same team, and switched Wunderlist off in May 2020. Every list it ever held ends the same way now. Complete.",
-  "died": "2020",
-  "epitaph": "All tasks complete.",
-  "id": "wunderlist",
-  "name": "Wunderlist",
-  "silence_days": 2390,
-  "tech": [
-   "Productivity",
-   "Microsoft"
-  ]
- },
- {
-  "born": "2007",
-  "cause": "Died in court",
-  "description": "Upload any song, hear any song: beloved by users and sued by every major label. It closed on April 30, 2015 under a legal settlement, apologizing on the way out. Napster, elsewhere in these grounds, could have told it how the case ends.",
-  "died": "2015",
-  "epitaph": "Settlement reached.",
-  "id": "grooveshark",
-  "name": "Grooveshark",
-  "silence_days": 4223,
-  "tech": [
-   "Music",
-   "Streaming"
-  ]
- },
- {
-  "born": "1999",
-  "cause": "Killed by a touchscreen",
-  "description": "The keyboard in every boardroom, and the signature line under a decade of email. The touchscreen changed the question, and BlackBerry never answered it. The company lives on in software; the phones' services ended on January 4, 2022, and it is the phones that are buried here.",
-  "died": "2022",
-  "epitaph": "Sent from my BlackBerry.",
-  "id": "blackberry",
-  "name": "BlackBerry",
-  "silence_days": 1782,
-  "tech": [
-   "Mobile",
-   "Hardware"
-  ]
- },
- {
-  "born": "2010",
-  "cause": "Starved",
-  "description": "From the founders of Skype: a beautiful, social music service that critics adored and the market outspent. Rdio filed for bankruptcy in November 2015 and Pandora bought the pieces. The design is still missed. The record says so, in those words, often.",
-  "died": "2015",
-  "epitaph": "The music stopped.",
-  "id": "rdio",
-  "name": "Rdio",
-  "silence_days": 3987,
-  "tech": [
-   "Music",
-   "Streaming"
-  ]
- },
- {
-  "born": "2014",
-  "cause": "Killed by its own family",
-  "description": "GitHub's own editor: hackable to the core, beloved, and the proving ground for Electron. GitHub sunset it on December 15, 2022 to bet on VS Code, and archived the repository with 60,688 stars on the stone. The Society records the number because the number was real.",
-  "died": "2022",
-  "epitaph": "Hackable to the core.",
-  "id": "atom",
-  "name": "Atom",
-  "silence_days": 1418,
-  "tech": [
-   "JavaScript",
-   "Editor"
-  ],
-  "url": "https://github.com/atom/atom"
- },
- {
-  "born": "2009",
-  "cause": "Died of a sequel",
-  "description": "The framework that taught a generation of developers to build apps in the browser. Google ended its life on December 31, 2021, years after its successor, Angular, had replaced it in everything but name recognition. The Society has a verdict for exactly this, and it is carved on the stone.",
-  "died": "2021",
-  "epitaph": "HTML, enhanced.",
-  "id": "angularjs",
-  "name": "AngularJS",
-  "silence_days": 953,
-  "tech": [
-   "JavaScript",
-   "Framework"
-  ],
-  "url": "https://github.com/angular/angular.js"
- },
- {
-  "born": "2011",
-  "cause": "Outpaced",
-  "description": "A headless browser before browsers came headless: it powered a decade of testing, scraping, and screenshots. When Chrome shipped its own headless mode, the maintainer stepped down and development was suspended in 2018. The repository is archived. The ghost was outlived by its use case.",
-  "died": "2018",
-  "epitaph": "The headless ghost.",
-  "id": "phantomjs",
-  "name": "PhantomJS",
-  "silence_days": 1456,
-  "tech": [
-   "C++",
-   "Browser automation"
-  ],
-  "url": "https://github.com/ariya/phantomjs"
- },
- {
-  "born": "2011",
-  "cause": "Dropped by its maker",
-  "description": "Adobe's open editor, built in the very languages it edited, with live preview before live preview was common. Adobe ended support on September 1, 2021. The community carried the code away to a new home; the original repository, 32,963 stars, is archived here.",
-  "died": "2021",
-  "epitaph": "An editor built in what it edited.",
-  "id": "brackets",
-  "name": "Brackets",
-  "silence_days": 1623,
-  "tech": [
-   "JavaScript",
-   "Editor"
-  ],
-  "url": "https://github.com/adobe/brackets"
- },
- {
-  "born": "2010",
-  "cause": "Faded away quietly",
-  "description": "jQuery's answer to the touch era: one framework for every phone browser of 2011. The platform grew up, responsive design took its job, and it was deprecated on October 7, 2021, the very day of its repository's last commit. The record and the stone agree to the day.",
-  "died": "2021",
-  "epitaph": "Write less, do more.",
-  "id": "jquery-mobile",
-  "name": "jQuery Mobile",
-  "silence_days": 1871,
-  "tech": [
-   "JavaScript",
-   "Mobile web"
-  ],
-  "url": "https://github.com/jquery/jquery-mobile"
- },
- {
-  "born": "2014",
-  "cause": "Outpaced",
-  "description": "Docker's tool for conjuring machines to run containers on: create, manage, connect. Desktop and contexts absorbed its work, Docker deprecated it, and the repository was archived after a last commit in February 2022.",
-  "died": "2022",
-  "epitaph": "It made the machines.",
-  "id": "docker-machine",
-  "name": "Docker Machine",
-  "silence_days": 1742,
-  "tech": [
-   "Go",
-   "Containers"
-  ],
-  "url": "https://github.com/docker/machine"
- },
- {
-  "born": "2009",
-  "cause": "Killed by its own family",
-  "description": "Google's battle-tested JavaScript library, a foundation under Gmail and Docs, maintained long after the ecosystem moved on. Google deprecated it in 2023 and archived the repository in August 2024. Few stones in these grounds carried more production weight.",
-  "died": "2024",
-  "epitaph": "The library behind Gmail.",
-  "id": "closure-library",
-  "name": "Closure Library",
-  "silence_days": 842,
-  "tech": [
-   "JavaScript",
-   "Library"
-  ],
-  "url": "https://github.com/google/closure-library"
- },
- {
-  "born": "2008",
-  "cause": "Died of a sequel",
-  "description": "The port that brought Processing sketches to the web. Its own team wound it down as p5.js, its spiritual successor, took the mission forward. The repository was archived after a last commit in December 2018. Survived by p5.js, and the timing is noted with affection.",
-  "died": "2018",
-  "epitaph": "Processing, in the browser.",
-  "id": "processing-js",
-  "name": "Processing.js",
-  "silence_days": 2909,
-  "tech": [
-   "Processing",
-   "Graphics"
-  ],
-  "url": "https://github.com/processing-js/processing-js"
- },
- {
-  "born": "2014",
-  "cause": "Killed by its own family",
-  "description": "Facebook's application architecture, the pattern that taught the web unidirectional data flow and the idea Redux ran away with. Facebook pointed developers elsewhere for years before archiving the repository in 2023, 17,435 stars on the stone. The pattern outlived the library everywhere.",
-  "died": "2023",
-  "epitaph": "Unidirectional data flow.",
-  "id": "flux",
-  "name": "Flux",
-  "silence_days": 1341,
-  "tech": [
-   "JavaScript",
-   "Architecture"
-  ],
-  "url": "https://github.com/facebook/flux"
- },
- {
-  "born": "2011",
-  "cause": "Died of progress",
-  "description": "FT Labs' tiny library that removed the 300ms tap delay from mobile browsers, installed on a generation of sites. Then the browsers fixed the delay themselves, and FastClick's own README pronounced it unnecessary. Few projects get to die because the world improved.",
-  "died": "2021",
-  "epitaph": "No more 300ms.",
-  "id": "fastclick",
-  "name": "FastClick",
-  "silence_days": 1926,
-  "tech": [
-   "JavaScript",
-   "Mobile web"
-  ],
-  "url": "https://github.com/ftlabs/fastclick"
- },
- {
-  "born": "2013",
-  "cause": "Died of a sequel",
-  "description": "The linter that kept TypeScript honest for years, from Palantir. In 2019 its own makers deprecated it and pointed everyone to ESLint, which had grown the architecture TSLint lacked. The repository was archived with 5,891 stars. Few tools get an obituary written by their own authors. This one did.",
-  "died": "2019",
-  "epitaph": "Linted, then left.",
-  "id": "tslint",
-  "name": "TSLint",
-  "silence_days": 2067,
-  "tech": [
-   "TypeScript",
-   "Tooling"
-  ],
-  "url": "https://github.com/palantir/tslint"
- },
- {
-  "born": "2015",
-  "cause": "Killed by its own family",
-  "description": "Facebook's open IDE, built on Atom and beloved by the React Native generation. Facebook discontinued it in December 2018. Its foundation, Atom, lies elsewhere in these grounds; the Society has placed the stones within sight of each other, because that is how it happened.",
-  "died": "2018",
-  "epitaph": "Built on Atom. Buried near it.",
-  "id": "nuclide",
-  "name": "Nuclide",
-  "silence_days": 2901,
-  "tech": [
-   "JavaScript",
-   "Editor"
-  ],
-  "url": "https://github.com/facebook/nuclide"
- },
- {
-  "born": "2015",
-  "cause": "Cancelled by its maker",
-  "description": "HashiCorp announced Otto in 2015 as the successor to Vagrant: one tool from development to deployment. A year later HashiCorp cancelled it, honestly and in public, and went back to its other tools. The repository lingered until 2020, as repositories do. The idea was not wrong. The timing was the whole story.",
-  "died": "2016",
-  "epitaph": "The successor to Vagrant, briefly.",
-  "id": "otto",
-  "name": "Otto",
-  "silence_days": 2339,
-  "tech": [
-   "DevOps",
-   "HashiCorp"
-  ],
-  "url": "https://github.com/hashicorp/otto"
- },
- {
-  "born": "2012",
-  "cause": "Died with its subject",
-  "description": "Mozilla's audacious project to run Flash content in pure JavaScript, no plugin. It worked better than anyone expected, and it did not matter: the web was leaving Flash behind anyway, and Mozilla shelved Shumway in 2016. Flash itself is buried in these grounds. Interpreter and subject, reunited.",
-  "died": "2016",
-  "epitaph": "It played Flash without Flash.",
-  "id": "shumway",
-  "name": "Shumway",
-  "silence_days": 2773,
-  "tech": [
-   "TypeScript",
-   "Mozilla"
-  ],
-  "url": "https://github.com/mozilla/shumway"
- },
- {
-  "born": "2006",
-  "cause": "Killed by a rename",
-  "description": "The enterprise PHP framework of its era, from the company behind PHP itself. In 2019 the project moved to the Linux Foundation and continued as Laminas; the code lives on under the new name. What is buried here is the name, with full honors, the way the Society buries all its renames.",
-  "died": "2019",
-  "epitaph": "Renamed, rehomed, released.",
-  "id": "zend-framework",
-  "name": "Zend Framework",
-  "silence_days": 2740,
-  "tech": [
-   "PHP",
-   "Framework"
-  ],
-  "url": "https://github.com/zendframework/zendframework"
- },
- {
-  "born": "2013",
-  "cause": "Outpaced",
-  "description": "Google's compiler for writing tomorrow's JavaScript today, before Babel took that job and kept it. Traceur was superseded for years before Google archived the repository; the stone is dated by the paperwork, and the Society notes the gap between the death and the filing, because the gap is the story of most tools.",
-  "died": "2024",
-  "epitaph": "Tomorrow's JavaScript, yesterday.",
-  "id": "traceur",
-  "name": "Traceur",
-  "silence_days": 711,
-  "tech": [
-   "JavaScript",
-   "Compiler"
-  ],
-  "url": "https://github.com/google/traceur-compiler"
- },
- {
-  "born": "2008",
-  "cause": "Dropped by its maker",
-  "description": "The original promise of hybrid apps: build with web technology, ship to every phone. Adobe acquired its maker in 2011 and ended PhoneGap in August 2020. The main repository had fallen silent in 2015 while the tooling lived on elsewhere; its engine, Cordova, still breathes under Apache's care. The name is buried here.",
-  "died": "2020",
-  "epitaph": "Write once. Ship everywhere.",
-  "id": "phonegap",
-  "name": "PhoneGap",
-  "silence_days": 4279,
-  "tech": [
-   "JavaScript",
-   "Mobile"
-  ],
-  "url": "https://github.com/phonegap/phonegap"
- },
- {
-  "born": "2014",
-  "cause": "Died of a sequel",
-  "description": "Microsoft's framework for building native apps for every platform from one C# codebase. It was succeeded by .NET MAUI, and Microsoft ended Xamarin support on May 1, 2024. The repository was archived days before the end. A recent grave, and a well-kept one.",
-  "died": "2024",
-  "epitaph": "One codebase, every platform.",
-  "id": "xamarin-forms",
-  "name": "Xamarin.Forms",
-  "silence_days": 936,
-  "tech": [
-   "C#",
-   "Mobile"
-  ],
-  "url": "https://github.com/xamarin/Xamarin.Forms"
- },
- {
-  "born": "2014",
-  "cause": "Outpaced",
-  "description": "Docker's original standalone orchestrator, from the years when the container wars were undecided. Kubernetes decided them. This stone is for the standalone Swarm, archived in 2020; the swarm mode built into Docker Engine is a different creature and lives on, and the Society does not bury the living.",
-  "died": "2020",
-  "epitaph": "Outclustered.",
-  "id": "docker-swarm",
-  "name": "Docker Swarm",
-  "silence_days": 2354,
-  "tech": [
-   "Go",
-   "Containers"
-  ],
-  "url": "https://github.com/docker/swarm"
- }
+  {
+    "born": "2005",
+    "cause": "Killed by its own family",
+    "description": "The feed reader everyone actually used, shut down on July 1, 2013 despite a devoted cult and a petition signed by well over a hundred thousand readers. Google wanted the team on other things. It had a real season. Its readers say it was loved. The Society notes what replaced it: an algorithmic feed, forever.",
+    "died": "2013",
+    "epitaph": "A second spring of cleaning.",
+    "id": "google-reader",
+    "name": "Google Reader",
+    "silence_days": 4890,
+    "style": "cross",
+    "tech": [
+      "RSS",
+      "Web"
+    ]
+  },
+  {
+    "born": "2020",
+    "cause": "Weekend fling, at scale",
+    "description": "Raised about 1.75 billion dollars to put ten-minute shows on phones, launched in April 2020, and was gone by December. It burned fast. Its backers say it was more than an idea. Nothing replaced it. The slot, and the money, are still open.",
+    "died": "2020",
+    "epitaph": "Quick bites. Big stories.",
+    "id": "quibi",
+    "name": "Quibi",
+    "silence_days": 2180,
+    "style": "tablet",
+    "tech": [
+      "Streaming",
+      "Mobile"
+    ]
+  },
+  {
+    "born": "2013",
+    "cause": "Starved by its parent",
+    "description": "Six seconds at a time, Vine taught the internet a new grammar and launched a generation of creators. Twitter bought it before launch, never figured out how it made money, and shut it down in January 2017. Survived by TikTok, born the following year. The Society notes the timing.",
+    "died": "2017",
+    "epitaph": "Do it for the Vine.",
+    "id": "vine",
+    "name": "Vine",
+    "silence_days": 3230,
+    "style": "gothic",
+    "tech": [
+      "Video",
+      "Mobile"
+    ]
+  },
+  {
+    "born": "2019",
+    "cause": "Died in a pivot",
+    "description": "Google's cloud gaming service streamed big games to any screen, then closed its own studios, then closed entirely in January 2023. To its credit, Google refunded the hardware and the games. The last thing ever released on it was a Snake clone the team had used for testing.",
+    "died": "2023",
+    "epitaph": "Worm Game.",
+    "id": "google-stadia",
+    "name": "Google Stadia",
+    "silence_days": 1400,
+    "style": "tablet",
+    "tech": [
+      "Cloud",
+      "Gaming"
+    ]
+  },
+  {
+    "born": "1995",
+    "cause": "Faded away quietly",
+    "description": "Once carried roughly 95 percent of the web and came preinstalled on nearly every computer on Earth. Then came a decade of being the browser you used to download another browser. Retired June 15, 2022. It had a long life, by any standard. Nothing replaced it that was not already there.",
+    "died": "2022",
+    "epitaph": "It is time to move to Edge.",
+    "id": "internet-explorer",
+    "name": "Internet Explorer",
+    "silence_days": 1620,
+    "style": "gothic",
+    "tech": [
+      "Browser",
+      "Windows"
+    ]
+  },
+  {
+    "born": "1996",
+    "cause": "Cold case, closed by the coroner",
+    "description": "Flash animated the early web: the games, the cartoons, the video players, the menus that should never have been menus. An open letter in 2010 began the end, phones refused to carry it, and support stopped on the last day of 2020. A whole era of the internet is archived in its file format.",
+    "died": "2020",
+    "epitaph": "No longer supported after December 2020.",
+    "id": "adobe-flash",
+    "name": "Adobe Flash",
+    "silence_days": 2150,
+    "style": "gothic",
+    "tech": [
+      "Plugin",
+      "Web"
+    ]
+  },
+  {
+    "born": "2003",
+    "cause": "Died as it lived: one more call",
+    "description": "Skype made the world talk for free, carried a huge share of all international calls, and became a verb. Microsoft bought it for 8.5 billion dollars, slowly rebuilt it several times, and retired it in May 2025 in favor of Teams. Its ringtone is in a museum of the mind.",
+    "died": "2025",
+    "epitaph": "The whole world can talk for free.",
+    "id": "skype",
+    "name": "Skype",
+    "silence_days": 565,
+    "style": "tablet",
+    "tech": [
+      "VoIP",
+      "Messaging"
+    ]
+  },
+  {
+    "born": "2001",
+    "cause": "Survived by its own successor",
+    "description": "A thousand songs in your pocket rewired the music industry and saved its company. Over 450 million were sold. Then the iPhone absorbed it whole, and the last model was discontinued in May 2022. It had a long life, by side-project standards. The Society notes what replaced it, because it is the same logo.",
+    "died": "2022",
+    "epitaph": "1,000 songs in your pocket.",
+    "id": "ipod",
+    "name": "iPod",
+    "silence_days": 1655,
+    "style": "gothic",
+    "tech": [
+      "Hardware",
+      "Music"
+    ]
+  },
+  {
+    "born": "2011",
+    "cause": "One more fix, then the plug",
+    "description": "Google's fourth attempt at a social network was wired into everything its maker owned, which is exactly what people resented. A data exposure in 2018 moved the funeral up; the doors closed April 2, 2019. Its best ideas, circles and hangouts, were survived by everyone else's products.",
+    "died": "2019",
+    "epitaph": "Real-life sharing, rethought for the web.",
+    "id": "google-plus",
+    "name": "Google+",
+    "silence_days": 2425,
+    "style": "tablet",
+    "tech": [
+      "Social",
+      "Web"
+    ]
+  },
+  {
+    "born": "1997",
+    "cause": "Away message: permanent",
+    "description": "AOL Instant Messenger was the social network before the word existed: screen names, buddy lists, away messages as literature, and a running man who meant your friends were home. It shut down on December 15, 2017. A generation's first audience is still out there, just on other services now.",
+    "died": "2017",
+    "epitaph": "Away message: gone forever.",
+    "id": "aim",
+    "name": "AIM",
+    "silence_days": 3265,
+    "style": "gothic",
+    "tech": [
+      "Messaging",
+      "Desktop"
+    ]
+  },
+  {
+    "born": "2010",
+    "cause": "Died in a merge of strategies",
+    "description": "The most beautiful phone interface of its era, with an app store the world never moved into. Microsoft bought Nokia's phone business, wrote it down for 7.6 billion dollars, and confirmed the end in 2017; support finished in 2019. Reviewers loved it. There were simply never enough of them.",
+    "died": "2017",
+    "epitaph": "Put people first.",
+    "id": "windows-phone",
+    "name": "Windows Phone",
+    "silence_days": 3330,
+    "style": "tablet",
+    "tech": [
+      "Mobile",
+      "OS"
+    ]
+  },
+  {
+    "born": "1994",
+    "cause": "Sudden cardiac arrest, browser war",
+    "description": "Netscape Navigator was the first web browser most people ever touched, and its maker helped invent JavaScript and the secure web along the way. The browser war was lost to a rival that shipped free with the operating system. Support ended in 2008. Survived, in spirit and in code, by Firefox.",
+    "died": "2008",
+    "epitaph": "Netscape Now!",
+    "id": "netscape",
+    "name": "Netscape",
+    "silence_days": 6840,
+    "style": "gothic",
+    "tech": [
+      "Browser",
+      "Web"
+    ]
+  },
+  {
+    "born": "1994",
+    "cause": "Neighborhood demolished",
+    "description": "A third of the early web lived here: neighborhoods of hand-built pages, guestbooks, MIDI, and glitter text. Yahoo bought it for billions and closed the US service in October 2009. Volunteers archived a million pages before the bulldozers. It had a real season, and the season was the whole early internet.",
+    "died": "2009",
+    "epitaph": "Under construction.",
+    "id": "geocities",
+    "name": "GeoCities",
+    "silence_days": 6250,
+    "style": "gothic",
+    "tech": [
+      "Web",
+      "Hosting"
+    ]
+  },
+  {
+    "born": "1999",
+    "cause": "Died in court",
+    "description": "Sixty million people sharing music from their dorm rooms, and the entire recording industry in court over it. The original service was shut down in July 2001. It burned fast. Everything about how music moves now was decided in its two years.",
+    "died": "2001",
+    "epitaph": "Download complete.",
+    "id": "napster",
+    "name": "Napster",
+    "silence_days": 9300,
+    "style": "tablet",
+    "tech": [
+      "P2P",
+      "Music"
+    ]
+  },
+  {
+    "born": "1995",
+    "cause": "Faded away quietly",
+    "description": "For a few years this was how you found anything: the biggest index on Earth, queried by people who still said 'the Net.' Sold, resold, folded into Yahoo, and switched off in July 2013, by then a footnote in its own results.",
+    "died": "2013",
+    "epitaph": "The guide to the Net.",
+    "id": "altavista",
+    "name": "AltaVista",
+    "silence_days": 4700,
+    "style": "gothic",
+    "tech": [
+      "Search",
+      "Web"
+    ]
+  },
+  {
+    "born": "2002",
+    "cause": "Survived by everyone",
+    "description": "The first of its kind, with millions of members before the word 'social network' settled. Slow pages and fake profiles drove its crowd to younger rivals; it relaunched as a games site in 2011 and suspended for good in 2015. The Society notes what replaced it: everyone.",
+    "died": "2011",
+    "epitaph": "The original social network.",
+    "id": "friendster",
+    "name": "Friendster",
+    "silence_days": 5500,
+    "style": "tablet",
+    "tech": [
+      "Social",
+      "Web"
+    ]
+  },
+  {
+    "born": "2009",
+    "cause": "Died ahead of its time",
+    "description": "A real-time, threaded, collaborative everything, unveiled to applause and abandoned within a year of launch. Read-only in 2012. Half its ideas quietly moved into documents and chat tools that arrived later and explained themselves better.",
+    "died": "2012",
+    "epitaph": "Email, if it were invented today.",
+    "id": "google-wave",
+    "name": "Google Wave",
+    "silence_days": 5100,
+    "style": "gothic",
+    "tech": [
+      "Collaboration",
+      "Web"
+    ]
+  },
+  {
+    "born": "2004",
+    "cause": "Died abroad, beloved",
+    "description": "A footnote in its home country and a phenomenon in Brazil and India, where for years it simply was social networking. Google closed it in September 2014. Its mourners were counted in tens of millions, an ocean away from the headquarters that ended it.",
+    "died": "2014",
+    "epitaph": "Scrap me.",
+    "id": "orkut",
+    "name": "Orkut",
+    "silence_days": 4450,
+    "style": "tablet",
+    "tech": [
+      "Social",
+      "Web"
+    ]
+  },
+  {
+    "born": "2003",
+    "cause": "Starved",
+    "description": "Social bookmarking before the feed ate the web: your links, tagged and shared, a library of what the internet thought was worth keeping. Sold twice, neglected, and made read-only in 2017. The bookmarks outlived the bookmarker.",
+    "died": "2017",
+    "epitaph": "Keep, share, discover.",
+    "id": "delicious",
+    "name": "Delicious",
+    "silence_days": 3300,
+    "style": "gothic",
+    "tech": [
+      "Bookmarks",
+      "Web"
+    ]
+  },
+  {
+    "born": "2001",
+    "cause": "Died in a pivot",
+    "description": "One button and the interesting internet arrived at random, back when randomness was a feature. Fifteen years of serendipity ended in June 2018 when its users were moved to a successor most never asked for. The slot it filled is still open.",
+    "died": "2018",
+    "epitaph": "Stumble!",
+    "id": "stumbleupon",
+    "name": "StumbleUpon",
+    "silence_days": 3050,
+    "style": "tablet",
+    "tech": [
+      "Discovery",
+      "Web"
+    ]
+  },
+  {
+    "born": "2004",
+    "cause": "Died in a redesign",
+    "description": "The front page of the internet, voted on by its readers, until a 2010 redesign so hated that the readers left in a weekend and founded the competition's traffic. Sold for parts in 2012. The redesign is still taught as a warning.",
+    "died": "2012",
+    "epitaph": "Digg it.",
+    "id": "digg",
+    "name": "Digg",
+    "silence_days": 5100,
+    "style": "gothic",
+    "tech": [
+      "News",
+      "Social"
+    ]
+  },
+  {
+    "born": "1997",
+    "cause": "Cold case",
+    "description": "The music player of a generation: skinnable, beloved, and bundled with everyone's MP3 library. AOL, which paid 80 million dollars for its maker, announced its end in 2013. The llama outlived the roadmap.",
+    "died": "2013",
+    "epitaph": "It really whips the llama's ass.",
+    "id": "winamp",
+    "name": "Winamp",
+    "silence_days": 4700,
+    "style": "tablet",
+    "tech": [
+      "Music",
+      "Desktop"
+    ]
+  },
+  {
+    "born": "2013",
+    "cause": "Died of exposure",
+    "description": "A computer on your face, years before the world had decided how it felt about that. The consumer version ended in 2015 amid a privacy backlash; the enterprise edition carried on quietly until 2023. It had two lives and was early for both.",
+    "died": "2023",
+    "epitaph": "Okay, Glass.",
+    "id": "google-glass",
+    "name": "Google Glass",
+    "silence_days": 1330,
+    "style": "tablet",
+    "tech": [
+      "Wearables",
+      "Hardware"
+    ]
+  },
+  {
+    "born": "1996",
+    "cause": "Died in a merger",
+    "description": "The PalmPilot put a computer in a shirt pocket a decade before the smartphone settled, and webOS was the most elegant mobile system of its year. HP bought Palm for 1.2 billion dollars and discontinued the devices sixteen months later. Survived by every phone now in every pocket.",
+    "died": "2011",
+    "epitaph": "HotSync complete.",
+    "id": "palm",
+    "name": "Palm",
+    "silence_days": 5500,
+    "style": "gothic",
+    "tech": [
+      "Mobile",
+      "Hardware"
+    ]
+  },
+  {
+    "born": "1985",
+    "cause": "Died of convenience",
+    "description": "The Friday-night empire: thousands of stores at its peak, and a business model partly built on late fees. Netflix offered no fees, then streaming. Blockbuster filed for bankruptcy in September 2010. The last store, in Bend, Oregon, keeps the lights on as a memorial.",
+    "died": "2010",
+    "epitaph": "Be kind. Rewind.",
+    "id": "blockbuster",
+    "name": "Blockbuster Video",
+    "silence_days": 5903,
+    "tech": [
+      "Video rental",
+      "Retail"
+    ]
+  },
+  {
+    "born": "1991",
+    "cause": "Faded away quietly",
+    "description": "The sound of the internet arriving: a screech, a handshake, and a voice saying you had mail. At its peak it carried tens of millions of households online. Broadband made it a museum piece, and the service ended on September 30, 2025, after thirty-four years. The longest goodbye in the grounds.",
+    "died": "2025",
+    "epitaph": "You've got mail. No more.",
+    "id": "aol-dialup",
+    "name": "AOL Dial-Up",
+    "silence_days": 417,
+    "tech": [
+      "Internet",
+      "Dial-up"
+    ]
+  },
+  {
+    "born": "1999",
+    "cause": "Died in a merger",
+    "description": "Where a generation learned to type fast and feel things in status messages. Microsoft folded it into Skype in April 2013. The Society notes the timing: the successor that absorbed it is buried in these same grounds, and outlived it by only twelve years.",
+    "died": "2013",
+    "epitaph": "brb.",
+    "id": "msn-messenger",
+    "name": "MSN Messenger",
+    "silence_days": 4975,
+    "tech": [
+      "Messaging",
+      "Microsoft"
+    ]
+  },
+  {
+    "born": "1996",
+    "cause": "Killed by a rename",
+    "description": "You asked a butler, in full sentences, and he fetched the web. Search learned to prefer keywords, and in 2006 the company retired Jeeves and became Ask.com. The name died so the engine could live. The Society has a verdict for exactly this, and it is carved on the stone.",
+    "died": "2006",
+    "epitaph": "The butler was dismissed.",
+    "id": "ask-jeeves",
+    "name": "Ask Jeeves",
+    "silence_days": 7520,
+    "tech": [
+      "Search"
+    ]
+  },
+  {
+    "born": "2012",
+    "cause": "Died in an acquisition",
+    "description": "The crowdfunding darling that proved the smartwatch before the giants arrived: a week of battery and an e-paper face. Fitbit bought the software in December 2016 and the watches were left to fade. Its fans kept its memory running for years. The record says it was loved.",
+    "died": "2016",
+    "epitaph": "Time ran out.",
+    "id": "pebble",
+    "name": "Pebble",
+    "silence_days": 3636,
+    "tech": [
+      "Wearables",
+      "Kickstarter"
+    ]
+  },
+  {
+    "born": "2014",
+    "cause": "Killed by its own family",
+    "description": "Gmail's experimental sibling: bundles, reminders, and the snooze the whole industry copied. Google shut it in April 2019 and folded the best ideas back into Gmail. The family plot gains another stone. The family keeps digging.",
+    "died": "2019",
+    "epitaph": "Snoozed forever.",
+    "id": "google-inbox",
+    "name": "Google Inbox",
+    "silence_days": 2790,
+    "tech": [
+      "Email",
+      "Google"
+    ]
+  },
+  {
+    "born": "2015",
+    "cause": "Killed by its own family",
+    "description": "Twitter bought it before it launched, and for a while anyone could broadcast to the world from a phone. The feature moved into the main app, and the standalone service closed in March 2021. It is survived by every Go Live button everywhere.",
+    "died": "2021",
+    "epitaph": "Live. Then not.",
+    "id": "periscope",
+    "name": "Periscope",
+    "silence_days": 2061,
+    "tech": [
+      "Livestreaming",
+      "Twitter"
+    ]
+  },
+  {
+    "born": "2013",
+    "cause": "Killed by its own family",
+    "description": "Google's third or fourth attempt at one messaging app, depending on how the counting is done. It was replaced by Google Chat in November 2022. The Society keeps a standing section for this family. Regulars know the way.",
+    "died": "2022",
+    "epitaph": "Moved to Chat.",
+    "id": "google-hangouts",
+    "name": "Google Hangouts",
+    "silence_days": 1481,
+    "tech": [
+      "Messaging",
+      "Google"
+    ]
+  },
+  {
+    "born": "2011",
+    "cause": "Died in an acquisition",
+    "description": "The to-do list people genuinely loved: simple, everywhere, and finished. Microsoft bought its maker in 2015, built To Do with the same team, and switched Wunderlist off in May 2020. Every list it ever held ends the same way now. Complete.",
+    "died": "2020",
+    "epitaph": "All tasks complete.",
+    "id": "wunderlist",
+    "name": "Wunderlist",
+    "silence_days": 2390,
+    "tech": [
+      "Productivity",
+      "Microsoft"
+    ]
+  },
+  {
+    "born": "2007",
+    "cause": "Died in court",
+    "description": "Upload any song, hear any song: beloved by users and sued by every major label. It closed on April 30, 2015 under a legal settlement, apologizing on the way out. Napster, elsewhere in these grounds, could have told it how the case ends.",
+    "died": "2015",
+    "epitaph": "Settlement reached.",
+    "id": "grooveshark",
+    "name": "Grooveshark",
+    "silence_days": 4223,
+    "tech": [
+      "Music",
+      "Streaming"
+    ]
+  },
+  {
+    "born": "1999",
+    "cause": "Killed by a touchscreen",
+    "description": "The keyboard in every boardroom, and the signature line under a decade of email. The touchscreen changed the question, and BlackBerry never answered it. The company lives on in software; the phones' services ended on January 4, 2022, and it is the phones that are buried here.",
+    "died": "2022",
+    "epitaph": "Sent from my BlackBerry.",
+    "id": "blackberry",
+    "name": "BlackBerry",
+    "silence_days": 1782,
+    "tech": [
+      "Mobile",
+      "Hardware"
+    ]
+  },
+  {
+    "born": "2010",
+    "cause": "Starved",
+    "description": "From the founders of Skype: a beautiful, social music service that critics adored and the market outspent. Rdio filed for bankruptcy in November 2015 and Pandora bought the pieces. The design is still missed. The record says so, in those words, often.",
+    "died": "2015",
+    "epitaph": "The music stopped.",
+    "id": "rdio",
+    "name": "Rdio",
+    "silence_days": 3987,
+    "tech": [
+      "Music",
+      "Streaming"
+    ]
+  },
+  {
+    "born": "2014",
+    "cause": "Killed by its own family",
+    "description": "GitHub's own editor: hackable to the core, beloved, and the proving ground for Electron. GitHub sunset it on December 15, 2022 to bet on VS Code, and archived the repository with 60,688 stars on the stone. The Society records the number because the number was real.",
+    "died": "2022",
+    "epitaph": "Hackable to the core.",
+    "id": "atom",
+    "name": "Atom",
+    "silence_days": 1418,
+    "tech": [
+      "JavaScript",
+      "Editor"
+    ],
+    "url": "https://github.com/atom/atom",
+    "stars": 60688
+  },
+  {
+    "born": "2009",
+    "cause": "Died of a sequel",
+    "description": "The framework that taught a generation of developers to build apps in the browser. Google ended its life on December 31, 2021, years after its successor, Angular, had replaced it in everything but name recognition. The Society has a verdict for exactly this, and it is carved on the stone.",
+    "died": "2021",
+    "epitaph": "HTML, enhanced.",
+    "id": "angularjs",
+    "name": "AngularJS",
+    "silence_days": 953,
+    "tech": [
+      "JavaScript",
+      "Framework"
+    ],
+    "url": "https://github.com/angular/angular.js",
+    "stars": 58425
+  },
+  {
+    "born": "2011",
+    "cause": "Outpaced",
+    "description": "A headless browser before browsers came headless: it powered a decade of testing, scraping, and screenshots. When Chrome shipped its own headless mode, the maintainer stepped down and development was suspended in 2018. The repository is archived. The ghost was outlived by its use case.",
+    "died": "2018",
+    "epitaph": "The headless ghost.",
+    "id": "phantomjs",
+    "name": "PhantomJS",
+    "silence_days": 1456,
+    "tech": [
+      "C++",
+      "Browser automation"
+    ],
+    "url": "https://github.com/ariya/phantomjs",
+    "stars": 29410
+  },
+  {
+    "born": "2011",
+    "cause": "Dropped by its maker",
+    "description": "Adobe's open editor, built in the very languages it edited, with live preview before live preview was common. Adobe ended support on September 1, 2021. The community carried the code away to a new home; the original repository, 32,963 stars, is archived here.",
+    "died": "2021",
+    "epitaph": "An editor built in what it edited.",
+    "id": "brackets",
+    "name": "Brackets",
+    "silence_days": 1623,
+    "tech": [
+      "JavaScript",
+      "Editor"
+    ],
+    "url": "https://github.com/adobe/brackets",
+    "stars": 32963
+  },
+  {
+    "born": "2010",
+    "cause": "Faded away quietly",
+    "description": "jQuery's answer to the touch era: one framework for every phone browser of 2011. The platform grew up, responsive design took its job, and it was deprecated on October 7, 2021, the very day of its repository's last commit. The record and the stone agree to the day.",
+    "died": "2021",
+    "epitaph": "Write less, do more.",
+    "id": "jquery-mobile",
+    "name": "jQuery Mobile",
+    "silence_days": 1871,
+    "tech": [
+      "JavaScript",
+      "Mobile web"
+    ],
+    "url": "https://github.com/jquery/jquery-mobile",
+    "stars": 9582
+  },
+  {
+    "born": "2014",
+    "cause": "Outpaced",
+    "description": "Docker's tool for conjuring machines to run containers on: create, manage, connect. Desktop and contexts absorbed its work, Docker deprecated it, and the repository was archived after a last commit in February 2022.",
+    "died": "2022",
+    "epitaph": "It made the machines.",
+    "id": "docker-machine",
+    "name": "Docker Machine",
+    "silence_days": 1742,
+    "tech": [
+      "Go",
+      "Containers"
+    ],
+    "url": "https://github.com/docker/machine",
+    "stars": 6602
+  },
+  {
+    "born": "2009",
+    "cause": "Killed by its own family",
+    "description": "Google's battle-tested JavaScript library, a foundation under Gmail and Docs, maintained long after the ecosystem moved on. Google deprecated it in 2023 and archived the repository in August 2024. Few stones in these grounds carried more production weight.",
+    "died": "2024",
+    "epitaph": "The library behind Gmail.",
+    "id": "closure-library",
+    "name": "Closure Library",
+    "silence_days": 842,
+    "tech": [
+      "JavaScript",
+      "Library"
+    ],
+    "url": "https://github.com/google/closure-library",
+    "stars": 4883
+  },
+  {
+    "born": "2008",
+    "cause": "Died of a sequel",
+    "description": "The port that brought Processing sketches to the web. Its own team wound it down as p5.js, its spiritual successor, took the mission forward. The repository was archived after a last commit in December 2018. Survived by p5.js, and the timing is noted with affection.",
+    "died": "2018",
+    "epitaph": "Processing, in the browser.",
+    "id": "processing-js",
+    "name": "Processing.js",
+    "silence_days": 2909,
+    "tech": [
+      "Processing",
+      "Graphics"
+    ],
+    "url": "https://github.com/processing-js/processing-js",
+    "stars": 3086
+  },
+  {
+    "born": "2014",
+    "cause": "Killed by its own family",
+    "description": "Facebook's application architecture, the pattern that taught the web unidirectional data flow and the idea Redux ran away with. Facebook pointed developers elsewhere for years before archiving the repository in 2023, 17,435 stars on the stone. The pattern outlived the library everywhere.",
+    "died": "2023",
+    "epitaph": "Unidirectional data flow.",
+    "id": "flux",
+    "name": "Flux",
+    "silence_days": 1341,
+    "tech": [
+      "JavaScript",
+      "Architecture"
+    ],
+    "url": "https://github.com/facebook/flux",
+    "stars": 17435
+  },
+  {
+    "born": "2011",
+    "cause": "Died of progress",
+    "description": "FT Labs' tiny library that removed the 300ms tap delay from mobile browsers, installed on a generation of sites. Then the browsers fixed the delay themselves, and FastClick's own README pronounced it unnecessary. Few projects get to die because the world improved.",
+    "died": "2021",
+    "epitaph": "No more 300ms.",
+    "id": "fastclick",
+    "name": "FastClick",
+    "silence_days": 1926,
+    "tech": [
+      "JavaScript",
+      "Mobile web"
+    ],
+    "url": "https://github.com/ftlabs/fastclick",
+    "stars": 18483
+  },
+  {
+    "born": "2013",
+    "cause": "Died of a sequel",
+    "description": "The linter that kept TypeScript honest for years, from Palantir. In 2019 its own makers deprecated it and pointed everyone to ESLint, which had grown the architecture TSLint lacked. The repository was archived with 5,891 stars. Few tools get an obituary written by their own authors. This one did.",
+    "died": "2019",
+    "epitaph": "Linted, then left.",
+    "id": "tslint",
+    "name": "TSLint",
+    "silence_days": 2067,
+    "tech": [
+      "TypeScript",
+      "Tooling"
+    ],
+    "url": "https://github.com/palantir/tslint",
+    "stars": 5891
+  },
+  {
+    "born": "2015",
+    "cause": "Killed by its own family",
+    "description": "Facebook's open IDE, built on Atom and beloved by the React Native generation. Facebook discontinued it in December 2018. Its foundation, Atom, lies elsewhere in these grounds; the Society has placed the stones within sight of each other, because that is how it happened.",
+    "died": "2018",
+    "epitaph": "Built on Atom. Buried near it.",
+    "id": "nuclide",
+    "name": "Nuclide",
+    "silence_days": 2901,
+    "tech": [
+      "JavaScript",
+      "Editor"
+    ],
+    "url": "https://github.com/facebook/nuclide",
+    "stars": 7702
+  },
+  {
+    "born": "2015",
+    "cause": "Cancelled by its maker",
+    "description": "HashiCorp announced Otto in 2015 as the successor to Vagrant: one tool from development to deployment. A year later HashiCorp cancelled it, honestly and in public, and went back to its other tools. The repository lingered until 2020, as repositories do. The idea was not wrong. The timing was the whole story.",
+    "died": "2016",
+    "epitaph": "The successor to Vagrant, briefly.",
+    "id": "otto",
+    "name": "Otto",
+    "silence_days": 2339,
+    "tech": [
+      "DevOps",
+      "HashiCorp"
+    ],
+    "url": "https://github.com/hashicorp/otto",
+    "stars": 4237
+  },
+  {
+    "born": "2012",
+    "cause": "Died with its subject",
+    "description": "Mozilla's audacious project to run Flash content in pure JavaScript, no plugin. It worked better than anyone expected, and it did not matter: the web was leaving Flash behind anyway, and Mozilla shelved Shumway in 2016. Flash itself is buried in these grounds. Interpreter and subject, reunited.",
+    "died": "2016",
+    "epitaph": "It played Flash without Flash.",
+    "id": "shumway",
+    "name": "Shumway",
+    "silence_days": 2773,
+    "tech": [
+      "TypeScript",
+      "Mozilla"
+    ],
+    "url": "https://github.com/mozilla/shumway",
+    "stars": 3662
+  },
+  {
+    "born": "2006",
+    "cause": "Killed by a rename",
+    "description": "The enterprise PHP framework of its era, from the company behind PHP itself. In 2019 the project moved to the Linux Foundation and continued as Laminas; the code lives on under the new name. What is buried here is the name, with full honors, the way the Society buries all its renames.",
+    "died": "2019",
+    "epitaph": "Renamed, rehomed, released.",
+    "id": "zend-framework",
+    "name": "Zend Framework",
+    "silence_days": 2740,
+    "tech": [
+      "PHP",
+      "Framework"
+    ],
+    "url": "https://github.com/zendframework/zendframework",
+    "stars": 5426
+  },
+  {
+    "born": "2013",
+    "cause": "Outpaced",
+    "description": "Google's compiler for writing tomorrow's JavaScript today, before Babel took that job and kept it. Traceur was superseded for years before Google archived the repository; the stone is dated by the paperwork, and the Society notes the gap between the death and the filing, because the gap is the story of most tools.",
+    "died": "2024",
+    "epitaph": "Tomorrow's JavaScript, yesterday.",
+    "id": "traceur",
+    "name": "Traceur",
+    "silence_days": 711,
+    "tech": [
+      "JavaScript",
+      "Compiler"
+    ],
+    "url": "https://github.com/google/traceur-compiler",
+    "stars": 8121
+  },
+  {
+    "born": "2008",
+    "cause": "Dropped by its maker",
+    "description": "The original promise of hybrid apps: build with web technology, ship to every phone. Adobe acquired its maker in 2011 and ended PhoneGap in August 2020. The main repository had fallen silent in 2015 while the tooling lived on elsewhere; its engine, Cordova, still breathes under Apache's care. The name is buried here.",
+    "died": "2020",
+    "epitaph": "Write once. Ship everywhere.",
+    "id": "phonegap",
+    "name": "PhoneGap",
+    "silence_days": 4279,
+    "tech": [
+      "JavaScript",
+      "Mobile"
+    ],
+    "url": "https://github.com/phonegap/phonegap",
+    "stars": 3934
+  },
+  {
+    "born": "2014",
+    "cause": "Died of a sequel",
+    "description": "Microsoft's framework for building native apps for every platform from one C# codebase. It was succeeded by .NET MAUI, and Microsoft ended Xamarin support on May 1, 2024. The repository was archived days before the end. A recent grave, and a well-kept one.",
+    "died": "2024",
+    "epitaph": "One codebase, every platform.",
+    "id": "xamarin-forms",
+    "name": "Xamarin.Forms",
+    "silence_days": 936,
+    "tech": [
+      "C#",
+      "Mobile"
+    ],
+    "url": "https://github.com/xamarin/Xamarin.Forms",
+    "stars": 5516
+  },
+  {
+    "born": "2014",
+    "cause": "Outpaced",
+    "description": "Docker's original standalone orchestrator, from the years when the container wars were undecided. Kubernetes decided them. This stone is for the standalone Swarm, archived in 2020; the swarm mode built into Docker Engine is a different creature and lives on, and the Society does not bury the living.",
+    "died": "2020",
+    "epitaph": "Outclustered.",
+    "id": "docker-swarm",
+    "name": "Docker Swarm",
+    "silence_days": 2354,
+    "tech": [
+      "Go",
+      "Containers"
+    ],
+    "url": "https://github.com/docker/swarm",
+    "stars": 5716
+  }
 ]

@@ -200,6 +200,9 @@ function makeTerminalPlaqueTexture(project) {
     190, 25, dimCyan);
   line("LAST COMMIT: " + project.silence_days + " DAYS AGO", 232, 25,
     dimCyan);
+  if (project.stars) {
+    line("STARS: " + project.stars.toLocaleString(), 274, 25, dimCyan);
+  }
   let y = 300;
   if (project.epitaph) {
     g.font = "25px 'Courier New', monospace";
@@ -513,6 +516,9 @@ function openPanel(project) {
     : project.born + " — " + project.died;
   el("panel-silent").textContent = project.silence_days
     ? "Silent for " + project.silence_days + " days now."
+    : "";
+  el("panel-stars").textContent = project.stars
+    ? "Buried with " + project.stars.toLocaleString() + " stars."
     : "";
   el("panel-rose").textContent = project.resurrections > 0
     ? "Back from the dead " +
@@ -1437,7 +1443,7 @@ const allPublic = [];
 async function loadPublicGrounds() {
   let entries;
   try {
-    const res = await fetch("public.json?v=23");
+    const res = await fetch("public.json?v=24");
     if (!res.ok) return;
     entries = await res.json();
   } catch (e) {
