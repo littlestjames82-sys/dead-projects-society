@@ -1,5 +1,7 @@
 # Dead Projects Society
 
+[![PyPI](https://img.shields.io/pypi/v/dead-projects-society)](https://pypi.org/project/dead-projects-society/)
+
 **A funeral for your abandoned side projects.**
 
 ![Dead Projects Society reading the roll of the departed](https://raw.githubusercontent.com/littlestjames82-sys/dead-projects-society/main/assets/demo.gif)
@@ -219,6 +221,11 @@ MIT. By [Ghost Developer Studio](https://ghostdeveloperstudio.com).
 Changes are recorded in the [CHANGELOG](https://github.com/littlestjames82-sys/dead-projects-society/blob/main/CHANGELOG.md); the Society
 keeps its own record as carefully as everyone else's.
 
-*See also: [PIP](https://github.com/littlestjames82-sys/pip-pip), which
-reviews the developer, and [Snap Judgment](https://github.com/littlestjames82-sys/snap-judgment),
-which judges the screenshots folder. The Society judges the projects.*
+## Also from Ghost Developer Studio
+
+The Society judges the projects. Its sister tools judge the rest:
+
+- **PIP**: reviews the developer from their own git history, with grades and a report card. `pip install on-a-pip`
+- **Snap Judgment**: judges your screenshots folder from file metadata only, with a courtroom verdict. `pip install snap-judgment`
+- **Ghost Hands**: governed browser automation for AI agents, with every action classified, policy checked, and trailed. `pip install ghost-hands`
+- **Agent Seatbelt**: guardrails for AI coding agents, gating tool calls before they run. `pip install ghost-seatbelt`
