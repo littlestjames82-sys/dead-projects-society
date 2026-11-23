@@ -74,6 +74,9 @@ Or the classic way:
 pip install dead-projects-society
 ```
 
+Shell completions for bash and zsh live in the repository's
+`completions/` folder, generated from the CLI's own flag list.
+
 Or run it straight from a checkout, no install needed:
 
 ```bash
