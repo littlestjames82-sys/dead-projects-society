@@ -2,7 +2,7 @@
 
 **A funeral for your abandoned side projects.**
 
-![Dead Projects Society reading the roll of the departed](assets/demo.gif)
+![Dead Projects Society reading the roll of the departed](https://raw.githubusercontent.com/littlestjames82-sys/dead-projects-society/main/assets/demo.gif)
 
 Point it at the folder where your projects go to die. It reads each git
 repository's history and builds a graveyard: a tombstone for every project
@@ -213,7 +213,7 @@ commit every few weeks, cold cases silent for two years, and more.
 ## License
 
 MIT. By [Ghost Developer Studio](https://ghostdeveloperstudio.com).
-Changes are recorded in the [CHANGELOG](CHANGELOG.md); the Society
+Changes are recorded in the [CHANGELOG](https://github.com/littlestjames82-sys/dead-projects-society/blob/main/CHANGELOG.md); the Society
 keeps its own record as carefully as everyone else's.
 
 *See also: [PIP](https://github.com/littlestjames82-sys/pip-pip), which
