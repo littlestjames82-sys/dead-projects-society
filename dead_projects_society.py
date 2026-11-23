@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.22.0"
+VERSION = "0.23.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1295,7 +1295,7 @@ left this machine. The Society does not bury the living.</footer>
 """
 
 
-def render_html(cem):
+def render_html(cem, log=None):
     def esc(s):
         return xml_escape(str(s), {'"': "&quot;"})
 
@@ -1329,6 +1329,27 @@ def render_html(cem):
                esc(compose_eulogy(p)), risen, factors, autopsy_line,
                esc(p.survived_by)))
     extra = []
+    if log:
+        if log["first_visit"]:
+            log_body = ("No previous visit on record. The log begins "
+                        "today; %d projects entered into it."
+                        % len(log["newly_born"]))
+        else:
+            log_rows = [("Newly buried", log["newly_buried"]),
+                        ("Finished, and at rest", log["newly_resting"]),
+                        ("Risen", log["risen"]),
+                        ("Stirred in their graves", log["stirred"]),
+                        ("Newly born", log["newly_born"])]
+            parts = ["%s: %s" % (label, ", ".join(esc(n) for n in names))
+                     for label, names in log_rows if names]
+            if not parts:
+                parts = ["Nothing changed. The grounds are as you "
+                         "left them."]
+            parts.append("Still buried, undisturbed: %d."
+                         % log["still_buried"])
+            log_body = "<br>".join(parts)
+        extra.append('<h3 class="section">THE GROUNDSKEEPER&rsquo;S '
+                     'LOG</h3><div class="living">%s</div>' % log_body)
     honors = society_honors(cem)
     if honors:
         rows = "<br>".join(
@@ -2152,7 +2173,7 @@ def main(argv=None):
               % (args.certificates, len(subjects), len(risen)))
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
-            fh.write(render_html(cem))
+            fh.write(render_html(cem, log if args.diff else None))
         print("Graveyard written to %s" % args.html)
     if args.card:
         with open(args.card, "w", encoding="utf-8") as fh:

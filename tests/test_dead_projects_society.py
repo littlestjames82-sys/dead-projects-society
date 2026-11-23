@@ -1169,3 +1169,27 @@ class TestHtmlAutopsy(FixtureBase):
         self.assertIn("Autopsy:", page)
         self.assertIn("commits a month", page)
         self.assertIn("Revival:", page)
+
+
+class TestHtmlGroundskeeperLog(FixtureBase):
+    """v0.23.0: the HTML report carries the log when --diff ran."""
+
+    def _cem(self):
+        make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "ambitious start"),
+            ("2025-02-03T09:00:00", "wip"),
+        ], readme=True, remote=True)
+        return dps.build_cemetery(self.tmp, now=NOW)
+
+    def test_log_section_present(self):
+        log = {"first_visit": False, "newly_buried": ["gone"],
+               "newly_resting": [], "risen": [], "stirred": [],
+               "newly_born": [], "still_buried": 1}
+        page = dps.render_html(self._cem(), log)
+        self.assertIn("GROUNDSKEEPER", page)
+        self.assertIn("Newly buried: gone", page)
+        self.assertIn("Still buried, undisturbed: 1.", page)
+
+    def test_no_log_no_section(self):
+        page = dps.render_html(self._cem())
+        self.assertNotIn("GROUNDSKEEPER", page)

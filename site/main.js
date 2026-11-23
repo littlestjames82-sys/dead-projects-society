@@ -1482,8 +1482,27 @@ async function loadPublicGrounds() {
     btn.appendChild(meta);
     btn.addEventListener("click", () => { stopTour(); visitProject(project); });
     li.appendChild(btn);
+    li.dataset.idx = String(list.children.length);
+    li.dataset.silence = String(project.silence_days || 0);
+    li.dataset.stars = String(project.stars || 0);
     list.appendChild(li);
   }
+  const sortSel = el("public-sort");
+  if (sortSel) sortSel.addEventListener("change", () => {
+    const mode = sortSel.value;
+    const items = [...list.children];
+    const key = {
+      grounds: (li) => Number(li.dataset.idx),
+      silence: (li) => -Number(li.dataset.silence),
+      stars: (li) => -Number(li.dataset.stars),
+      name: (li) => li.textContent.toLowerCase(),
+    }[mode] || ((li) => Number(li.dataset.idx));
+    items.sort((a, b) => {
+      const ka = key(a), kb = key(b);
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
+    for (const li of items) list.appendChild(li);
+  });
   el("public-section").hidden = false;
   buildSectionFilters();
   applyFilters();

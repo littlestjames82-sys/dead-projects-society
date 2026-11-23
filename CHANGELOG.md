@@ -4,6 +4,15 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.23.0] — 2026-11-22
+
+### Added
+- The HTML graveyard report carries the Groundskeeper's Log section
+  when the run uses `--diff`, at parity with the terminal report
+  and the JSON.
+- The web graveyard's Public Grounds can be reordered: as buried,
+  by longest silence, by most stars, or by name.
+
 ## [0.22.0] — 2026-11-21
 
 ### Added

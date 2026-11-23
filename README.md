@@ -151,6 +151,8 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - The HTML graveyard report carries each stone's autopsy line
   (pace, momentum, revival verdict), at parity with the terminal
   report and the web graveyard.
+- The HTML graveyard report also carries the Groundskeeper's Log
+  when the run uses `--diff`.
 - `--fail-if-new-deaths`, with `--diff`, exits with code 3 when the
   Groundskeeper's Log finds a death it has not reported before: a
   project newly buried since the last visit, or one found already
