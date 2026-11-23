@@ -153,6 +153,15 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   report and the web graveyard.
 - The HTML graveyard report also carries the Groundskeeper's Log
   when the run uses `--diff`.
+- `--deep-autopsy` (opt-in, the one code-aware mode): a bounded
+  sample of each buried project (README, manifests, largest source
+  files, final diffs) goes to Muse Ember, which writes a structured
+  autopsy cited to files and commits. Every call is priced before
+  it is made, recorded in a spend ledger, and refused past a hard
+  budget cap (`--deep-budget`, default $10). `--deep-dry-run`
+  assembles the samples and prints the prices without calling.
+  The standard scan never opens a file; this mode exists only
+  because you asked, in so many flags.
 - `--exclude NAME` (repeatable) keeps directories out of the scan:
   vendored checkouts, mirrors, other people's dead.
 - `--fail-if-new-deaths`, with `--diff`, exits with code 3 when the

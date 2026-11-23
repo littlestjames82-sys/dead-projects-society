@@ -54,7 +54,7 @@ about the Society's oldest mistake: silence is not abandonment.
       deepened v0.12.0)
 - [x] Dependency-era signals from the commit record (v0.14.0), and
       the Groundskeeper's Log: --diff between visits (v0.14.0)
-- [ ] The opt-in deep autopsy (code-aware) as a separate mode, later
+- [x] The opt-in deep autopsy (code-aware) as a separate mode: sampler, budget ledger, and Ember client built Nov 23, 2026 for the Muse Ember Hackathon; first live call waits on hackathon selection and credits
 
 ### III. The Resurrection Department — LATER
 AI-assisted revival under governance: isolated workspace, autopsy first,

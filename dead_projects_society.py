@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.24.0"
+VERSION = "0.25.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1128,6 +1128,7 @@ def cemetery_dict(cem):
             "language": p.language or None,
             "dependency_commits": p.dep_commits,
             "dependency_tail_share": round(p.dep_tail_share, 2),
+            "deep_autopsy": getattr(p, "deep_autopsy", None),
         }
     return {
         "tool": "dead-projects-society",
@@ -2051,6 +2052,324 @@ def _save_state(path, state):
 # ---------------------------------------------------------------------------
 
 
+
+# ------------------------------------------------------------------
+# The Deep Autopsy Department (opt-in, code-aware, Ember-powered)
+#
+# The standard scan reads git metadata only and never opens a file.
+# This department is the one deliberate exception, and it is opt-in
+# twice over: the --deep-autopsy flag, and a Meta Model API key the
+# user supplies. When it runs, a bounded sample of the project (its
+# README, manifests, largest source files, and final diffs) is sent
+# to Muse Ember, which writes a structured autopsy cited to files
+# and commits. Every call is priced before it is made, recorded in
+# a ledger, and refused when it would cross the budget cap. The
+# Society's rule stands: nobody's code is read without the owner
+# asking, in so many flags.
+# ------------------------------------------------------------------
+
+import urllib.error
+import urllib.request
+
+DEEP_API_URL = "https://api.meta.ai/v1/responses"
+DEEP_MODEL_DEFAULT = os.environ.get("DPS_DEEP_MODEL", "muse-ember-1.0")
+DEEP_INPUT_USD_PER_TOKEN = 0.10 / 1000000
+DEEP_OUTPUT_USD_PER_TOKEN = 0.50 / 1000000
+DEEP_DEFAULT_BUDGET_USD = 10.00
+DEEP_DEFAULT_MAX_TOKENS = 120000
+DEEP_ASSUMED_OUTPUT_TOKENS = 2500
+_DEEP_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv",
+                   "venv", "dist", "build", "target", ".next",
+                   "vendor", ".hg", ".svn"}
+
+
+class DeepAutopsyError(Exception):
+    """A deep autopsy could not be performed; the reason is plain."""
+
+
+def _est_tokens(text):
+    return (len(text) + 3) // 4
+
+
+def _read_bounded(path, cap):
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as fh:
+            return fh.read(cap)
+    except OSError:
+        return ""
+
+
+def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
+    """Assemble the bounded sample of one project for Ember.
+
+    Returns (text, stats). The sample is the ONLY thing that leaves
+    the machine, and it is assembled entirely from the owner's own
+    folder at the owner's explicit request.
+    """
+    root = p.path
+    parts = []
+    files = []
+    head = ["PROJECT: %s" % p.name,
+            "LIFESPAN: %s to %s (%d commits, %d author(s))"
+            % (p.born.date(), p.died.date(), p.commits, p.authors),
+            "LAST WORDS: %s" % (p.last_words or "")]
+    meta = autopsy(p)
+    if meta:
+        head.append("METADATA AUTOPSY: %s; revival verdict: %s"
+                    % (meta["momentum"], meta["revival_verdict"]))
+    parts.append("\n".join(head))
+
+    for name in sorted(os.listdir(root)):
+        if name.lower().startswith("readme") and \
+                os.path.isfile(os.path.join(root, name)):
+            text = _read_bounded(os.path.join(root, name), 12000)
+            if text:
+                parts.append("===== %s =====\n%s" % (name, text))
+                files.append(name)
+            break
+
+    for name in ("package.json", "pyproject.toml", "Cargo.toml",
+                 "go.mod", "Gemfile", "requirements.txt",
+                 "composer.json", "pom.xml"):
+        path = os.path.join(root, name)
+        if os.path.isfile(path):
+            text = _read_bounded(path, 4000)
+            if text:
+                parts.append("===== %s =====\n%s" % (name, text))
+                files.append(name)
+
+    tree, sized = [], []
+    for base, dirs, names in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in _DEEP_SKIP_DIRS
+                   and not d.startswith(".")]
+        for name in names:
+            full = os.path.join(base, name)
+            rel = os.path.relpath(full, root)
+            tree.append(rel)
+            ext = os.path.splitext(name)[1].lower()
+            if ext in _LANG_BY_EXT:
+                try:
+                    sized.append((os.path.getsize(full), rel, full))
+                except OSError:
+                    pass
+    tree.sort()
+    parts.append("===== FILE TREE (%d files) =====\n%s"
+                 % (len(tree), "\n".join(tree[:200])))
+
+    sized.sort(reverse=True)
+    for _size, rel, full in sized[:3]:
+        text = _read_bounded(full, 15000)
+        if text:
+            parts.append("===== %s =====\n%s" % (rel, text))
+            files.append(rel)
+
+    diff = _git(root, "log", "-p", "-3")
+    if diff:
+        parts.append("===== FINAL COMMITS (git log -p -3) =====\n%s"
+                     % diff[:20000])
+        files.append("git log -p -3")
+
+    text = "\n\n".join(parts)
+    truncated = False
+    if _est_tokens(text) > max_tokens:
+        text = text[: max_tokens * 4]
+        cut = text.rfind("\n")
+        if cut > 0:
+            text = text[:cut]
+        truncated = True
+    stats = {"files": files, "chars": len(text),
+             "est_tokens": _est_tokens(text), "truncated": truncated}
+    return text, stats
+
+
+def deep_ledger_default():
+    return os.path.join(os.path.expanduser("~"),
+                        ".dead-projects-society", "deep-ledger.jsonl")
+
+
+def deep_ledger_total(path):
+    total = 0.0
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    total += float(json.loads(line).get("cost_usd", 0))
+                except (ValueError, TypeError):
+                    continue
+    except OSError:
+        return 0.0
+    return total
+
+
+def deep_ledger_append(path, entry):
+    folder = os.path.dirname(path)
+    if folder:
+        os.makedirs(folder, exist_ok=True)
+    with open(path, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry) + "\n")
+
+
+def deep_estimate(sample_text,
+                  out_tokens=DEEP_ASSUMED_OUTPUT_TOKENS):
+    in_tokens = _est_tokens(sample_text)
+    cost = (in_tokens * DEEP_INPUT_USD_PER_TOKEN
+            + out_tokens * DEEP_OUTPUT_USD_PER_TOKEN)
+    return in_tokens, cost
+
+
+_DEEP_PROMPT = """You are the Deep Autopsy surgeon of the Dead Projects Society. Below is a bounded sample of a dead software project: its metadata verdict, README, manifests, file tree, largest source files, and final commits. Everything you claim must be cited to something in the sample: a file path, a commit, a line of the README. Where the sample does not show something, write "the sample does not show" instead of guessing. Do not invent dates, people, or events.
+
+Write the autopsy in exactly these sections:
+
+CAUSE OF DEATH, CONFIRMED FROM THE BODY
+The specific technical or human cause the evidence supports, with its citations.
+
+CONTRIBUTING CONDITIONS
+What weakened it before the end: unfinished work, dependency weight, scope, silence in the record.
+
+LEFT UNFINISHED
+What the record shows was started and never completed.
+
+SALVAGEABLE PARTS
+What a new project could honestly take from this one.
+
+REVIVAL
+Difficulty (low, moderate, high, or do not attempt) and the first three concrete steps.
+
+FINAL NOTE
+One or two sentences in the Society's register: factual, unsentimental, a little kind.
+
+THE SAMPLE
+"""
+
+
+def build_deep_prompt(p, sample_text):
+    return _DEEP_PROMPT + sample_text
+
+
+def _post_responses(prompt, model, api_key, timeout=180):
+    payload = json.dumps({"model": model, "input": prompt}).encode()
+    req = urllib.request.Request(
+        DEEP_API_URL, data=payload,
+        headers={"Content-Type": "application/json",
+                 "Authorization": "Bearer " + api_key})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _extract_output_text(parsed):
+    if isinstance(parsed.get("output_text"), str):
+        return parsed["output_text"]
+    out = []
+    for item in parsed.get("output") or []:
+        for part in item.get("content") or []:
+            if part.get("type") in ("output_text", "text") \
+                    and isinstance(part.get("text"), str):
+                out.append(part["text"])
+    return "\n".join(out)
+
+
+def _extract_usage(parsed):
+    usage = parsed.get("usage") or {}
+    in_t = usage.get("input_tokens", usage.get("prompt_tokens"))
+    out_t = usage.get("output_tokens", usage.get("completion_tokens"))
+    return in_t, out_t
+
+
+def call_ember(prompt, model, api_key=None, post_fn=None):
+    """One Ember autopsy call. Returns (text, in_tokens, out_tokens);
+    token counts are None when the API does not report usage."""
+    if post_fn is not None:
+        parsed = post_fn(prompt, model)
+    else:
+        key = api_key or os.environ.get("META_API_KEY")
+        if not key:
+            raise DeepAutopsyError(
+                "No Meta Model API key. The Deep Autopsy Department "
+                "needs one: set META_API_KEY, or use --deep-dry-run "
+                "to see the sample and the price without calling.")
+        try:
+            parsed = _post_responses(prompt, model, key)
+        except urllib.error.HTTPError as exc:
+            raise DeepAutopsyError(
+                "The model API refused the call (HTTP %d). Check the "
+                "key and the model id (%s)." % (exc.code, model))
+        except (urllib.error.URLError, OSError) as exc:
+            raise DeepAutopsyError(
+                "The model API could not be reached (%s)." % exc)
+    text = _extract_output_text(parsed)
+    if not text:
+        raise DeepAutopsyError("The model returned no autopsy text.")
+    in_t, out_t = _extract_usage(parsed)
+    return text, in_t, out_t
+
+
+def run_deep_autopsies(cem, args):
+    """The opt-in department at work. Prints its own section and
+    records each report on its project for the JSON output."""
+    budget = getattr(args, "deep_budget", DEEP_DEFAULT_BUDGET_USD)
+    model = getattr(args, "deep_model", DEEP_MODEL_DEFAULT)
+    max_tokens = getattr(args, "deep_max_tokens",
+                         DEEP_DEFAULT_MAX_TOKENS)
+    ledger = getattr(args, "deep_ledger", None) or deep_ledger_default()
+    dry = getattr(args, "deep_dry_run", False)
+    post_fn = getattr(args, "deep_post_fn", None)
+    targets = [p for p in cem.projects
+               if p.status in ("deceased", "resting")]
+    print()
+    print("THE DEEP AUTOPSY DEPARTMENT (opt-in, code-aware)")
+    print("Samples assembled from your own folders are sent to the "
+          "model API. The standard scan never does this.")
+    if not targets:
+        print("No bodies on the table: nothing buried or at rest in "
+              "these grounds.")
+        return
+    spent = deep_ledger_total(ledger)
+    print("Budget: $%.2f of $%.2f spent (ledger: %s)"
+          % (spent, budget, ledger))
+    for p in targets:
+        sample, stats = sample_project(p, max_tokens=max_tokens)
+        _in_t, est = deep_estimate(sample)
+        if spent + est > budget:
+            print("BUDGET GUARD: %s refused. $%.2f spent of $%.2f; "
+                  "this autopsy is estimated at $%.4f."
+                  % (p.name, spent, budget, est))
+            break
+        if dry:
+            print("DRY RUN %s: %d sources sampled, ~%d tokens, "
+                  "estimated $%.4f. No call was made."
+                  % (p.name, len(stats["files"]), stats["est_tokens"],
+                     est))
+            continue
+        try:
+            text, u_in, u_out = call_ember(
+                build_deep_prompt(p, sample), model, post_fn=post_fn)
+        except DeepAutopsyError as exc:
+            print("DEEP AUTOPSY FAILED for %s: %s" % (p.name, exc))
+            break
+        if u_in is None:
+            u_in = stats["est_tokens"]
+        if u_out is None:
+            u_out = DEEP_ASSUMED_OUTPUT_TOKENS
+        cost = (u_in * DEEP_INPUT_USD_PER_TOKEN
+                + u_out * DEEP_OUTPUT_USD_PER_TOKEN)
+        deep_ledger_append(ledger, {
+            "time": cem.generated.isoformat(), "project": p.name,
+            "model": model, "input_tokens": u_in,
+            "output_tokens": u_out, "cost_usd": round(cost, 6)})
+        spent += cost
+        p.deep_autopsy = {"model": model, "input_tokens": u_in,
+                          "output_tokens": u_out,
+                          "cost_usd": round(cost, 4), "report": text}
+        print()
+        print("DEEP AUTOPSY: %s (model %s, $%.4f)"
+              % (p.name, model, cost))
+        print(text)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="dead-projects-society",
@@ -2090,6 +2409,31 @@ def main(argv=None):
                     help="Skip directories with this name while "
                          "scanning (repeatable): vendored checkouts, "
                          "mirrors, other people's dead")
+    ap.add_argument("--deep-autopsy", action="store_true",
+                    help="Opt-in and code-aware: send a bounded "
+                         "sample of each buried or at-rest project "
+                         "to Muse Ember for a structured deep "
+                         "autopsy (needs META_API_KEY; every call "
+                         "is priced first and recorded in a ledger)")
+    ap.add_argument("--deep-dry-run", action="store_true",
+                    help="With the deep autopsy: assemble the "
+                         "samples and print the estimated prices, "
+                         "but make no API call")
+    ap.add_argument("--deep-budget", type=float,
+                    default=DEEP_DEFAULT_BUDGET_USD, metavar="USD",
+                    help="Hard cap on recorded deep-autopsy spend "
+                         "(default: $10.00)")
+    ap.add_argument("--deep-model", default=DEEP_MODEL_DEFAULT,
+                    metavar="ID",
+                    help="Model id for the deep autopsy "
+                         "(default: %(default)s)")
+    ap.add_argument("--deep-max-tokens", type=int,
+                    default=DEEP_DEFAULT_MAX_TOKENS, metavar="N",
+                    help="Sample size cap in estimated tokens "
+                         "(default: %(default)s)")
+    ap.add_argument("--deep-ledger", default=None, metavar="FILE",
+                    help="Spend ledger for deep autopsies (default: "
+                         "~/.dead-projects-society/deep-ledger.jsonl)")
     ap.add_argument("--fail-if-new-deaths", action="store_true",
                     help="With --diff: exit with code 3 when the "
                          "Groundskeeper's Log finds a death it has "
@@ -2136,6 +2480,9 @@ def main(argv=None):
         print("No bodies found. No git repositories under %s."
               % cem.root)
         return 2
+
+    if args.deep_autopsy or args.deep_dry_run:
+        run_deep_autopsies(cem, args)
 
     log = None
     if args.diff:

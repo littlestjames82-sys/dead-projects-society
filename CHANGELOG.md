@@ -4,6 +4,17 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [Unreleased]
+
+### Added
+- The Deep Autopsy Department (opt-in, code-aware): `--deep-autopsy`
+  sends a bounded sample of each buried or at-rest project to Muse
+  Ember for a structured autopsy cited to files and commits, with
+  `--deep-dry-run`, a priced-before-it-is-made estimate, a spend
+  ledger, and a hard budget guard (`--deep-budget`). Built for the
+  Muse Ember Hackathon; the first live call lands when the model
+  id is confirmed. The standard scan still never opens a file.
+
 ## [0.24.0] — 2026-11-22
 
 ### Added

@@ -1,9 +1,12 @@
+import io
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import types
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -1219,3 +1222,107 @@ class TestExclude(FixtureBase):
         cem = dps.build_cemetery(self.tmp, now=NOW,
                                  exclude=["vendored", "mine"])
         self.assertEqual(cem.projects, [])
+
+
+class TestDeepAutopsyDepartment(FixtureBase):
+    """v0.25.0: the opt-in Deep Autopsy Department. No network is
+    touched: transports are fakes, keys are absent on purpose."""
+
+    def _repo(self):
+        path = os.path.join(self.tmp, "corpse")
+        make_repo(path, [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip: parser half done"),
+        ])
+        with open(os.path.join(path, "README.md"), "w") as fh:
+            fh.write("# Corpse\nA parser that never parsed.\n"
+                     "MARKER_README\n")
+        with open(os.path.join(path, "corpse.py"), "w") as fh:
+            fh.write("def parse():\n    return None  # TODO\n")
+        return path
+
+    def _cem(self):
+        self._repo()
+        return dps.build_cemetery(self.tmp, now=NOW)
+
+    def _args(self, **kw):
+        base = dict(deep_budget=10.0, deep_model="fake-ember",
+                    deep_max_tokens=120000, deep_ledger=None,
+                    deep_dry_run=False, deep_post_fn=None)
+        base.update(kw)
+        return types.SimpleNamespace(**base)
+
+    def test_sampler_reads_readme_and_bounds(self):
+        cem = self._cem()
+        p = cem.projects[0]
+        text, stats = dps.sample_project(p, max_tokens=40)
+        self.assertTrue(stats["truncated"])
+        self.assertLessEqual(stats["est_tokens"], 60)
+        text2, stats2 = dps.sample_project(p)
+        self.assertIn("MARKER_README", text2)
+        self.assertIn("corpse.py", stats2["files"])
+
+    def test_estimate_math(self):
+        in_t, cost = dps.deep_estimate("x" * 4000, out_tokens=1000)
+        self.assertEqual(in_t, 1000)
+        self.assertAlmostEqual(cost, 1000 * 0.10 / 1e6 + 1000 * 0.50 / 1e6)
+
+    def test_ledger_round_trip(self):
+        path = os.path.join(self.tmp, "ledger.jsonl")
+        self.assertEqual(dps.deep_ledger_total(path), 0.0)
+        dps.deep_ledger_append(path, {"cost_usd": 0.25})
+        dps.deep_ledger_append(path, {"cost_usd": 0.5})
+        self.assertAlmostEqual(dps.deep_ledger_total(path), 0.75)
+
+    def test_missing_key_is_a_plain_refusal(self):
+        os.environ.pop("META_API_KEY", None)
+        with self.assertRaises(dps.DeepAutopsyError):
+            dps.call_ember("prompt", "fake-ember")
+
+    def test_budget_guard_refuses_and_spends_nothing(self):
+        cem = self._cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        calls = []
+        args = self._args(
+            deep_budget=0.0, deep_ledger=ledger,
+            deep_post_fn=lambda pr, mo: calls.append(1) or {})
+        out = io.StringIO()
+        with redirect_stdout(out):
+            dps.run_deep_autopsies(cem, args)
+        self.assertIn("BUDGET GUARD", out.getvalue())
+        self.assertEqual(calls, [])
+        self.assertEqual(dps.deep_ledger_total(ledger), 0.0)
+
+    def test_fake_transport_run_records_spend(self):
+        cem = self._cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+
+        def fake(prompt, model):
+            self.assertIn("CAUSE OF DEATH", prompt)
+            return {"output_text": "It died of a TODO.",
+                    "usage": {"input_tokens": 1000,
+                              "output_tokens": 100}}
+
+        args = self._args(deep_ledger=ledger, deep_post_fn=fake)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            dps.run_deep_autopsies(cem, args)
+        text = out.getvalue()
+        self.assertIn("DEEP AUTOPSY: corpse", text)
+        self.assertIn("It died of a TODO.", text)
+        self.assertAlmostEqual(dps.deep_ledger_total(ledger),
+                               1000 * 0.10 / 1e6 + 100 * 0.50 / 1e6)
+        self.assertEqual(cem.projects[0].deep_autopsy["cost_usd"],
+                         round(1000 * 0.10 / 1e6 + 100 * 0.50 / 1e6, 4))
+
+    def test_dry_run_cli_makes_no_call(self):
+        self._repo()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = dps.main([self.tmp, "--deep-dry-run",
+                           "--deep-ledger", ledger])
+        self.assertEqual(rc, 0)
+        self.assertIn("DRY RUN corpse", out.getvalue())
+        self.assertIn("No call was made", out.getvalue())
+        self.assertFalse(os.path.exists(ledger))
