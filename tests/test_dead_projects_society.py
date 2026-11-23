@@ -1193,3 +1193,29 @@ class TestHtmlGroundskeeperLog(FixtureBase):
     def test_no_log_no_section(self):
         page = dps.render_html(self._cem())
         self.assertNotIn("GROUNDSKEEPER", page)
+
+
+class TestExclude(FixtureBase):
+    """v0.24.0: --exclude keeps named directories out of the scan."""
+
+    def _grounds(self):
+        make_repo(os.path.join(self.tmp, "mine"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        make_repo(os.path.join(self.tmp, "vendored"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+
+    def test_exclude_by_name(self):
+        self._grounds()
+        cem = dps.build_cemetery(self.tmp, now=NOW,
+                                 exclude=["vendored"])
+        self.assertEqual([p.name for p in cem.projects], ["mine"])
+
+    def test_exclude_repeatable(self):
+        self._grounds()
+        cem = dps.build_cemetery(self.tmp, now=NOW,
+                                 exclude=["vendored", "mine"])
+        self.assertEqual(cem.projects, [])

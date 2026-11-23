@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.23.0"
+VERSION = "0.24.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -125,8 +125,12 @@ def _git(path, *args):
     return out.stdout
 
 
-def find_repos(root, depth=1):
-    """Yield repo paths: root itself, plus subdirectories up to depth."""
+def find_repos(root, depth=1, exclude=()):
+    """Yield repo paths: root itself, plus subdirectories up to depth.
+
+    Directories named in exclude are never entered: the Society
+    does not dig where it is told not to dig.
+    """
     root = os.path.abspath(root)
     found = []
 
@@ -145,7 +149,7 @@ def find_repos(root, depth=1):
             except OSError:
                 continue
             for name in names:
-                if name.startswith("."):
+                if name.startswith(".") or name in exclude:
                     continue
                 p = os.path.join(base, name)
                 if os.path.isdir(p):
@@ -466,7 +470,7 @@ def assign_succession(projects):
 
 
 def build_grounds(roots, dead_days=DEFAULT_DEAD_DAYS, depth=1,
-                  now=None):
+                  now=None, exclude=()):
     """One cemetery over several folders. Projects are merged,
     duplicates (the same repo reached through two roots) are kept
     once, and succession is judged across the whole union: the
@@ -475,11 +479,11 @@ def build_grounds(roots, dead_days=DEFAULT_DEAD_DAYS, depth=1,
     now = now or datetime.now(timezone.utc)
     if len(roots) == 1:
         return build_cemetery(roots[0], dead_days=dead_days,
-                              depth=depth, now=now)
+                              depth=depth, now=now, exclude=exclude)
     seen = {}
     for root in roots:
         part = build_cemetery(root, dead_days=dead_days, depth=depth,
-                              now=now)
+                              now=now, exclude=exclude)
         for p in part.projects:
             seen[os.path.abspath(p.path)] = p
     projects = sorted(seen.values(), key=lambda p: p.born)
@@ -490,11 +494,12 @@ def build_grounds(roots, dead_days=DEFAULT_DEAD_DAYS, depth=1,
                     projects=projects)
 
 
-def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None):
+def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None,
+                   exclude=()):
     now = now or datetime.now(timezone.utc)
     cem = Cemetery(root=os.path.abspath(root), generated=now,
                    dead_days=dead_days)
-    for path in find_repos(root, depth=depth):
+    for path in find_repos(root, depth=depth, exclude=exclude):
         p = read_project(path, now)
         if p is None:
             continue
@@ -2080,6 +2085,11 @@ def main(argv=None):
     ap.add_argument("--site", metavar="DIR",
                     help="Write projects.json and wards.json for the 3D "
                          "web graveyard into DIR")
+    ap.add_argument("--exclude", action="append", default=[],
+                    metavar="NAME",
+                    help="Skip directories with this name while "
+                         "scanning (repeatable): vendored checkouts, "
+                         "mirrors, other people's dead")
     ap.add_argument("--fail-if-new-deaths", action="store_true",
                     help="With --diff: exit with code 3 when the "
                          "Groundskeeper's Log finds a death it has "
@@ -2120,7 +2130,8 @@ def main(argv=None):
         if not os.path.isdir(root):
             print("No such folder: %s" % root, file=sys.stderr)
             return 2
-    cem = build_grounds(roots, dead_days=args.days, depth=args.depth)
+    cem = build_grounds(roots, dead_days=args.days, depth=args.depth,
+                        exclude=args.exclude)
     if not cem.projects:
         print("No bodies found. No git repositories under %s."
               % cem.root)

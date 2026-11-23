@@ -4,6 +4,19 @@ All notable changes to Dead Projects Society. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the Society
 records its own history with the same care it gives everyone else's.
 
+## [0.24.0] — 2026-11-22
+
+### Added
+- `--exclude NAME` (repeatable): directories with that name are
+  never entered during a scan, for vendored checkouts, mirrors,
+  and other people's dead.
+- CI now also runs the suite on macOS and Windows, so the grounds
+  are proven on all three soils before the launch.
+
+### Changed
+- The package's Homepage link now points at the web graveyard
+  itself, with the repository and issues one click further.
+
 ## [0.23.0] — 2026-11-22
 
 ### Added
