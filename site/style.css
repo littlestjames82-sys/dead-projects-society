@@ -557,3 +557,5 @@ html, body {
 .install-title { margin: 0 0 8px; color: #b08d57; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
 .install-cmd { display: block; background: #0b0e12; border: 1px solid #232a31; color: #7fe7ff; padding: 8px 10px; font-size: 13px; margin-bottom: 8px; overflow-x: auto; white-space: nowrap; }
 .install-link { display: block; text-align: center; margin-top: 8px; color: #8b96a0; font-size: 13px; }
+
+.survey-line { color: #77828d; font-size: 12px; margin: 2px 0 8px; font-style: italic; }

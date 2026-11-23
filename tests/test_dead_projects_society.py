@@ -1326,3 +1326,24 @@ class TestDeepAutopsyDepartment(FixtureBase):
         self.assertIn("DRY RUN corpse", out.getvalue())
         self.assertIn("No call was made", out.getvalue())
         self.assertFalse(os.path.exists(ledger))
+
+
+class TestSurveyExport(FixtureBase):
+    """The --site export carries its own provenance (survey.json)."""
+
+    def test_survey_json_written(self):
+        make_repo(os.path.join(self.tmp, "corpse"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        out = os.path.join(self.tmp, "site-data")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--site", out])
+        self.assertEqual(rc, 0)
+        with open(os.path.join(out, "survey.json")) as fh:
+            survey = json.load(fh)
+        self.assertEqual(survey["tool"], "dead-projects-society")
+        self.assertEqual(survey["version"], dps.VERSION)
+        self.assertEqual(survey["buried"], 1)
+        self.assertIn("generated", survey)

@@ -7,6 +7,10 @@ records its own history with the same care it gives everyone else's.
 ## [Unreleased]
 
 ### Added
+- The `--site` export now writes `survey.json` beside the grounds
+  data: when the grounds were surveyed, by which version, and the
+  census. The web graveyard displays the survey line in its
+  Registry, so a snapshot never passes itself off as the present.
 - The Deep Autopsy Department (opt-in, code-aware): `--deep-autopsy`
   sends a bounded sample of each buried or at-rest project to Muse
   Ember for a structured autopsy cited to files and commits, with

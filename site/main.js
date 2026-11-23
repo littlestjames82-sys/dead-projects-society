@@ -1445,6 +1445,21 @@ async function loadOnThisDay() {
 }
 loadOnThisDay();
 
+async function loadSurvey() {
+  try {
+    const res = await fetch("survey.json?v=1");
+    if (!res.ok) return;
+    const s = await res.json();
+    const elx = document.getElementById("survey-line");
+    if (!elx || !s.generated) return;
+    const d = new Date(s.generated + "T12:00:00Z");
+    const when = d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+    elx.textContent = "Grounds surveyed on " + when + " by " + s.tool + " " + s.version + ".";
+    elx.hidden = false;
+  } catch (e) { /* the grounds keep their counsel */ }
+}
+loadSurvey();
+
 // ---------- the Public Grounds: famous graves ----------
 const allPublic = [];
 

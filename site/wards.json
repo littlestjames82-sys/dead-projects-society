@@ -6,11 +6,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "docs: announce the Cloud waitlist below the README title (#30)",
-      "description": "The Society does not bury the living. 3 commits; last seen 64 days ago.",
+      "description": "The Society does not bury the living. 3 commits; last seen 66 days ago.",
       "tech": [
         "Python"
       ],
-      "silence_days": 64,
+      "silence_days": 66,
       "commits": 3,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -27,11 +27,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Netlify: self-contained function bundle (Prisma engine + libsql stub)",
-      "description": "The Society does not bury the living. 36 commits; last seen 57 days ago.",
+      "description": "The Society does not bury the living. 36 commits; last seen 58 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 57,
+      "silence_days": 58,
       "commits": 36,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -49,11 +49,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "fix: translate the conversation continuity email body (#16103)",
-      "description": "The Society does not bury the living. 1 commits; last seen 51 days ago.",
+      "description": "The Society does not bury the living. 1 commits; last seen 52 days ago.",
       "tech": [
         "Vue"
       ],
-      "silence_days": 51,
+      "silence_days": 52,
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -70,11 +70,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "fix(app): align Electron, backend, packaging and documentation (#2578)",
-      "description": "The Society does not bury the living. 3686 commits; last seen 50 days ago.",
+      "description": "The Society does not bury the living. 3686 commits; last seen 51 days ago.",
       "tech": [
         "Python"
       ],
-      "silence_days": 50,
+      "silence_days": 51,
       "commits": 3686,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -97,11 +97,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Add GhostChat Inbox add-on selection to sales-page signup",
-      "description": "The Society does not bury the living. 5 commits; last seen 49 days ago.",
+      "description": "The Society does not bury the living. 5 commits; last seen 50 days ago.",
       "tech": [
         "JavaScript"
       ],
-      "silence_days": 49,
+      "silence_days": 50,
       "commits": 5,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -118,11 +118,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Route to the coworker somebody named, and stop building a Bot four ways (#296)",
-      "description": "The Society does not bury the living. 1 commits; last seen 47 days ago.",
+      "description": "The Society does not bury the living. 1 commits; last seen 48 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 47,
+      "silence_days": 48,
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -139,11 +139,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Working demo: Gemma 3 4B brain + Sopro voice, smoke test 8/8, evidence + DEV draft",
-      "description": "The Society does not bury the living. 2 commits; last seen 39 days ago.",
+      "description": "The Society does not bury the living. 2 commits; last seen 41 days ago.",
       "tech": [
         "Python"
       ],
-      "silence_days": 39,
+      "silence_days": 41,
       "commits": 2,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -159,11 +159,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Render Mermaid diagrams in thread messages (#135)",
-      "description": "The Society does not bury the living. 520 commits; last seen 39 days ago.",
+      "description": "The Society does not bury the living. 520 commits; last seen 41 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 39,
+      "silence_days": 41,
       "commits": 520,
       "resurrections": 0,
       "longest_flatline_days": 80,
@@ -184,11 +184,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Add the Ember color theme",
-      "description": "The Society does not bury the living. 521 commits; last seen 39 days ago.",
+      "description": "The Society does not bury the living. 521 commits; last seen 41 days ago.",
       "tech": [
         "TypeScript"
       ],
-      "silence_days": 39,
+      "silence_days": 41,
       "commits": 521,
       "resurrections": 0,
       "longest_flatline_days": 80,
@@ -209,11 +209,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "v1.0.6 polish round 6: Kotlin constructor properties as symbols, /api/calls per-symbol dashboard lookup, test-suite speed pass",
-      "description": "The Society does not bury the living. 35 commits; last seen 38 days ago.",
+      "description": "The Society does not bury the living. 35 commits; last seen 40 days ago.",
       "tech": [
         "Python"
       ],
-      "silence_days": 38,
+      "silence_days": 40,
       "commits": 35,
       "resurrections": 0,
       "longest_flatline_days": 0,
@@ -231,11 +231,11 @@
       "born": "2026",
       "died": "2026",
       "epitaph": "Trailhead: hike log CLI with tests",
-      "description": "Still active, 18 days ago. 1 commits and counting. Nothing to pronounce.",
+      "description": "Still active, 20 days ago. 1 commits and counting. Nothing to pronounce.",
       "tech": [
         "Python"
       ],
-      "silence_days": 18,
+      "silence_days": 20,
       "commits": 1,
       "resurrections": 0,
       "longest_flatline_days": 0,

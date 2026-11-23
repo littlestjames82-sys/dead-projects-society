@@ -2586,6 +2586,18 @@ def main(argv=None):
                   encoding="utf-8") as fh:
             json.dump(site_infamy(cem), fh, indent=2)
             fh.write("\n")
+        with open(os.path.join(args.site, "survey.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump({
+                "generated": cem.generated.date().isoformat(),
+                "tool": "dead-projects-society",
+                "version": VERSION,
+                "buried": len(cem.deceased),
+                "at_rest": len(cem.resting),
+                "coma": len(cem.coma),
+                "alive": len(cem.alive),
+            }, fh, indent=2)
+            fh.write("\n")
         print("Web graveyard data written to %s" % args.site)
     if args.fail_if_new_deaths and log and not log.get("first_visit"):
         dead_now = {p.name for p in cem.deceased}
