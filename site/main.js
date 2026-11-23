@@ -1239,6 +1239,14 @@ function buildRegistry(projects) {
   });
 
   let terminalMode = false;
+  el("install-copy").addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText("pip install dead-projects-society");
+      el("install-copy").textContent = "Copied";
+      setTimeout(() => { el("install-copy").textContent = "Copy the command"; }, 1600);
+    } catch (e) { /* clipboard unavailable; the command is on screen */ }
+  });
+
   el("terminal-btn").addEventListener("click", () => {
     terminalMode = !terminalMode;
     el("terminal-btn").textContent =
