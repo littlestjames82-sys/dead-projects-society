@@ -1,6 +1,7 @@
 # Dead Projects Society
 
 [![PyPI](https://img.shields.io/pypi/v/dead-projects-society)](https://pypi.org/project/dead-projects-society/)
+[![Downloads](https://static.pepy.tech/badge/dead-projects-society)](https://pepy.tech/project/dead-projects-society)
 
 **A funeral for your abandoned side projects.**
 
