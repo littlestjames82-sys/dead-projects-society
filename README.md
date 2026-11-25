@@ -136,7 +136,16 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   Completion, for the finished) for every project that earned one, and
   a **Certificate of Resurrection** for every project that flatlined
   past the death line and committed again, whether it is living still
-  or fell a second time. The return is on the record.
+  or fell a second time. The return is on the record. The same flag
+  also issues the formal certificate as a **standalone SVG**, the
+  frameable copy: dark grounds, gold rules, the project's dates,
+  lifespan, and place of death, the coroner's cause and its last
+  words, its commits and authors entered as witnesses, the Society's
+  seal turned by an angle seeded from the project's name, and a
+  certificate number computed from the name and the death date, so
+  the same project carries the same number on every visit. The
+  finished receive a **Certificate of Honourable Retirement** in the
+  same form; the living receive nothing.
 - `--badge FILE` writes a shields-style badge with the state of your
   grounds, for a README.
 - `--square FILE` writes a 1080x1080 card sized for social feeds (the

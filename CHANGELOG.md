@@ -19,6 +19,32 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.30.0] - 2026-11-25
+
+### Added
+- The formal certificates, framed: `--certificates DIR` now also
+  issues each Death Certificate as a standalone SVG, the frameable
+  copy, beside the HTML certificates it has written since v0.8.0.
+  Dark grounds and gold rules in the manner of the Society's
+  cards, the project's name in large type, its born and died
+  dates with its lifespan, the place of death given as the
+  grounds folder's name, the coroner's cause, its last words,
+  and its commit count and author count entered as witnesses.
+  A successor, where the record names one, is noted as survived
+  by. At-rest projects receive a Certificate of Honourable
+  Retirement in place of a death certificate; the still
+  breathing and the intensive-care patients receive none.
+- Every certificate carries the Society's seal, a ringed star
+  turned by an angle seeded from the project's name, and a
+  certificate number (DPS-<death year>-<four digits>) computed
+  from the project's name and death date, so the same project
+  carries the same seal and the same number on every visit, and
+  the same grounds issue byte-identical certificates on every
+  run. The JSON report gains a per-project `certificate`
+  filename and a `certificates` count in the summary when the
+  flag is used, and the `--site` export carries the certificates
+  in a `certificates` folder alongside the grounds data.
+
 ## [0.29.0] - 2026-11-25
 
 ### Added

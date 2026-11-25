@@ -21,6 +21,7 @@ Usage:
 
 import argparse
 import json
+import math
 import os
 import re
 import subprocess
@@ -31,7 +32,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.29.0"
+VERSION = "0.30.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -1827,7 +1828,8 @@ def _sections(cem):
 
 
 def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
-                  adoption_files=None, with_house_awards=False):
+                  adoption_files=None, with_house_awards=False,
+                  certificate_files=None):
     def pd(p):
         return {
             "name": p.name,
@@ -1856,6 +1858,8 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
                             if with_eulogy else None),
             "adoption_listing": (adoption_files.get(p.name)
                                  if adoption_files else None),
+            "certificate": (certificate_files.get(p.name)
+                            if certificate_files else None),
             "autopsy": autopsy(p) if p.status in ("deceased", "resting")
                        else None,
             "activity_monthly": p.activity,
@@ -1880,6 +1884,8 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
                 1 for p in cem.projects if p.resurrections >= 1),
             "adoption_papers": (len(adoption_files)
                                 if adoption_files else 0),
+            "certificates": (len(certificate_files)
+                             if certificate_files else 0),
             "sections": _sections(cem),
         },
         "honors": [
@@ -2355,6 +2361,195 @@ def render_resurrection_certificate(p, cem):
         issued=_fmt_date(cem.generated),
         grounds=esc(cem.root),
     )
+
+
+# ---------------------------------------------------------------------------
+# Rendering: the formal certificates, as standalone SVG
+# ---------------------------------------------------------------------------
+
+
+def certificate_subjects(cem):
+    """Who receives a formal certificate: the buried, and the
+    finished at rest. The still breathing and the intensive-care
+    patients receive none; the Society does not certify the
+    living."""
+    return cem.deceased + cem.resting
+
+
+def certificate_filename(p):
+    if p.status == "resting":
+        return "%s-retirement-certificate.svg" % _site_slug(p.name)
+    return "%s-certificate.svg" % _site_slug(p.name)
+
+
+def certificate_number(p):
+    """The number on the certificate, derived from the project's
+    name and the date of its death: DPS-<death year>-<four
+    digits>. The same project carries the same number on every
+    visit, because the number is computed from the record, not
+    handed out in sequence."""
+    seed = "%s|%s" % (p.name, p.died.date().isoformat())
+    return "DPS-%04d-%04d" % (
+        p.died.year,
+        zlib.crc32(seed.encode("utf-8")) % 10000)
+
+
+def _seal_svg(p, cx, cy):
+    """The Society's seal: two gold rings and a five-pointed star,
+    the star turned by an angle seeded from the project's name,
+    so each seal differs slightly and the same project's seal
+    never changes."""
+    angle = zlib.crc32(p.name.encode("utf-8")) % 360
+    points = []
+    for i in range(10):
+        r = 21 if i % 2 == 0 else 8.5
+        theta = math.radians(angle - 90 + i * 36)
+        points.append("%.1f,%.1f" % (cx + r * math.cos(theta),
+                                     cy + r * math.sin(theta)))
+    return "".join([
+        '<circle cx="%d" cy="%d" r="47" fill="none" stroke="#dcb968" '
+        'stroke-width="2.5"/>' % (cx, cy),
+        '<circle cx="%d" cy="%d" r="38" fill="none" stroke="#b08d57" '
+        'stroke-width="1"/>' % (cx, cy),
+        '<polygon points="%s" fill="#dcb968"/>' % " ".join(points),
+    ])
+
+
+def render_svg_certificate(p, cem):
+    """The formal certificate as a standalone SVG: the frameable
+    copy. Dark grounds, gold rules, the seal, and a number,
+    drawn entirely from the project's own record. Nothing in it
+    is dated by the visit, so the same grounds issue byte-
+    identical certificates on every run."""
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    resting = p.status == "resting"
+    title = ("CERTIFICATE OF HONOURABLE RETIREMENT" if resting
+             else "CERTIFICATE OF DEATH")
+    title_size = 33 if resting else 48
+    name_size = (58 if len(p.name) <= 18 else
+                 46 if len(p.name) <= 28 else 36)
+    place = (os.path.basename(os.path.normpath(cem.root))
+             or cem.root)
+    witnesses = ("its sole author" if p.authors == 1
+                 else "%d authors" % p.authors)
+    parts = []
+    parts.append(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" '
+        'height="1000" viewBox="0 0 1200 1000">')
+    parts.append('<rect width="1200" height="1000" fill="#101418"/>')
+    parts.append('<rect x="24" y="24" width="1152" height="952" '
+                 'fill="none" stroke="#b08d57" stroke-width="2"/>')
+    parts.append('<rect x="40" y="40" width="1120" height="920" '
+                 'fill="none" stroke="#333d46" stroke-width="1"/>')
+    parts.append('<text x="600" y="112" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="28" '
+                 'fill="#8b96a0" letter-spacing="8">DEAD PROJECTS '
+                 'SOCIETY</text>')
+    parts.append('<rect x="440" y="134" width="320" height="2" '
+                 'fill="#b08d57"/>')
+    parts.append('<text x="600" y="200" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="%d" '
+                 'fill="#e8e2d2" letter-spacing="4">%s</text>'
+                 % (title_size, title))
+    parts.append('<text x="600" y="240" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="20" '
+                 'fill="#dcb968" letter-spacing="2">CERTIFICATE '
+                 'No. %s</text>' % certificate_number(p))
+    parts.append('<text x="600" y="296" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-style="italic" '
+                 'font-size="24" fill="#c3ccd4">%s</text>'
+                 % ("This is to certify the honourable retirement "
+                    "of the project known as" if resting else
+                    "This is to certify that the project known as"))
+    parts.append('<text x="600" y="360" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="%d" '
+                 'fill="#eef2f5">%s</text>' % (name_size, esc(p.name)))
+    fields = [
+        ("BORN", _fmt_date(p.born)),
+        ("RETIRED" if resting else "DIED", _fmt_date(p.died)),
+        ("LIFESPAN", _lifespan_text(p)),
+        ("PLACE OF RETIREMENT" if resting else "PLACE OF DEATH",
+         place),
+    ]
+    for i, (label, value) in enumerate(fields):
+        cx = 370 if i % 2 == 0 else 830
+        ly = 440 if i < 2 else 552
+        parts.append('<text x="%d" y="%d" text-anchor="middle" '
+                     'font-family="Georgia, serif" font-size="18" '
+                     'fill="#b08d57" letter-spacing="3">%s</text>'
+                     % (cx, ly, label))
+        parts.append('<text x="%d" y="%d" text-anchor="middle" '
+                     'font-family="Georgia, serif" font-size="30" '
+                     'fill="#eef2f5">%s</text>'
+                     % (cx, ly + 38, esc(value)))
+    parts.append('<text x="600" y="652" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="24" '
+                 'fill="#c3ccd4">The record shows %d commits, '
+                 'witnessed by %s.</text>'
+                 % (p.commits, witnesses))
+    y = 706
+    parts.append('<text x="600" y="%d" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="18" '
+                 'fill="#b08d57" letter-spacing="3">%s</text>'
+                 % (y, "THE RECORD" if resting else "CAUSE OF DEATH"))
+    y += 36
+    for line in textwrap.wrap(p.cause or "Cause unknown.", 78):
+        parts.append('<text x="600" y="%d" text-anchor="middle" '
+                     'font-family="Georgia, serif" '
+                     'font-style="italic" font-size="24" '
+                     'fill="#c3ccd4">%s</text>' % (y, esc(line)))
+        y += 32
+    y += 14
+    parts.append('<text x="600" y="%d" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="18" '
+                 'fill="#b08d57" letter-spacing="3">LAST WORDS</text>'
+                 % y)
+    y += 34
+    last = '"%s"' % (p.last_words or "(silence)")
+    for line in textwrap.wrap(last, 84):
+        parts.append('<text x="600" y="%d" text-anchor="middle" '
+                     'font-family="Georgia, serif" '
+                     'font-style="italic" font-size="22" '
+                     'fill="#c3ccd4">%s</text>' % (y, esc(line)))
+        y += 30
+    if p.survived_by and not p.survived_by.startswith(
+            "Survived by no one"):
+        y += 16
+        for line in textwrap.wrap(p.survived_by, 84):
+            parts.append('<text x="600" y="%d" text-anchor="middle" '
+                         'font-family="Georgia, serif" '
+                         'font-style="italic" font-size="22" '
+                         'fill="#c3ccd4">%s</text>' % (y, esc(line)))
+            y += 30
+    parts.append(_seal_svg(p, 170, 878))
+    parts.append('<text x="680" y="872" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="22" '
+                 'fill="#e8e2d2">Certified by the Dead Projects '
+                 'Society</text>')
+    parts.append('<text x="680" y="906" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="19" '
+                 'fill="#5f6a74">pip install '
+                 'dead-projects-society</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+def write_svg_certificates(cem, folder):
+    """Issue the formal SVG certificate for every buried or
+    at-rest project into folder. Returns {project name:
+    certificate filename}. Deterministic: the same grounds
+    produce byte-identical certificates."""
+    os.makedirs(folder, exist_ok=True)
+    files = {}
+    for p in certificate_subjects(cem):
+        fname = certificate_filename(p)
+        with open(os.path.join(folder, fname), "w",
+                  encoding="utf-8") as fh:
+            fh.write(render_svg_certificate(p, cem))
+        files[p.name] = fname
+    return files
 
 
 # ---------------------------------------------------------------------------
@@ -3293,8 +3488,13 @@ def main(argv=None):
                          "JSON; not to be confused with the "
                          "Obituary Awards, which are for the famous")
     ap.add_argument("--certificates", metavar="DIR",
-                    help="Write a formal certificate (HTML) for every "
-                         "buried or at-rest project into DIR")
+                    help="Write certificates for every buried or "
+                         "at-rest project into DIR: the formal Death "
+                         "Certificate as a standalone SVG, sealed and "
+                         "numbered (a Certificate of Honourable "
+                         "Retirement for the finished), the HTML "
+                         "certificates, and a Certificate of "
+                         "Resurrection for every project that rose")
     ap.add_argument("--diff", action="store_true",
                     help="Compare this scan with the last recorded "
                          "visit to these grounds and report what "
@@ -3343,11 +3543,17 @@ def main(argv=None):
         adoption_files = write_adoption_papers(cem,
                                                args.adoption_papers)
 
+    certificate_files = None
+    if args.certificates:
+        certificate_files = write_svg_certificates(cem,
+                                                   args.certificates)
+
     if args.json:
         data = cemetery_dict(cem, with_eulogy=args.eulogy,
                              wrapped_year=wrapped_year,
                              adoption_files=adoption_files,
-                             with_house_awards=args.house_awards)
+                             with_house_awards=args.house_awards,
+                             certificate_files=certificate_files)
         if log is not None:
             data["groundskeeper_log"] = log
         if args.on_this_day:
@@ -3380,8 +3586,9 @@ def main(argv=None):
                       encoding="utf-8") as fh:
                 fh.write(render_resurrection_certificate(p, cem))
         print("Certificates written to %s (%d death or completion, "
-              "%d resurrection)"
-              % (args.certificates, len(subjects), len(risen)))
+              "%d resurrection); %d formal SVG certificates issued"
+              % (args.certificates, len(subjects), len(risen),
+                 len(certificate_files or {})))
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
             fh.write(render_html(cem, log if args.diff else None,
@@ -3487,6 +3694,9 @@ def main(argv=None):
         if adoption_files is not None:
             write_adoption_papers(
                 cem, os.path.join(args.site, "adoption-papers"))
+        if certificate_files is not None:
+            write_svg_certificates(
+                cem, os.path.join(args.site, "certificates"))
         print("Web graveyard data written to %s" % args.site)
     if args.fail_if_new_deaths and log and not log.get("first_visit"):
         dead_now = {p.name for p in cem.deceased}

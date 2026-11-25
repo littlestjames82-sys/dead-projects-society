@@ -707,7 +707,7 @@ class TestInfamyAndAutopsy(unittest.TestCase):
         out = os.path.join(tmp, "certs")
         rc = dps.main([grounds, "--certificates", out])
         self.assertEqual(rc, 0)
-        files = os.listdir(out)
+        files = [f for f in os.listdir(out) if f.endswith(".html")]
         self.assertEqual(files, ["gone-certificate.html"])
         with open(os.path.join(out, files[0])) as fh:
             html = fh.read()
@@ -1020,7 +1020,8 @@ class TestResurrectionCertificates(FixtureBase):
         out = os.path.join(self.tmp, "certs")
         rc = dps.main([self.tmp, "--certificates", out])
         self.assertEqual(rc, 0)
-        files = sorted(os.listdir(out))
+        files = sorted(f for f in os.listdir(out)
+                       if f.endswith(".html"))
         self.assertEqual(files, ["phoenix-certificate.html",
                                  "phoenix-resurrection-certificate.html"])
         with open(os.path.join(out,
@@ -1395,6 +1396,181 @@ class TestAdoptionListings(FixtureBase):
             os.path.join(nested, "index.md")))
         self.assertTrue(os.path.exists(
             os.path.join(nested, "old-game-adoption.md")))
+
+
+class TestSvgCertificates(FixtureBase):
+    """v0.30.0: --certificates issues the formal certificates as
+    standalone SVG, sealed and numbered."""
+
+    def _build(self):
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-03-10T09:00:00", "add sprites"),
+            ("2025-03-20T09:00:00", "levels"),
+            ("2025-04-03T09:00:00", "physics"),
+            ("2025-04-09T09:00:00", "score"),
+            ("2025-04-15T09:00:00", "sound"),
+            ("2025-04-21T09:00:00", "menus"),
+            ("2025-04-27T09:00:00", "polish"),
+            ("2025-05-06T09:00:00", "bugfix"),
+            ("2025-05-19T09:00:00", "more levels"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        rest = os.path.join(self.tmp, "resting-lib")
+        make_repo(rest, [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "final tidy"),
+        ])
+        with open(os.path.join(rest, "PROJECT_WILL.md"), "w") as fh:
+            fh.write("Status: complete\n")
+        # born six days after old-game died: its successor, and alive
+        make_repo(os.path.join(self.tmp, "heir-tool"), [
+            ("2025-06-20T09:00:00", "initial commit"),
+            ("2025-12-30T09:00:00", "still going"),
+        ])
+        # intensive care: silent 42 days at NOW, receives nothing
+        make_repo(os.path.join(self.tmp, "sick-tool"), [
+            ("2025-11-20T09:00:00", "initial commit"),
+        ])
+
+    def _cem(self):
+        return dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+
+    def _project(self, cem, name):
+        return {p.name: p for p in cem.projects}[name]
+
+    def test_death_certificate_drawn_from_the_record(self):
+        self._build()
+        cem = self._cem()
+        p = self._project(cem, "old-game")
+        svg = dps.render_svg_certificate(p, cem)
+        self.assertTrue(svg.startswith("<svg"))
+        self.assertTrue(svg.endswith("</svg>"))
+        self.assertIn("DEAD PROJECTS SOCIETY", svg)
+        self.assertIn("CERTIFICATE OF DEATH", svg)
+        self.assertIn("old-game", svg)
+        # born, died, lifespan, and the place of death
+        self.assertIn("Mar 02, 2025", svg)
+        self.assertIn("Jun 14, 2025", svg)
+        self.assertIn("3 months", svg)
+        self.assertIn("PLACE OF DEATH", svg)
+        self.assertIn(os.path.basename(self.tmp), svg)
+        # the coroner's line and the last words
+        self.assertIn("CAUSE OF DEATH", svg)
+        self.assertIn("Died mid-sentence", svg)
+        self.assertIn("LAST WORDS", svg)
+        self.assertIn("wip", svg)
+        # commits and authors, entered as witnesses
+        self.assertIn("The record shows 11 commits, witnessed by "
+                      "its sole author.", svg)
+        # the succession, the seal, and the footer
+        self.assertIn("Survived by heir-tool, born 6 days later.",
+                      svg)
+        self.assertIn("<circle", svg)
+        self.assertIn("<polygon", svg)
+        self.assertIn("Certified by the Dead Projects Society", svg)
+        self.assertIn("pip install dead-projects-society", svg)
+
+    def test_certificate_number_is_stable_and_well_formed(self):
+        import re as _re
+        self._build()
+        cem = self._cem()
+        p = self._project(cem, "old-game")
+        number = dps.certificate_number(p)
+        self.assertTrue(_re.match(r"^DPS-2025-\d{4}$", number))
+        # the same project carries the same number on every visit
+        again = self._project(self._cem(), "old-game")
+        self.assertEqual(dps.certificate_number(again), number)
+        svg = dps.render_svg_certificate(p, cem)
+        self.assertIn("CERTIFICATE No. %s" % number, svg)
+
+    def test_retirement_certificate_for_the_finished(self):
+        self._build()
+        out = os.path.join(self.tmp, "certs")
+        files = dps.write_svg_certificates(self._cem(), out)
+        self.assertEqual(files["resting-lib"],
+                         "resting-lib-retirement-certificate.svg")
+        with open(os.path.join(
+                out, "resting-lib-retirement-certificate.svg"),
+                encoding="utf-8") as fh:
+            svg = fh.read()
+        self.assertIn("CERTIFICATE OF HONOURABLE RETIREMENT", svg)
+        self.assertNotIn("CERTIFICATE OF DEATH", svg)
+        self.assertIn("PLACE OF RETIREMENT", svg)
+        self.assertIn("THE RECORD", svg)
+
+    def test_living_and_intensive_care_receive_none(self):
+        self._build()
+        out = os.path.join(self.tmp, "certs")
+        files = dps.write_svg_certificates(self._cem(), out)
+        self.assertEqual(sorted(files), ["old-game", "resting-lib"])
+        self.assertEqual(files["old-game"], "old-game-certificate.svg")
+        self.assertFalse(os.path.exists(
+            os.path.join(out, "heir-tool-certificate.svg")))
+        self.assertFalse(os.path.exists(
+            os.path.join(out, "sick-tool-certificate.svg")))
+
+    def test_certificates_are_byte_identical_across_runs(self):
+        self._build()
+        cem = self._cem()
+        one = os.path.join(self.tmp, "certs-one")
+        two = os.path.join(self.tmp, "certs-two")
+        dps.write_svg_certificates(cem, one)
+        dps.write_svg_certificates(cem, two)
+        for name in ("old-game-certificate.svg",
+                     "resting-lib-retirement-certificate.svg"):
+            with open(os.path.join(one, name), "rb") as fh:
+                a = fh.read()
+            with open(os.path.join(two, name), "rb") as fh:
+                b = fh.read()
+            self.assertEqual(a, b)
+
+    def test_json_carries_count_and_filenames(self):
+        self._build()
+        cem = self._cem()
+        out = os.path.join(self.tmp, "certs")
+        files = dps.write_svg_certificates(cem, out)
+        data = dps.cemetery_dict(cem, certificate_files=files)
+        self.assertEqual(data["summary"]["certificates"], 2)
+        by_name = {p["name"]: p for p in data["projects"]}
+        self.assertEqual(by_name["old-game"]["certificate"],
+                         "old-game-certificate.svg")
+        self.assertEqual(by_name["resting-lib"]["certificate"],
+                         "resting-lib-retirement-certificate.svg")
+        self.assertIsNone(by_name["heir-tool"]["certificate"])
+        self.assertIsNone(by_name["sick-tool"]["certificate"])
+        plain = dps.cemetery_dict(cem)
+        self.assertEqual(plain["summary"]["certificates"], 0)
+        self.assertIsNone(
+            {p["name"]: p for p in plain["projects"]}
+            ["old-game"]["certificate"])
+
+    def test_cli_issues_certificates_and_reports(self):
+        self._build()
+        out = os.path.join(self.tmp, "certs")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--certificates", out])
+        self.assertEqual(rc, 0)
+        text = buf.getvalue()
+        self.assertIn("Certificates written to %s" % out, text)
+        self.assertIn("formal SVG certificates issued", text)
+        self.assertTrue(os.path.exists(
+            os.path.join(out, "old-game-certificate.svg")))
+
+    def test_site_export_includes_the_certificates(self):
+        self._build()
+        site = os.path.join(self.tmp, "site")
+        certs = os.path.join(self.tmp, "certs")
+        with redirect_stdout(io.StringIO()):
+            rc = dps.main([self.tmp, "--site", site,
+                           "--certificates", certs])
+        self.assertEqual(rc, 0)
+        nested = os.path.join(site, "certificates")
+        self.assertTrue(os.path.exists(
+            os.path.join(nested, "old-game-certificate.svg")))
+        self.assertTrue(os.path.exists(os.path.join(
+            nested, "resting-lib-retirement-certificate.svg")))
 
 
 class TestOneline(FixtureBase):

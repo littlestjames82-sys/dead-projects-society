@@ -65,6 +65,11 @@ The CLI, the verdicts, the 3D cemetery.
       from the winner's own record, unqualified categories
       omitted (v0.29.0). The Obituary Awards above remain the
       famous dead's ceremony; this one is yours.
+- [x] The formal certificates, framed: `--certificates DIR`
+      also issues each Death Certificate (and, for the finished,
+      a Certificate of Honourable Retirement) as a standalone
+      SVG, sealed with a name-seeded seal and numbered from the
+      record, byte-identical on every run (v0.30.0)
 
 ### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful
