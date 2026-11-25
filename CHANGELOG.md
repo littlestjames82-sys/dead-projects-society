@@ -19,6 +19,24 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.26.0] - 2026-11-25
+
+### Added
+- `--eulogy`: the full eulogy, composed for every buried or
+  at-rest project and read aloud only on request. Each one is a
+  short spoken-style paragraph woven from the record the scan
+  already keeps: the project's dates and lifespan, its commit
+  count, its brightest month, the coroner's verdict, its last
+  words, the successor that replaced it, and any resurrection
+  in its past. At-rest projects get a softer telling, because
+  they finished rather than faded. The variety is seeded from
+  the project's name, so repeat visits produce the identical
+  text. The eulogy joins the terminal report as its own
+  section, the Markdown and HTML obituaries, the JSON as
+  `full_eulogy`, and the `--site` export as each stone's
+  `eulogy`, ready for the web graveyard to display. Still
+  metadata only: no file is opened, nothing leaves the machine.
+
 ## [0.24.0] — 2026-11-22
 
 ### Added

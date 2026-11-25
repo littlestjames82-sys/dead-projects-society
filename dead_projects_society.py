@@ -25,11 +25,13 @@ import os
 import re
 import subprocess
 import sys
+import textwrap
+import zlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.25.0"
+VERSION = "0.26.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -871,6 +873,152 @@ def compose_eulogy(p):
     return "%s %s %s" % (opener, middle, closer)
 
 
+def _eulogy_pick(seed, salt, options):
+    return options[(seed + salt) % len(options)]
+
+
+def compose_full_eulogy(p):
+    """The full eulogy, in the spoken style, for the buried and
+    for the at rest.
+
+    Woven only from what the standard scan already knows: the
+    dates, the lifespan, the commit count, the peak month, the
+    coroner's verdict, the last words, the successor, and any
+    resurrection on the record. No fact is invented, and nothing
+    is read that the scan did not already read. The variety is
+    seeded from the project's name, so the same project receives
+    the same eulogy on every visit; the Society composes, it
+    does not improvise. At-rest projects are spoken of softly:
+    they were not abandoned, they finished.
+    """
+    if p.status not in ("deceased", "resting"):
+        return None
+    seed = zlib.crc32(p.name.encode("utf-8"))
+    resting = p.status == "resting"
+    parts = []
+    if resting:
+        parts.append(_eulogy_pick(seed, 0, [
+            "We speak gently of %s, for it is not dead. It "
+            "finished." % p.name,
+            "No mourning is in order for %s. It completed its "
+            "work and lies at rest." % p.name,
+            "The Society keeps a softer voice for %s, a project "
+            "that ended on purpose." % p.name,
+        ]))
+    else:
+        parts.append(_eulogy_pick(seed, 0, [
+            "We are gathered for %s." % p.name,
+            "Friends, the roll of the departed stops today at "
+            "%s." % p.name,
+            "The Society calls the name of %s, and the grounds "
+            "go quiet." % p.name,
+        ]))
+    parts.append(_eulogy_pick(seed, 1, [
+        "It lived from %s to %s, %s in all, and left %d "
+        "commits behind it." % (_fmt_date(p.born),
+                                 _fmt_date(p.died),
+                                 _lifespan_text(p), p.commits),
+        "Born %s, last heard from %s: %s of work, and %d "
+        "commits on the record." % (_fmt_date(p.born),
+                                     _fmt_date(p.died),
+                                     _lifespan_text(p), p.commits),
+        "Its dates run from %s to %s. The tally of the life is "
+        "%s and %d commits." % (_fmt_date(p.born),
+                                _fmt_date(p.died),
+                                _lifespan_text(p), p.commits),
+    ]))
+    record = autopsy(p)
+    if record["peak_month"] and record["peak_commits"] >= 2 \
+            and p.commits >= 10:
+        parts.append(_eulogy_pick(seed, 2, [
+            "Its brightest month was %s, when %d commits landed "
+            "and the work was at full stride."
+            % (record["peak_month"], record["peak_commits"]),
+            "If you want to remember it living, remember %s: "
+            "%d commits in a single month."
+            % (record["peak_month"], record["peak_commits"]),
+            "The record peaks in %s, with %d commits, before "
+            "the quiet began."
+            % (record["peak_month"], record["peak_commits"]),
+        ]))
+    elif p.lifespan_days < 31 and p.commits >= 2:
+        parts.append("The whole life fits inside a single "
+                     "month; there was no time for seasons.")
+    if p.commits >= 500:
+        parts.append("%d commits is not a fling. It was loved, "
+                     "and the record shows it." % p.commits)
+    elif p.commits >= 50:
+        parts.append("That count says it was meant, not toyed "
+                     "with.")
+    elif p.commits >= 10:
+        parts.append("That count says it was more than an idea.")
+    elif p.commits >= 2:
+        parts.append("It never grew large, and it did not need "
+                     "to. Small lives get eulogies too.")
+    else:
+        parts.append("A single commit is nearly all that "
+                     "remains, and the Society reads it twice.")
+    if resting:
+        if p.will_note:
+            parts.append('Its will leaves a note, in its '
+                         'author\'s own words: "%s"' % p.will_note)
+        else:
+            parts.append("Its author declared it complete, in "
+                         "writing, and the Society honors the "
+                         "declaration.")
+    elif p.cause:
+        parts.append(_eulogy_pick(seed, 3, [
+            "The coroner records the cause plainly. %s" % p.cause,
+            "How did it end? %s" % p.cause,
+            "The record closes with the coroner's verdict. %s"
+            % p.cause,
+        ]))
+    if p.last_words:
+        parts.append(_eulogy_pick(seed, 4, [
+            'Its last words were "%s".' % p.last_words,
+            'When it spoke for the final time, it said: "%s".'
+            % p.last_words,
+            'The last thing it ever said was "%s".'
+            % p.last_words,
+        ]))
+    else:
+        parts.append("It left no last words. The silence was "
+                     "the message.")
+    if p.resurrections == 1:
+        parts.append("And let the record show that it had "
+                     "already flatlined for %d days once and "
+                     "come back. This time, it did not."
+                     % p.longest_flatline)
+    elif p.resurrections > 1:
+        parts.append("It came back from the dead %d times, the "
+                     "longest silence lasting %d days, and the "
+                     "Society admired the stubbornness. This "
+                     "time, it stayed."
+                     % (p.resurrections, p.longest_flatline))
+    if p.survived_by:
+        if p.survived_by.startswith("Survived by no one"):
+            parts.append("Nothing has taken its place. The slot "
+                         "is still open, and the Society keeps "
+                         "the key.")
+        else:
+            parts.append(p.survived_by)
+    if resting:
+        parts.append(_eulogy_pick(seed, 5, [
+            "Rest well, %s. Finished is a fine word." % p.name,
+            "The Society closes the book on %s, gently." % p.name,
+            "%s asked for nothing more, and neither do we."
+            % p.name,
+        ]))
+    else:
+        parts.append(_eulogy_pick(seed, 5, [
+            "Go in peace, %s. The grounds remember." % p.name,
+            "The Society lowers its hat. Rest well, %s." % p.name,
+            "%s was worked on, and that is enough. The service "
+            "is over." % p.name,
+        ]))
+    return " ".join(parts)
+
+
 # ---------------------------------------------------------------------------
 # Rendering: terminal
 # ---------------------------------------------------------------------------
@@ -943,7 +1091,8 @@ def render_oneline(cem):
     return "\n".join(lines) + ("\n" if lines else "")
 
 
-def render_terminal(cem, with_autopsy=False, with_on_this_day=False):
+def render_terminal(cem, with_autopsy=False, with_on_this_day=False,
+                    with_eulogy=False):
     out = []
     out.append("")
     out.append("=" * 64)
@@ -1045,6 +1194,17 @@ def render_terminal(cem, with_autopsy=False, with_on_this_day=False):
                 if a["findings"]:
                     out.append("    Findings: %s"
                                % " ".join(a["findings"][:4]))
+    if with_eulogy:
+        subjects = cem.deceased + cem.resting
+        if subjects:
+            out.append("-" * 64)
+            out.append("  THE EULOGIES (read aloud, as is proper)")
+            for p in subjects:
+                out.append("")
+                out.append("  For %s:" % p.name)
+                for line in textwrap.wrap(compose_full_eulogy(p),
+                                          62):
+                    out.append("  " + line)
     if with_on_this_day:
         otd = on_this_day(cem)
         out.append("-" * 64)
@@ -1097,7 +1257,7 @@ def _sections(cem):
 # ---------------------------------------------------------------------------
 
 
-def cemetery_dict(cem):
+def cemetery_dict(cem, with_eulogy=False):
     def pd(p):
         return {
             "name": p.name,
@@ -1122,6 +1282,8 @@ def cemetery_dict(cem):
             "contributing_factors": p.factors,
             "survived_by": p.survived_by or None,
             "eulogy": compose_eulogy(p) if p.status == "deceased" else None,
+            "full_eulogy": (compose_full_eulogy(p)
+                            if with_eulogy else None),
             "autopsy": autopsy(p) if p.status in ("deceased", "resting")
                        else None,
             "activity_monthly": p.activity,
@@ -1165,7 +1327,7 @@ def cemetery_dict(cem):
 # ---------------------------------------------------------------------------
 
 
-def render_markdown(cem):
+def render_markdown(cem, with_eulogy=False):
     out = ["# Dead Projects Society", ""]
     out.append("Grounds: `%s`" % cem.root)
     out.append("")
@@ -1189,6 +1351,10 @@ def render_markdown(cem):
         out.append("")
         out.append("*%s*" % compose_eulogy(p))
         out.append("")
+        if with_eulogy:
+            out.append("**The eulogy, as read at the service:** %s"
+                       % compose_full_eulogy(p))
+            out.append("")
         if p.resurrections >= 1:
             out.append("It had already flatlined for %d days once and come "
                        "back. This time it did not." % p.longest_flatline)
@@ -1210,6 +1376,10 @@ def render_markdown(cem):
         out.append("")
         if p.will_note:
             out.append("From its will: %s" % p.will_note)
+            out.append("")
+        if with_eulogy:
+            out.append("**The eulogy, as read at the service:** %s"
+                       % compose_full_eulogy(p))
             out.append("")
         out.append("- %s" % p.survived_by)
         out.append("")
@@ -1277,6 +1447,8 @@ _HTML = """<!DOCTYPE html>
   .cause {{ color:#b08d57; font-size:.95rem; }}
   .eulogy {{ font-style:italic; color:#aeb9c2; margin-top:.55rem;
             font-size:.92rem; }}
+  .fulleulogy {{ text-align:left; color:#c3ccd4; margin-top:.7rem;
+            font-size:.95rem; line-height:1.55; }}
   .autopsy {{ color:#8b96a0; font-size:.85rem; margin-top:.55rem; }}
   .risen {{ color:#d8c58f; font-size:.85rem; margin-top:.35rem; }}
   .factor, .survived {{ color:#77828d; font-size:.85rem; margin-top:.35rem; }}
@@ -1301,7 +1473,7 @@ left this machine. The Society does not bury the living.</footer>
 """
 
 
-def render_html(cem, log=None):
+def render_html(cem, log=None, with_eulogy=False):
     def esc(s):
         return xml_escape(str(s), {'"': "&quot;"})
 
@@ -1320,6 +1492,10 @@ def render_html(cem, log=None):
             " &middot; %s &middot; Revival: %s</div>"
             % (aut["pace_commits_per_month"], esc(aut["momentum"]),
                esc(aut["revival_verdict"])))
+        full_eulogy = ""
+        if with_eulogy:
+            full_eulogy = ('<div class="fulleulogy">%s</div>'
+                           % esc(compose_full_eulogy(p)))
         stones.append(
             '<div class="stone"><div class="rip">R.I.P.</div>'
             "<h2>%s</h2>"
@@ -1327,13 +1503,13 @@ def render_html(cem, log=None):
             "</div>"
             '<div class="words">&ldquo;%s&rdquo;</div>'
             '<div class="cause">%s</div>'
-            '<div class="eulogy">%s</div>%s%s%s'
+            '<div class="eulogy">%s</div>%s%s%s%s'
             '<div class="survived">%s</div></div>'
             % (esc(p.name), _fmt_date(p.born), _fmt_date(p.died),
                _lifespan_text(p), p.commits,
                esc(p.last_words or "(silence)"), esc(p.cause),
-               esc(compose_eulogy(p)), risen, factors, autopsy_line,
-               esc(p.survived_by)))
+               esc(compose_eulogy(p)), full_eulogy, risen, factors,
+               autopsy_line, esc(p.survived_by)))
     extra = []
     if log:
         if log["first_visit"]:
@@ -1365,9 +1541,16 @@ def render_html(cem, log=None):
         extra.append('<h3 class="section">THE SOCIETY&rsquo;S HONORS</h3>'
                      '<div class="living">%s</div>' % rows)
     if cem.resting:
-        rows = "<br>".join(
-            "%s &mdash; %s" % (esc(p.name), esc(p.cause))
-            for p in cem.resting)
+        if with_eulogy:
+            rows = "<br><br>".join(
+                "%s &mdash; %s<br><em>%s</em>"
+                % (esc(p.name), esc(p.cause),
+                   esc(compose_full_eulogy(p)))
+                for p in cem.resting)
+        else:
+            rows = "<br>".join(
+                "%s &mdash; %s" % (esc(p.name), esc(p.cause))
+                for p in cem.resting)
         extra.append('<h3 class="section">AT REST: FINISHED, NOT DEAD</h3>'
                      '<div class="living">%s</div>' % rows)
     infamy = hall_of_infamy(cem)
@@ -1656,7 +1839,7 @@ def _site_github_url(path):
     return None
 
 
-def site_projects(cem):
+def site_projects(cem, with_eulogy=False):
     stones = []
     for p in cem.deceased:
         desc = "%d commits over %s. %s" % (
@@ -1683,6 +1866,8 @@ def site_projects(cem):
             "longest_flatline_days": p.longest_flatline,
             "activity": p.activity,
         }
+        if with_eulogy:
+            stone["eulogy"] = compose_full_eulogy(p)
         _a = autopsy(p)
         stone["autopsy"] = {
             "momentum": _a["momentum"],
@@ -2454,6 +2639,11 @@ def main(argv=None):
     ap.add_argument("--autopsy", action="store_true",
                     help="Append the Autopsy Department's findings "
                          "(metadata only) to the terminal report")
+    ap.add_argument("--eulogy", action="store_true",
+                    help="Compose the full eulogy for every buried "
+                         "or at-rest project and include it in the "
+                         "terminal report, the Markdown and HTML "
+                         "obituaries, the JSON, and the site export")
     ap.add_argument("--certificates", metavar="DIR",
                     help="Write a formal certificate (HTML) for every "
                          "buried or at-rest project into DIR")
@@ -2497,7 +2687,7 @@ def main(argv=None):
         _save_state(state_path, state)
 
     if args.json:
-        data = cemetery_dict(cem)
+        data = cemetery_dict(cem, with_eulogy=args.eulogy)
         if log is not None:
             data["groundskeeper_log"] = log
         if args.on_this_day:
@@ -2509,7 +2699,8 @@ def main(argv=None):
             print(render_groundskeeper_log(log))
     else:
         print(render_terminal(cem, with_autopsy=args.autopsy,
-                              with_on_this_day=args.on_this_day))
+                              with_on_this_day=args.on_this_day,
+                              with_eulogy=args.eulogy))
         if log is not None:
             print(render_groundskeeper_log(log))
     if args.certificates:
@@ -2531,7 +2722,8 @@ def main(argv=None):
               % (args.certificates, len(subjects), len(risen)))
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
-            fh.write(render_html(cem, log if args.diff else None))
+            fh.write(render_html(cem, log if args.diff else None,
+                                 with_eulogy=args.eulogy))
         print("Graveyard written to %s" % args.html)
     if args.card:
         with open(args.card, "w", encoding="utf-8") as fh:
@@ -2547,7 +2739,7 @@ def main(argv=None):
         print("Badge written to %s" % args.badge)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(render_markdown(cem))
+            fh.write(render_markdown(cem, with_eulogy=args.eulogy))
         print("Obituaries written to %s" % args.out)
     if args.adopt:
         with open(args.adopt, "w", encoding="utf-8") as fh:
@@ -2572,7 +2764,8 @@ def main(argv=None):
         os.makedirs(args.site, exist_ok=True)
         with open(os.path.join(args.site, "projects.json"), "w",
                   encoding="utf-8") as fh:
-            json.dump(site_projects(cem), fh, indent=2)
+            json.dump(site_projects(cem, with_eulogy=args.eulogy),
+                      fh, indent=2)
             fh.write("\n")
         with open(os.path.join(args.site, "wards.json"), "w",
                   encoding="utf-8") as fh:

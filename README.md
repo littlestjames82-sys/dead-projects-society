@@ -144,6 +144,18 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--on-this-day` appends the anniversaries: projects that died on
   this month and day in an earlier year, and projects born on it. A
   reason to visit the grounds more than once.
+- `--eulogy` composes **the full eulogy** for every buried or
+  at-rest project: a short spoken-style paragraph woven from the
+  life itself, its dates and commit count, its brightest month,
+  the coroner's verdict, its last words, the successor that
+  replaced it, and any resurrection on its record. At-rest
+  projects are spoken of softly; they finished, they were not
+  abandoned. The wording varies by project but is seeded from the
+  project's name, so the same project receives the same eulogy on
+  every visit. It appears in the terminal report, the Markdown and
+  HTML obituaries, the JSON (`full_eulogy`), and the `--site`
+  export, and only when the flag is given: a eulogy is read aloud
+  on request, not by default.
 - Several folders can be named at once; they are merged into one
   cemetery, and succession is judged across all of them. If the
   replacement was started in a different folder, the Society will

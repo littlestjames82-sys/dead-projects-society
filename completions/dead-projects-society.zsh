@@ -18,6 +18,7 @@ _dead_projects_society() {
     '--deep-model[model id]:model:' \
     '--depth[folder depth to scan]:depth:' \
     '--diff[compare with the last recorded visit]' \
+    '--eulogy[include the full eulogies in the outputs]' \
     '--exclude[directory name to skip]:name:' \
     '--fail-if-new-deaths[exit 3 when the log reports a new death]' \
     '--html[file to write the HTML graveyard to]:file:_files' \

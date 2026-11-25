@@ -409,6 +409,135 @@ class TestEulogiesAndPatients(FixtureBase):
         self.assertIn("does not bury the living", e["description"])
 
 
+class TestFullEulogies(FixtureBase):
+    """v0.26.0: the full eulogy, spoken style, behind --eulogy."""
+
+    def _buried(self):
+        commits = [("2024-01-05T10:00:00", "first breath")]
+        for i in range(14):
+            commits.append(("2024-%02d-10T10:00:00" % (i % 8 + 1),
+                            "steady work %d" % i))
+        commits.append(("2024-09-01T10:00:00", "wrapping up for now"))
+        make_repo(os.path.join(self.tmp, "oldfaithful"), commits)
+        return dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+
+    def test_buried_eulogy_weaves_the_record(self):
+        cem = self._buried()
+        p = cem.deceased[0]
+        text = dps.compose_full_eulogy(p)
+        self.assertIn("oldfaithful", text)
+        self.assertIn("Jan 05, 2024", text)
+        self.assertIn("Sep 01, 2024", text)
+        self.assertIn("16 commits", text)
+        self.assertIn("Jan 2024", text)  # the peak month, named
+        self.assertIn(p.cause, text)
+        self.assertIn('"wrapping up for now"', text)
+        self.assertNotIn("—", text)
+
+    def test_eulogy_is_deterministic(self):
+        cem = self._buried()
+        p = cem.deceased[0]
+        self.assertEqual(dps.compose_full_eulogy(p),
+                         dps.compose_full_eulogy(p))
+        again = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(dps.compose_full_eulogy(again.deceased[0]),
+                         dps.compose_full_eulogy(p))
+
+    def test_resurrected_eulogy_notes_the_return(self):
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2024-01-01T10:00:00", "start"),
+            ("2024-06-15T10:00:00", "back again"),
+            ("2024-07-01T10:00:00", "final word"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        p = cem.deceased[0]
+        self.assertEqual(p.resurrections, 1)
+        text = dps.compose_full_eulogy(p)
+        self.assertIn("flatlined for 166 days once and come back",
+                      text)
+        self.assertIn("This time, it did not.", text)
+
+    def test_successor_is_named_in_the_eulogy(self):
+        make_repo(os.path.join(self.tmp, "firsttry"), [
+            ("2024-01-01T10:00:00", "start"),
+            ("2024-02-01T10:00:00", "giving up"),
+        ])
+        make_repo(os.path.join(self.tmp, "secondtry"), [
+            ("2024-02-10T10:00:00", "new beginning"),
+            ("2024-03-01T10:00:00", "still going"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        by_name = {p.name: p for p in cem.projects}
+        first = by_name["firsttry"]
+        self.assertIn("secondtry", first.survived_by)
+        self.assertIn("secondtry", dps.compose_full_eulogy(first))
+
+    def test_at_rest_eulogy_is_softer(self):
+        path = os.path.join(self.tmp, "donetools")
+        dates = ["2025-03-01", "2025-03-15", "2025-04-01",
+                 "2025-04-15", "2025-05-01", "2025-05-15",
+                 "2025-05-20", "2025-05-24", "2025-05-27",
+                 "2025-05-29", "2025-05-31"]
+        commits = [("%sT10:00:00" % d, "work %d" % i)
+                   for i, d in enumerate(dates, 1)]
+        commits.append(("2025-06-01T10:00:00", "work twelve"))
+        make_repo(path, commits)
+        with open(os.path.join(path, "PROJECT_WILL.md"), "w") as fh:
+            fh.write("# Will\nStatus: complete\n"
+                     "Note: It did everything it was going to do.\n")
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.resting), 1)
+        text = dps.compose_full_eulogy(cem.resting[0])
+        self.assertIn("did everything it was going to do", text)
+        self.assertNotIn("coroner", text)
+        self.assertNotIn("flatlined", text)
+
+    def test_the_living_get_no_eulogy(self):
+        make_repo(os.path.join(self.tmp, "aliveandwell"), [
+            ("2025-12-20T10:00:00", "start"),
+            ("2025-12-30T10:00:00", "recent work"),
+        ])
+        cem = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(len(cem.alive), 1)
+        self.assertIsNone(dps.compose_full_eulogy(cem.alive[0]))
+        data = dps.cemetery_dict(cem, with_eulogy=True)
+        self.assertIsNone(data["projects"][0]["full_eulogy"])
+
+    def test_flag_controls_every_surface(self):
+        cem = self._buried()
+        eulogy = dps.compose_full_eulogy(cem.deceased[0])
+        self.assertIn("THE EULOGIES",
+                      dps.render_terminal(cem, with_eulogy=True))
+        self.assertNotIn("THE EULOGIES", dps.render_terminal(cem))
+        self.assertIn(eulogy,
+                      dps.render_markdown(cem, with_eulogy=True))
+        self.assertNotIn(eulogy, dps.render_markdown(cem))
+        self.assertIn('class="fulleulogy"',
+                      dps.render_html(cem, with_eulogy=True))
+        self.assertNotIn('class="fulleulogy"', dps.render_html(cem))
+        on = dps.cemetery_dict(cem, with_eulogy=True)["projects"][0]
+        off = dps.cemetery_dict(cem)["projects"][0]
+        self.assertEqual(on["full_eulogy"], eulogy)
+        self.assertIsNone(off["full_eulogy"])
+        self.assertEqual(
+            dps.site_projects(cem, with_eulogy=True)[0]["eulogy"],
+            eulogy)
+        self.assertNotIn("eulogy", dps.site_projects(cem)[0])
+
+    def test_cli_eulogy_flag(self):
+        self._buried()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--eulogy"])
+        self.assertEqual(rc, 0)
+        self.assertIn("THE EULOGIES", buf.getvalue())
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp])
+        self.assertEqual(rc, 0)
+        self.assertNotIn("THE EULOGIES", buf.getvalue())
+
+
 class TestHtmlAndCardParity(FixtureBase):
     def test_html_has_honors_and_eulogy(self):
         make_repo(os.path.join(self.tmp, "htmlproj"), [

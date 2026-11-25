@@ -42,6 +42,10 @@ The CLI, the verdicts, the 3D cemetery.
       succession judged across the union (v0.18.0)
 - [x] The Obituary Awards: year-end honors for the famous dead
       (site, Nov 21, 2026)
+- [x] The full eulogy: `--eulogy` composes a spoken-style
+      paragraph for every buried or at-rest project from its own
+      record, in the terminal, Markdown, HTML, JSON, and site
+      outputs (v0.26.0)
 
 ### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful
