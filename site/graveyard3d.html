@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dead Projects Society — The Graveyard</title>
+<meta name="description" content="A 3D graveyard for abandoned side projects. Walk the grounds, read the tombstones.">
+<meta property="og:title" content="Dead Projects Society — The Graveyard">
+<meta property="og:description" content="Every abandoned side project deserves a tombstone. Walk the grounds, read the last words.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://littlestjames82-sys.github.io/dead-projects-society/">
+<meta property="og:image" content="https://littlestjames82-sys.github.io/dead-projects-society/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://littlestjames82-sys.github.io/dead-projects-society/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M20 95 V45 A30 30 0 0 1 80 45 V95 Z' fill='%236a737c'/%3E%3Ctext x='50' y='62' font-size='26' text-anchor='middle' fill='%23cfd6dd' font-family='Georgia'%3ERIP%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css?v=26">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="scene-container"></div>
+<div class="vignette"></div>
+<div id="tooltip" class="tooltip" hidden></div>
+
+<nav id="registry" class="registry" hidden>
+  <div class="registry-title">The Registry</div>
+  <div id="on-this-day" class="on-this-day" hidden></div>
+  <div id="survey-line" class="survey-line" hidden></div>
+  <input id="registry-search" class="registry-search" type="search"
+    placeholder="Search the dead&hellip;" aria-label="Search the registry">
+  <div id="cause-filters" class="cause-filters"></div>
+  <div class="registry-title section-title">Sections by era</div>
+  <div id="era-filters" class="cause-filters"></div>
+  <div class="registry-title section-title">Sections by language</div>
+  <div id="language-filters" class="cause-filters"></div>
+  <ul id="registry-list" class="registry-list"></ul>
+  <div id="honors" hidden>
+    <div class="registry-title">Society Honors</div>
+    <ul id="honors-list" class="registry-list"></ul>
+  </div>
+  <div id="infamy" hidden>
+    <div class="registry-title">Hall of Infamy</div>
+    <ul id="infamy-list" class="registry-list"></ul>
+  </div>
+  <div id="wards-section" hidden>
+    <div class="registry-title">The Wards</div>
+    <ul id="wards-list" class="registry-list"></ul>
+  </div>
+  <div id="public-section" hidden>
+    <div class="registry-title">The Public Grounds</div>
+    <div class="grounds-note">Every grave here was verified before burial: products by an official shutdown, repositories by GitHub's own archived flag, with real star counts and last-push dates. Anything still breathing was refused, however famous.</div>
+    <div id="public-filters" class="cause-filters">
+      <button class="filter-chip active" type="button" data-pub="all">All</button>
+      <button class="filter-chip" type="button" data-pub="products">Products</button>
+      <button class="filter-chip" type="button" data-pub="repos">Repositories</button>
+    </div>
+    <label class="sort-label">Order the grounds
+      <select id="public-sort">
+        <option value="grounds">As buried</option>
+        <option value="silence">Longest silence</option>
+        <option value="stars">Most stars</option>
+        <option value="name">Name</option>
+      </select>
+    </label>
+    <ul id="public-list" class="registry-list"></ul>
+    <button id="tour-public-btn" class="tour-btn" type="button">Tour the Public Grounds</button>
+  </div>
+  <button id="random-grave" class="random-grave" type="button">Visit a random grave</button>
+  <button id="tour-btn" class="tour-btn" type="button">Take the tour</button>
+  <button id="terminal-btn" class="tour-btn" type="button">Terminal mode</button>
+  <a class="tour-btn" href="bury.html" style="display:block;text-align:center;text-decoration:none;margin-top:8px">Bury a GitHub user</a>
+  <a class="tour-btn" href="awards.html" style="display:block;text-align:center;text-decoration:none;margin-top:8px">The 2026 Obituary Awards</a>
+  <div class="install-box">
+    <p class="install-title">Run it on your own grounds</p>
+    <code class="install-cmd">pip install dead-projects-society</code>
+    <button id="install-copy" class="tour-btn" type="button">Copy the command</button>
+    <a class="install-link" href="https://pypi.org/project/dead-projects-society/">The Society on PyPI</a>
+  </div>
+</nav>
+
+<header class="masthead">
+  <h1>DEAD PROJECTS SOCIETY</h1>
+  <p class="tagline">est. the day you ran the command</p>
+  <p id="grounds-stats" class="stats">Opening the gates&hellip;</p>
+</header>
+
+<div class="hint" id="hint">Drag to look around &middot; Scroll to zoom &middot; Click a tombstone to pay respects</div>
+
+<aside id="panel" class="panel" hidden>
+  <button id="panel-close" class="panel-close" aria-label="Close">&times;</button>
+  <div class="panel-rip">R.I.P.</div>
+  <h2 id="panel-name"></h2>
+  <div id="panel-years" class="panel-years"></div>
+  <div id="panel-silent" class="panel-silent"></div>
+  <div id="panel-stars" class="panel-silent"></div>
+  <div id="panel-rose" class="panel-silent"></div>
+  <div id="panel-life" class="panel-silent" hidden>ITS LIFE, MONTH BY MONTH</div>
+  <canvas id="panel-timeline" width="296" height="46" hidden></canvas>
+  <span id="panel-cause" class="cause-tag"></span>
+  <blockquote id="panel-epitaph" class="panel-epitaph"></blockquote>
+  <p id="panel-description" class="panel-description"></p>
+  <div id="panel-autopsy" hidden>
+    <div class="panel-silent">THE AUTOPSY</div>
+    <p id="panel-autopsy-momentum" class="autopsy-momentum"></p>
+    <ul id="panel-autopsy-findings" class="autopsy-findings"></ul>
+    <p id="panel-autopsy-revival" class="autopsy-revival"></p>
+  </div>
+  <div id="panel-tech" class="tech-row"></div>
+  <a id="panel-url" class="remains-link" href="#" target="_blank" rel="noopener" hidden>View remains &rarr;</a>
+  <div>
+    <button id="panel-share" class="share-btn" type="button">Share this grave</button>
+    <button id="panel-copy" class="share-btn" type="button">Copy obituary</button>
+    <button id="panel-download" class="share-btn" type="button">Download card</button>
+    <button id="panel-cert" class="share-btn" type="button">Death certificate</button>
+  </div>
+  <div class="panel-nav">
+    <button id="panel-prev" class="nav-btn" type="button">&larr; Previous grave</button>
+    <button id="panel-next" class="nav-btn" type="button">Next grave &rarr;</button>
+  </div>
+</aside>
+
+<div id="fallback" class="fallback" hidden>
+  <h2>The gates are stuck</h2>
+  <p id="fallback-text">The 3D grounds could not open in this browser. The departed are still listed with the
+  <a href="https://github.com/littlestjames82-sys/dead-projects-society">Society's CLI</a>.</p>
+</div>
+
+<footer class="colophon">
+  Judged locally from git history alone &middot; The Society does not bury the living &middot;
+  <a href="https://github.com/littlestjames82-sys/dead-projects-society">GitHub</a>
+</footer>
+
+<script type="module" src="main.js?v=32"></script>
+</body>
+</html>
