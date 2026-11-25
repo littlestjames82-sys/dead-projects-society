@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.27.0"
+VERSION = "0.28.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -850,6 +850,190 @@ def render_adoption_papers(cem):
     return "\n".join(lines) + "\n"
 
 
+# ---------------------------------------------------------------------------
+# Adoption listings: one ready-to-post paper per project (v0.28.0)
+# ---------------------------------------------------------------------------
+
+
+def adoption_subjects(cem):
+    """Who may be offered: the buried, and the finished at rest.
+    The still breathing and the intensive-care patients are not
+    being offered, and the Society does not list them."""
+    return cem.deceased + cem.resting
+
+
+def adoption_listing_filename(p):
+    return "%s-adoption.md" % _site_slug(p.name)
+
+
+def _adoption_identity(p):
+    """One line of introduction, from the record."""
+    bits = []
+    if p.language:
+        bits.append("A %s project" % p.language)
+    else:
+        bits.append("A project")
+    bits.append("lived from %s to %s (%s)"
+                % (_fmt_date(p.born), _fmt_date(p.died),
+                   _lifespan_text(p)))
+    bits.append("%d commits by %s"
+                % (p.commits,
+                   "a single author" if p.authors == 1
+                   else "%d authors" % p.authors))
+    return ", ".join(bits) + "."
+
+
+def render_adoption_listing(p, cem):
+    """One ready-to-post adoption listing for a single project,
+    drawn entirely from its own record. The buried are offered as
+    the dead; the finished are offered as a retirement transfer,
+    because they were completed, not felled."""
+    a = autopsy(p)
+    resting = p.status == "resting"
+    lines = []
+    if resting:
+        lines += [
+            "# Offered for a new keeper: %s" % p.name,
+            "",
+            "*A retirement transfer, filed by the Dead Projects "
+            "Society. This project was finished, not felled; its "
+            "author completed it and set it down. What it needs "
+            "now is not a resurrection but a keeper.*",
+            "",
+        ]
+    else:
+        lines += [
+            "# For adoption: %s" % p.name,
+            "",
+            "*An adoption listing, filed by the Dead Projects "
+            "Society. Every project deserves a proper obituary; "
+            "some deserve a second life. This one is offered for "
+            "the second.*",
+            "",
+        ]
+    lines += [_adoption_identity(p), ""]
+    lines += ["## Why it is offered", ""]
+    if resting:
+        lines.append("The record closes with the coroner's note: %s"
+                     % (p.cause or "Completed, by its author's word."))
+        lines.append("It has been silent for %d days, not in "
+                     "distress but in retirement."
+                     % p.silence_days)
+    else:
+        lines.append("Cause of death, as the coroner wrote it: %s"
+                     % (p.cause or "Cause unknown."))
+        lines.append("The silence has lasted %d days."
+                     % p.silence_days)
+        lines.append("Its last words were \"%s\"."
+                     % (p.last_words or "(none recorded)"))
+    if p.will_status == "adoptable":
+        lines.append("Its will asks for a new keeper, in writing.")
+    if p.will_note:
+        lines.append("Its author left word in the will: \"%s\""
+                     % p.will_note)
+    lines += ["", "## The state of the estate", ""]
+    lines.append("Momentum, as the Autopsy Department read it: %s"
+                 % a["momentum"])
+    lines.append("Bus factor: %d. %s"
+                 % (p.authors,
+                    "A single pair of hands knew the whole story."
+                    if p.authors <= 1 else
+                    "The knowledge was not trapped in one head."))
+    if a["findings"]:
+        lines.append("")
+        lines += ["- %s" % f for f in a["findings"]]
+    lines += ["", "## Revival outlook", ""]
+    lines.append("The Society's assessment: %s" % a["revival_verdict"])
+    if a["revival_reasons"]:
+        lines.append("The record in its favour: %s."
+                     % "; ".join(a["revival_reasons"]))
+    if resting:
+        lines.append("To be plain: this one does not need reviving. "
+                     "It needs a keeper willing to answer for it.")
+    if p.survived_by and not p.survived_by.startswith(
+            "Survived by no one"):
+        lines += ["", "## A note on the succession", "",
+                  p.survived_by,
+                  "An adopter takes the elder line, with its full "
+                  "history. The successor keeps its own name and its "
+                  "own future; the Society records both.", ""]
+    lines += [
+        "## Terms of adoption",
+        "",
+        "- License: as recorded in the repository. (The owner "
+        "confirms it here: ____________________)",
+        "- Handover notes: ____________________",
+        "- What the new keeper takes on: the project, its history, "
+        "and its last words, and the promise to give it a future.",
+        "",
+        "The Society's standing word: nobody's project is modified, "
+        "claimed, or republished without its owner's authorization. "
+        "Memorializing a project is always free, and so is offering "
+        "it a second life.",
+        "",
+        "---",
+        "",
+        "Filed by the Dead Projects Society, from the project's own "
+        "record. The Society varnishes nothing.",
+        "Give your own grounds the same courtesy: "
+        "`pip install dead-projects-society`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_adoption_index(cem, subjects):
+    """The index of listings in an adoption papers folder."""
+    lines = [
+        "# ADOPTION LISTINGS",
+        "",
+        "Issued by the Dead Projects Society, for the grounds at %s."
+        % cem.root,
+        "",
+        "One listing per project offered, each drawn from the "
+        "project's own record and ready to post wherever maintainers "
+        "are found. The still breathing and the intensive-care "
+        "patients are not listed; they are not being offered.",
+        "",
+    ]
+    if not subjects:
+        lines.append("No projects are offered at this time. The "
+                     "grounds hold no one who needs a keeper.")
+    for p in subjects:
+        kind = ("retirement transfer" if p.status == "resting"
+                else "adoption")
+        lines.append("- [%s](%s): %s, %s to %s, %d commits."
+                     % (p.name, adoption_listing_filename(p), kind,
+                        _fmt_date(p.born), _fmt_date(p.died),
+                        p.commits))
+    lines += [
+        "",
+        "---",
+        "",
+        "The Society charges nothing for adoptions. It never has.",
+        "`pip install dead-projects-society`",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def write_adoption_papers(cem, folder):
+    """Write one listing per offered project into folder, plus the
+    index. Returns {project name: listing filename}. Deterministic:
+    the same grounds produce byte-identical papers."""
+    os.makedirs(folder, exist_ok=True)
+    subjects = adoption_subjects(cem)
+    files = {}
+    for p in subjects:
+        fname = adoption_listing_filename(p)
+        with open(os.path.join(folder, fname), "w",
+                  encoding="utf-8") as fh:
+            fh.write(render_adoption_listing(p, cem))
+        files[p.name] = fname
+    with open(os.path.join(folder, "index.md"), "w",
+              encoding="utf-8") as fh:
+        fh.write(render_adoption_index(cem, subjects))
+    return files
+
+
 def compose_eulogy(p):
     """A few kind sentences, assembled from the facts of the life."""
     life = p.lifespan_days
@@ -1483,7 +1667,8 @@ def _sections(cem):
 # ---------------------------------------------------------------------------
 
 
-def cemetery_dict(cem, with_eulogy=False, wrapped_year=None):
+def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
+                  adoption_files=None):
     def pd(p):
         return {
             "name": p.name,
@@ -1510,6 +1695,8 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None):
             "eulogy": compose_eulogy(p) if p.status == "deceased" else None,
             "full_eulogy": (compose_full_eulogy(p)
                             if with_eulogy else None),
+            "adoption_listing": (adoption_files.get(p.name)
+                                 if adoption_files else None),
             "autopsy": autopsy(p) if p.status in ("deceased", "resting")
                        else None,
             "activity_monthly": p.activity,
@@ -1532,6 +1719,8 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None):
             "average_lifespan_days": round(cem.avg_lifespan, 1),
             "back_from_the_dead": sum(
                 1 for p in cem.projects if p.resurrections >= 1),
+            "adoption_papers": (len(adoption_files)
+                                if adoption_files else 0),
             "sections": _sections(cem),
         },
         "honors": [
@@ -2880,6 +3069,12 @@ def main(argv=None):
                     help="Write adoption papers (Markdown) for the "
                          "buried: one honest listing per project, "
                          "with a line for a new keeper to sign")
+    ap.add_argument("--adoption-papers", metavar="DIR", default=None,
+                    help="Write one ready-to-post adoption listing "
+                         "(Markdown) per buried or at-rest project "
+                         "into DIR, with an index: the estate, the "
+                         "revival outlook, and blank terms for the "
+                         "owner to complete")
     ap.add_argument("--on-this-day", action="store_true",
                     help="Append anniversaries: projects that died or "
                          "were born on this month and day in earlier "
@@ -2938,9 +3133,15 @@ def main(argv=None):
     if args.wrapped is not None:
         wrapped_year = args.wrapped or cem.generated.year
 
+    adoption_files = None
+    if args.adoption_papers:
+        adoption_files = write_adoption_papers(cem,
+                                               args.adoption_papers)
+
     if args.json:
         data = cemetery_dict(cem, with_eulogy=args.eulogy,
-                             wrapped_year=wrapped_year)
+                             wrapped_year=wrapped_year,
+                             adoption_files=adoption_files)
         if log is not None:
             data["groundskeeper_log"] = log
         if args.on_this_day:
@@ -3016,6 +3217,10 @@ def main(argv=None):
             fh.write(render_adoption_papers(cem))
         print("Adoption papers: %s (%d projects listed)"
               % (args.adopt, len(cem.deceased)))
+    if adoption_files is not None:
+        print("Adoption listings written to %s (%d papers, plus "
+              "index.md)"
+              % (args.adoption_papers, len(adoption_files)))
     if args.wrapped_kit:
         year = args.year or cem.generated.year
         os.makedirs(args.wrapped_kit, exist_ok=True)
@@ -3066,6 +3271,9 @@ def main(argv=None):
                 "alive": len(cem.alive),
             }, fh, indent=2)
             fh.write("\n")
+        if adoption_files is not None:
+            write_adoption_papers(
+                cem, os.path.join(args.site, "adoption-papers"))
         print("Web graveyard data written to %s" % args.site)
     if args.fail_if_new_deaths and log and not log.get("first_visit"):
         dead_now = {p.name for p in cem.deceased}

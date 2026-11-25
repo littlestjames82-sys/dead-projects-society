@@ -173,6 +173,14 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--adopt papers.md` writes adoption papers for the buried: one
   honest listing per project, its assessment, what it needs, and a
   line for a new keeper to sign.
+- `--adoption-papers DIR` writes **one ready-to-post adoption
+  listing per project** into DIR, with an index: the project's
+  identity, why it is offered, the state of the estate, and the
+  revival outlook, all drawn from its own record, a note where a
+  successor exists, and Terms of adoption left blank for the
+  owner to complete. At-rest projects are filed as retirement
+  transfers. The still breathing and the intensive-care patients
+  get no papers; they are not being offered.
 - `--oneline` prints one line per project (name, state, silence,
   cause) for quick scans and pipes; the full report remains the
   ceremony.

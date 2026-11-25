@@ -1223,6 +1223,180 @@ class TestAdoptionPapers(FixtureBase):
         self.assertIn("died_full", entry)
 
 
+class TestAdoptionListings(FixtureBase):
+    """v0.28.0: --adoption-papers DIR, one listing per project."""
+
+    def _build(self):
+        make_repo(os.path.join(self.tmp, "old-game"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-03-10T09:00:00", "add sprites"),
+            ("2025-03-20T09:00:00", "levels"),
+            ("2025-04-03T09:00:00", "physics"),
+            ("2025-04-09T09:00:00", "score"),
+            ("2025-04-15T09:00:00", "sound"),
+            ("2025-04-21T09:00:00", "menus"),
+            ("2025-04-27T09:00:00", "polish"),
+            ("2025-05-06T09:00:00", "bugfix"),
+            ("2025-05-19T09:00:00", "more levels"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        rest = os.path.join(self.tmp, "resting-lib")
+        make_repo(rest, [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "final tidy"),
+        ])
+        with open(os.path.join(rest, "PROJECT_WILL.md"), "w") as fh:
+            fh.write("Status: complete\n")
+        # born six days after old-game died: its successor, and alive
+        make_repo(os.path.join(self.tmp, "heir-tool"), [
+            ("2025-06-20T09:00:00", "initial commit"),
+            ("2025-12-30T09:00:00", "still going"),
+        ])
+        # intensive care: silent 42 days at NOW, not offered
+        make_repo(os.path.join(self.tmp, "sick-tool"), [
+            ("2025-11-20T09:00:00", "initial commit"),
+        ])
+
+    def _cem(self):
+        return dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+
+    def test_buried_listing_drawn_from_the_record(self):
+        self._build()
+        out = os.path.join(self.tmp, "papers")
+        files = dps.write_adoption_papers(self._cem(), out)
+        self.assertEqual(files["old-game"], "old-game-adoption.md")
+        with open(os.path.join(out, "old-game-adoption.md"),
+                  encoding="utf-8") as fh:
+            listing = fh.read()
+        self.assertIn("# For adoption: old-game", listing)
+        # why it is offered: cause, silence, last words
+        self.assertIn("Cause of death, as the coroner wrote it:",
+                      listing)
+        self.assertIn("Died mid-sentence", listing)
+        self.assertIn('Its last words were "wip".', listing)
+        # the state of the estate: peak month, momentum, bus factor
+        self.assertIn("## The state of the estate", listing)
+        self.assertIn("Peak month: Apr 2025", listing)
+        self.assertIn("Bus factor: 1", listing)
+        # revival outlook, from the autopsy
+        self.assertIn("## Revival outlook", listing)
+        self.assertIn("The Society's assessment: Let it rest.",
+                      listing)
+        self.assertIn("the trail is still warm", listing)
+        # successor note: heir-tool was born six days after it died
+        self.assertIn("## A note on the succession", listing)
+        self.assertIn("heir-tool", listing)
+        # terms, standing word, footer
+        self.assertIn("## Terms of adoption", listing)
+        self.assertIn("without its owner's authorization", listing)
+        self.assertIn("Memorializing a project is always free",
+                      listing)
+        self.assertIn("pip install dead-projects-society", listing)
+
+    def test_resting_listing_is_a_retirement_transfer(self):
+        self._build()
+        out = os.path.join(self.tmp, "papers")
+        files = dps.write_adoption_papers(self._cem(), out)
+        self.assertIn("resting-lib", files)
+        with open(os.path.join(out, "resting-lib-adoption.md"),
+                  encoding="utf-8") as fh:
+            listing = fh.read()
+        self.assertIn("Offered for a new keeper: resting-lib",
+                      listing)
+        self.assertIn("retirement transfer", listing)
+        self.assertIn("finished, not felled", listing)
+        self.assertIn("does not need reviving", listing)
+        self.assertNotIn("Cause of death, as the coroner wrote it:",
+                         listing)
+
+    def test_living_and_intensive_care_get_no_papers(self):
+        self._build()
+        out = os.path.join(self.tmp, "papers")
+        files = dps.write_adoption_papers(self._cem(), out)
+        self.assertEqual(sorted(files), ["old-game", "resting-lib"])
+        self.assertFalse(os.path.exists(
+            os.path.join(out, "heir-tool-adoption.md")))
+        self.assertFalse(os.path.exists(
+            os.path.join(out, "sick-tool-adoption.md")))
+
+    def test_index_lists_every_listing(self):
+        self._build()
+        out = os.path.join(self.tmp, "papers")
+        dps.write_adoption_papers(self._cem(), out)
+        with open(os.path.join(out, "index.md"),
+                  encoding="utf-8") as fh:
+            index = fh.read()
+        self.assertIn("ADOPTION LISTINGS", index)
+        self.assertIn("[old-game](old-game-adoption.md)", index)
+        self.assertIn("[resting-lib](resting-lib-adoption.md)",
+                      index)
+        self.assertNotIn("(heir-tool-adoption.md)", index)
+        self.assertNotIn("(sick-tool-adoption.md)", index)
+
+    def test_json_carries_count_and_filenames(self):
+        self._build()
+        cem = self._cem()
+        out = os.path.join(self.tmp, "papers")
+        files = dps.write_adoption_papers(cem, out)
+        data = dps.cemetery_dict(cem, adoption_files=files)
+        self.assertEqual(data["summary"]["adoption_papers"], 2)
+        by_name = {p["name"]: p for p in data["projects"]}
+        self.assertEqual(by_name["old-game"]["adoption_listing"],
+                         "old-game-adoption.md")
+        self.assertEqual(by_name["resting-lib"]["adoption_listing"],
+                         "resting-lib-adoption.md")
+        self.assertIsNone(by_name["heir-tool"]["adoption_listing"])
+        plain = dps.cemetery_dict(cem)
+        self.assertEqual(plain["summary"]["adoption_papers"], 0)
+        self.assertIsNone(
+            {p["name"]: p for p in plain["projects"]}
+            ["old-game"]["adoption_listing"])
+
+    def test_papers_are_deterministic(self):
+        self._build()
+        cem = self._cem()
+        one = os.path.join(self.tmp, "papers-one")
+        two = os.path.join(self.tmp, "papers-two")
+        dps.write_adoption_papers(cem, one)
+        dps.write_adoption_papers(cem, two)
+        for name in ("old-game-adoption.md",
+                     "resting-lib-adoption.md", "index.md"):
+            with open(os.path.join(one, name), "rb") as fh:
+                a = fh.read()
+            with open(os.path.join(two, name), "rb") as fh:
+                b = fh.read()
+            self.assertEqual(a, b)
+
+    def test_cli_writes_papers_and_reports(self):
+        self._build()
+        out = os.path.join(self.tmp, "papers")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--adoption-papers", out])
+        self.assertEqual(rc, 0)
+        text = buf.getvalue()
+        # main() judges by the real calendar, not the fixture NOW,
+        # so the count is not pinned; the report line is the contract
+        self.assertIn("Adoption listings written to %s" % out, text)
+        self.assertIn("papers, plus index.md)", text)
+        self.assertTrue(os.path.exists(
+            os.path.join(out, "old-game-adoption.md")))
+
+    def test_site_export_includes_the_papers(self):
+        self._build()
+        site = os.path.join(self.tmp, "site")
+        papers = os.path.join(self.tmp, "papers")
+        with redirect_stdout(io.StringIO()):
+            rc = dps.main([self.tmp, "--site", site,
+                           "--adoption-papers", papers])
+        self.assertEqual(rc, 0)
+        nested = os.path.join(site, "adoption-papers")
+        self.assertTrue(os.path.exists(
+            os.path.join(nested, "index.md")))
+        self.assertTrue(os.path.exists(
+            os.path.join(nested, "old-game-adoption.md")))
+
+
 class TestOneline(FixtureBase):
     """v0.20.0: one line per project."""
 

@@ -51,6 +51,13 @@ The CLI, the verdicts, the 3D cemetery.
       month, its longest and shortest ended lives, and the
       coroner's most-written cause, with a shareable SVG card
       (v0.27.0)
+- [x] Adoption papers, one listing per project:
+      `--adoption-papers DIR` writes a ready-to-post listing for
+      every buried or at-rest project, drawn from its own record
+      with blank terms for the owner to complete (v0.28.0). The
+      local precursor to the Resurrection Department and the
+      adoption marketplace: the paper exists now; the platform
+      that trades on it remains Divisions III and V, later.
 
 ### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful

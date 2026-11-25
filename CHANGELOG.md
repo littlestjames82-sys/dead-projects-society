@@ -19,6 +19,32 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.28.0] - 2026-11-25
+
+### Added
+- `--adoption-papers DIR` writes one ready-to-post adoption
+  listing (Markdown) per buried or at-rest project into DIR,
+  with an `index.md` of them all. Each listing is drawn from the
+  project's own record: its identity (language, lifespan,
+  commits), why it is offered (the coroner's cause, the length
+  of the silence, its last words), the state of the estate (peak
+  month and momentum from the autopsy, bus factor, the README
+  and remote findings, dependency-era signals where present),
+  and the revival outlook (the autopsy's verdict and the record
+  in its favour). A project survived by a successor says so, so
+  an adopter knows the elder line is what is on offer. The
+  Terms of adoption are left blank for the owner to complete,
+  under the Society's standing word: nobody's project is
+  modified, claimed, or republished without its owner's
+  authorization, and memorializing is always free. At-rest
+  projects are filed as retirement transfers, not deaths. The
+  still breathing and the intensive-care patients receive no
+  papers; they are not being offered. The JSON gains an
+  `adoption_papers` count and a per-project `adoption_listing`
+  filename when the flag is used, and with `--site` the papers
+  are written into the export folder as well. The same grounds
+  produce byte-identical papers.
+
 ## [0.27.0] - 2026-11-25
 
 ### Added

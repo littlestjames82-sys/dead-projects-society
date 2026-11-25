@@ -5,6 +5,7 @@
 _dead_projects_society() {
   _arguments \
     '--adopt[file to write adoption papers to]:file:_files' \
+    '--adoption-papers[directory for per-project adoption listings]:directory:_files -/' \
     '--autopsy[append the metadata autopsy to the report]' \
     '--badge[file to write the README badge to]:file:_files' \
     '--card[file to write the share card to]:file:_files' \

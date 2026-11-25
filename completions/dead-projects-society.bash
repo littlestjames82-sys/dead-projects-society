@@ -6,9 +6,9 @@ _dead_projects_society() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    flags="--adopt --autopsy --badge --card --certificates --days --deep-autopsy --deep-budget --deep-dry-run --deep-ledger --deep-max-tokens --deep-model --depth --diff --eulogy --exclude --fail-if-new-deaths --html --json --on-this-day --oneline --out --site --square --state --version --wrapped --wrapped-kit --year --help"
+    flags="--adopt --adoption-papers --autopsy --badge --card --certificates --days --deep-autopsy --deep-budget --deep-dry-run --deep-ledger --deep-max-tokens --deep-model --depth --diff --eulogy --exclude --fail-if-new-deaths --html --json --on-this-day --oneline --out --site --square --state --version --wrapped --wrapped-kit --year --help"
     file_flags="--html --card --square --badge --out --adopt --state --deep-ledger"
-    dir_flags="--certificates --site --wrapped-kit"
+    dir_flags="--adoption-papers --certificates --site --wrapped-kit"
     case " $file_flags " in
         *" $prev "*) COMPREPLY=( $(compgen -f -- "$cur") ); return 0 ;;
     esac
