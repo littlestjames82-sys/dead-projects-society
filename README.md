@@ -156,6 +156,22 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   HTML obituaries, the JSON (`full_eulogy`), and the `--site`
   export, and only when the flag is given: a eulogy is read aloud
   on request, not by default.
+- `--house-awards` holds **the House Awards**: a ceremony for
+  your own grounds, one honour per category the record
+  genuinely supports. Longest Life and Briefest Life among the
+  buried, the Life's Work for the most commits, the Quietest
+  Passing for the longest premortem silence, Most Likely to
+  Rise on the Autopsy Department's revival verdict, the Elder
+  among the still breathing, the Patient longest in intensive
+  care, and the Comeback for a resurrection on the record. Each
+  citation is composed from the winner's own numbers, ties are
+  broken by name, and a category with no qualifying project is
+  omitted, never padded. Not to be confused with the **Obituary
+  Awards** on the site, which honour the famous dead; the House
+  Awards are for the grounds in front of you. The ceremony
+  appears in the terminal report, the Markdown and HTML
+  obituaries, and the JSON (`awards`), and the `--site` export
+  carries it as `house_awards.json`.
 - `--wrapped [YEAR]` appends **the Society's Year in Review**:
   for the year you name (or this year), it counts the projects
   born, buried, and resurrected, every commit that landed across

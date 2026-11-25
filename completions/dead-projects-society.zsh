@@ -22,6 +22,7 @@ _dead_projects_society() {
     '--eulogy[include the full eulogies in the outputs]' \
     '--exclude[directory name to skip]:name:' \
     '--fail-if-new-deaths[exit 3 when the log reports a new death]' \
+    '--house-awards[hold the House Awards ceremony for these grounds]' \
     '--html[file to write the HTML graveyard to]:file:_files' \
     '--json[print the full record as JSON]' \
     '--on-this-day[anniversaries in the grounds]' \

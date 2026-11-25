@@ -19,6 +19,28 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.29.0] - 2026-11-25
+
+### Added
+- `--house-awards` holds the House Awards: a ceremony for your
+  own grounds, as the Obituary Awards on the site are a ceremony
+  for the famous dead. One honour per category, and only where
+  the record genuinely supports one: Longest Life and Briefest
+  Life among the buried (the briefest asks at least one full day
+  of life, so a same-day scaffold does not win by default), the
+  Life's Work for the most commits, the Quietest Passing for the
+  longest premortem silence, Most Likely to Rise on the Autopsy
+  Department's revival verdict, the Elder among the still
+  breathing, the Patient longest in intensive care, and the
+  Comeback for a resurrection on the record. Each award carries
+  a citation composed from the winner's own numbers. Ties are
+  broken by name, a category with no qualifying project is
+  omitted rather than padded, and the same grounds hold the
+  same ceremony on every visit. The ceremony appears in the
+  terminal report, the Markdown and HTML obituaries, and the
+  JSON (`awards`), and the `--site` export now writes
+  `house_awards.json` beside the other grounds data.
+
 ## [0.28.0] - 2026-11-25
 
 ### Added

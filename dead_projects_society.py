@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.28.0"
+VERSION = "0.29.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -632,6 +632,151 @@ def hall_of_infamy(cem):
                       % len(p.gaps),
         })
     return infamy
+
+
+# ---------------------------------------------------------------------------
+# The House Awards: a ceremony for these grounds alone (v0.29.0)
+# ---------------------------------------------------------------------------
+
+_REVIVAL_RANK = {"Worth exhuming.": 2, "Long odds, but not none.": 1}
+
+
+def _award_pick(candidates, metric, highest=True):
+    """The deterministic winner: the best metric takes it, and a
+    tie is broken by name, so the same grounds hold the same
+    ceremony on every visit."""
+    if not candidates:
+        return None
+    if highest:
+        return sorted(candidates,
+                      key=lambda p: (-metric(p), p.name))[0]
+    return sorted(candidates, key=lambda p: (metric(p), p.name))[0]
+
+
+def house_awards(cem):
+    """The House Awards: one honour per category, and only where
+    the record genuinely supports one. The Obituary Awards on the
+    site are for the famous dead; this ceremony is for the grounds
+    in front of the Society, judged from the same record as
+    everything else here. A category with no qualifying project is
+    omitted. The Society does not pad a programme."""
+    awards = []
+    dead = cem.deceased
+    if dead:
+        p = _award_pick(dead, lambda x: x.lifespan_days)
+        awards.append({
+            "award": "Longest Life",
+            "project": p,
+            "citation": "Lived %s, from %s to %s, across %d commits. "
+                        "No one in these grounds had more life, and "
+                        "the Society honours the whole of it."
+                        % (_lifespan_text(p), _fmt_date(p.born),
+                           _fmt_date(p.died), p.commits),
+        })
+        brief = [p for p in dead if p.lifespan_days >= 1]
+        p = _award_pick(brief, lambda x: x.lifespan_days,
+                        highest=False)
+        if p is not None:
+            awards.append({
+                "award": "Briefest Life",
+                "project": p,
+                "citation": "Lived %s, from %s to %s, with %d commits "
+                            "in all. A short life, formally noted: "
+                            "brevity is not the same as insignificance."
+                            % (_lifespan_text(p), _fmt_date(p.born),
+                               _fmt_date(p.died), p.commits),
+            })
+        p = _award_pick(dead, lambda x: x.commits)
+        awards.append({
+            "award": "The Life's Work",
+            "project": p,
+            "citation": "%d commits, more than anyone else in these "
+                        "grounds, across a life of %s. Whatever became "
+                        "of the plan, the record of the work stands."
+                        % (p.commits, _lifespan_text(p)),
+        })
+        quiet = [p for p in dead if p.longest_flatline >= 1]
+        p = _award_pick(quiet, lambda x: x.longest_flatline)
+        if p is not None:
+            awards.append({
+                "award": "The Quietest Passing",
+                "project": p,
+                "citation": "Before the end, it fell silent for %d "
+                            "days, the longest premortem quiet in "
+                            "these grounds, and still came back to "
+                            "work before the record closed for good."
+                            % p.longest_flatline,
+            })
+        hopeful = []
+        for p in dead:
+            a = autopsy(p)
+            if a["revival_verdict"] in _REVIVAL_RANK:
+                hopeful.append((p, a))
+        if hopeful:
+            p, a = sorted(
+                hopeful,
+                key=lambda pa: (-_REVIVAL_RANK[pa[1]["revival_verdict"]],
+                                -pa[1]["revival_score"],
+                                pa[0].name))[0]
+            awards.append({
+                "award": "Most Likely to Rise",
+                "project": p,
+                "citation": "The Autopsy Department's verdict: %s "
+                            "The record in its favour: %s. If anyone "
+                            "in these grounds comes back, the smart "
+                            "money is here."
+                            % (a["revival_verdict"],
+                               "; ".join(a["revival_reasons"])),
+            })
+    if cem.alive:
+        p = sorted(cem.alive, key=lambda x: (x.born, x.name))[0]
+        age = max(0, (cem.generated - p.born).days)
+        awards.append({
+            "award": "The Elder",
+            "project": p,
+            "citation": "Born %s and still breathing, %s into its "
+                        "life and counting. The elder of these "
+                        "grounds, honoured among the living."
+                        % (_fmt_date(p.born), _site_life_text(age)),
+        })
+    if cem.coma:
+        p = _award_pick(cem.coma, lambda x: x.silence_days)
+        awards.append({
+            "award": "The Patient",
+            "project": p,
+            "citation": "In intensive care these %d days, last seen "
+                        "%s. The Society does not bury the living, "
+                        "and it does not forget them either."
+                        % (p.silence_days, _fmt_date(p.died)),
+        })
+    risen = [p for p in cem.projects if p.resurrections >= 1]
+    if risen:
+        p = sorted(risen,
+                   key=lambda x: (-x.resurrections,
+                                  -x.longest_flatline, x.name))[0]
+        times = ("once" if p.resurrections == 1
+                 else "%d times" % p.resurrections)
+        awards.append({
+            "award": "The Comeback",
+            "project": p,
+            "citation": "Flatlined for %d days and came back %s. "
+                        "The death was filed, and then, on the "
+                        "evidence of the record, unfiled."
+                        % (p.longest_flatline, times),
+        })
+    return awards
+
+
+def site_house_awards(cem):
+    return [
+        {
+            "award": a["award"],
+            "project_id": _site_slug(a["project"].name),
+            "project_name": a["project"].name,
+            "citation": a["citation"],
+        }
+        for a in house_awards(cem)
+    ]
 
 
 _SPARK = " \u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588"
@@ -1495,7 +1640,8 @@ def render_oneline(cem):
 
 
 def render_terminal(cem, with_autopsy=False, with_on_this_day=False,
-                    with_eulogy=False, wrapped_year=None):
+                    with_eulogy=False, wrapped_year=None,
+                    with_house_awards=False):
     out = []
     out.append("")
     out.append("=" * 64)
@@ -1578,6 +1724,19 @@ def render_terminal(cem, with_autopsy=False, with_on_this_day=False,
         for h in infamy:
             out.append("  ~ %s: %s. %s"
                        % (h["title"], h["project"].name, h["detail"]))
+    if with_house_awards:
+        awards = house_awards(cem)
+        out.append("-" * 64)
+        out.append("  THE HOUSE AWARDS (a ceremony for these grounds)")
+        if awards:
+            for a in awards:
+                out.append("  ~ %s: %s. %s"
+                           % (a["award"], a["project"].name,
+                              a["citation"]))
+        else:
+            out.append("  No awards this year. The grounds hold no "
+                       "one the record can honour, and the Society "
+                       "does not invent honourees.")
     if with_autopsy:
         subjects = cem.deceased + cem.resting
         if subjects:
@@ -1668,7 +1827,7 @@ def _sections(cem):
 
 
 def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
-                  adoption_files=None):
+                  adoption_files=None, with_house_awards=False):
     def pd(p):
         return {
             "name": p.name,
@@ -1736,6 +1895,11 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
         "projects": [pd(p) for p in cem.projects],
         "wrapped": (compute_wrapped(cem, wrapped_year)
                     if wrapped_year is not None else None),
+        "awards": ([{"award": a["award"],
+                     "project": a["project"].name,
+                     "citation": a["citation"]}
+                    for a in house_awards(cem)]
+                   if with_house_awards else None),
     }
 
 
@@ -1744,7 +1908,8 @@ def cemetery_dict(cem, with_eulogy=False, wrapped_year=None,
 # ---------------------------------------------------------------------------
 
 
-def render_markdown(cem, with_eulogy=False, wrapped_year=None):
+def render_markdown(cem, with_eulogy=False, wrapped_year=None,
+                    with_house_awards=False):
     out = ["# Dead Projects Society", ""]
     out.append("Grounds: `%s`" % cem.root)
     out.append("")
@@ -1815,6 +1980,20 @@ def render_markdown(cem, with_eulogy=False, wrapped_year=None):
         for h in infamy:
             out.append("- **%s:** %s. %s"
                        % (h["title"], h["project"].name, h["detail"]))
+        out.append("")
+    if with_house_awards:
+        awards = house_awards(cem)
+        out.append("## The House Awards")
+        out.append("")
+        if awards:
+            for a in awards:
+                out.append("- **%s:** %s. %s"
+                           % (a["award"], a["project"].name,
+                              a["citation"]))
+        else:
+            out.append("No awards this year. The grounds hold no one "
+                       "the record can honour, and the Society does "
+                       "not invent honourees.")
         out.append("")
     if cem.coma:
         out.append("## Intensive care")
@@ -1898,7 +2077,8 @@ left this machine. The Society does not bury the living.</footer>
 """
 
 
-def render_html(cem, log=None, with_eulogy=False, wrapped_year=None):
+def render_html(cem, log=None, with_eulogy=False, wrapped_year=None,
+                with_house_awards=False):
     def esc(s):
         return xml_escape(str(s), {'"': "&quot;"})
 
@@ -1985,6 +2165,20 @@ def render_html(cem, log=None, with_eulogy=False, wrapped_year=None):
                             esc(h["detail"]))
             for h in infamy)
         extra.append('<h3 class="section">HALL OF INFAMY</h3>'
+                     '<div class="living">%s</div>' % rows)
+    if with_house_awards:
+        awards = house_awards(cem)
+        if awards:
+            rows = "<br>".join(
+                "%s: %s. %s" % (esc(a["award"]),
+                                esc(a["project"].name),
+                                esc(a["citation"]))
+                for a in awards)
+        else:
+            rows = ("No awards this year. The grounds hold no one "
+                    "the record can honour, and the Society does not "
+                    "invent honourees.")
+        extra.append('<h3 class="section">THE HOUSE AWARDS</h3>'
                      '<div class="living">%s</div>' % rows)
     if cem.coma:
         rows = "<br>".join(
@@ -3087,6 +3281,17 @@ def main(argv=None):
                          "or at-rest project and include it in the "
                          "terminal report, the Markdown and HTML "
                          "obituaries, the JSON, and the site export")
+    ap.add_argument("--house-awards", action="store_true",
+                    help="Hold the House Awards: a ceremony for "
+                         "these grounds alone, one honour per "
+                         "category the record genuinely supports "
+                         "(longest life, briefest life, the life's "
+                         "work, the quietest passing, most likely "
+                         "to rise, the elder, the patient, the "
+                         "comeback), in the terminal report, the "
+                         "Markdown and HTML obituaries, and the "
+                         "JSON; not to be confused with the "
+                         "Obituary Awards, which are for the famous")
     ap.add_argument("--certificates", metavar="DIR",
                     help="Write a formal certificate (HTML) for every "
                          "buried or at-rest project into DIR")
@@ -3141,7 +3346,8 @@ def main(argv=None):
     if args.json:
         data = cemetery_dict(cem, with_eulogy=args.eulogy,
                              wrapped_year=wrapped_year,
-                             adoption_files=adoption_files)
+                             adoption_files=adoption_files,
+                             with_house_awards=args.house_awards)
         if log is not None:
             data["groundskeeper_log"] = log
         if args.on_this_day:
@@ -3155,7 +3361,8 @@ def main(argv=None):
         print(render_terminal(cem, with_autopsy=args.autopsy,
                               with_on_this_day=args.on_this_day,
                               with_eulogy=args.eulogy,
-                              wrapped_year=wrapped_year))
+                              wrapped_year=wrapped_year,
+                              with_house_awards=args.house_awards))
         if log is not None:
             print(render_groundskeeper_log(log))
     if args.certificates:
@@ -3179,7 +3386,8 @@ def main(argv=None):
         with open(args.html, "w", encoding="utf-8") as fh:
             fh.write(render_html(cem, log if args.diff else None,
                                  with_eulogy=args.eulogy,
-                                 wrapped_year=wrapped_year))
+                                 wrapped_year=wrapped_year,
+                                 with_house_awards=args.house_awards))
         print("Graveyard written to %s" % args.html)
     if args.card:
         with open(args.card, "w", encoding="utf-8") as fh:
@@ -3196,7 +3404,8 @@ def main(argv=None):
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
             fh.write(render_markdown(cem, with_eulogy=args.eulogy,
-                                     wrapped_year=wrapped_year))
+                                     wrapped_year=wrapped_year,
+                                     with_house_awards=args.house_awards))
         print("Obituaries written to %s" % args.out)
     if wrapped_year is not None:
         out_path = None
@@ -3258,6 +3467,10 @@ def main(argv=None):
                   encoding="utf-8") as fh:
             json.dump(compute_wrapped(cem, cem.generated.year),
                       fh, indent=2)
+            fh.write("\n")
+        with open(os.path.join(args.site, "house_awards.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(site_house_awards(cem), fh, indent=2)
             fh.write("\n")
         with open(os.path.join(args.site, "survey.json"), "w",
                   encoding="utf-8") as fh:

@@ -58,6 +58,13 @@ The CLI, the verdicts, the 3D cemetery.
       local precursor to the Resurrection Department and the
       adoption marketplace: the paper exists now; the platform
       that trades on it remains Divisions III and V, later.
+- [x] The House Awards: `--house-awards` holds a ceremony for
+      your own grounds (longest and briefest life, the life's
+      work, the quietest passing, most likely to rise, the
+      elder, the patient, the comeback), each citation composed
+      from the winner's own record, unqualified categories
+      omitted (v0.29.0). The Obituary Awards above remain the
+      famous dead's ceremony; this one is yours.
 
 ### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful

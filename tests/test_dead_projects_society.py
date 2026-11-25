@@ -1844,3 +1844,228 @@ class TestWrapped(FixtureBase):
         self.assertIn("year", w)
         self.assertIn("born", w)
         self.assertIn("commits_in_year", w)
+
+
+class TestHouseAwards(FixtureBase):
+    """v0.29.0: the House Awards, a ceremony for your own grounds,
+    behind --house-awards. The famous dead have the Obituary
+    Awards; these grounds have this."""
+
+    def _cem(self, projects):
+        from datetime import datetime, timezone
+        return dps.Cemetery(root="/x", generated=datetime(
+            2026, 1, 1, tzinfo=timezone.utc), dead_days=90,
+            projects=projects)
+
+    def _winners(self, cem):
+        return {a["award"]: a for a in dps.house_awards(cem)}
+
+    def test_longest_life_and_citation_numbers(self):
+        old = _proj("old-timer", "2020-01-01", "2025-06-01", 300)
+        young = _proj("young", "2024-01-01", "2025-01-01", 40)
+        w = self._winners(self._cem([young, old]))
+        a = w["Longest Life"]
+        self.assertEqual(a["project"].name, "old-timer")
+        self.assertIn("300 commits", a["citation"])
+        self.assertIn("Jan 01, 2020", a["citation"])
+        self.assertIn("Jun 01, 2025", a["citation"])
+
+    def test_briefest_life_skips_same_day_scaffolds(self):
+        same_day = _proj("scaffold", "2025-04-01", "2025-04-01", 2)
+        brief = _proj("mayfly", "2025-03-01", "2025-03-03", 5)
+        long_lived = _proj("long", "2020-01-01", "2025-01-01", 90)
+        w = self._winners(self._cem([same_day, brief, long_lived]))
+        self.assertEqual(w["Briefest Life"]["project"].name, "mayfly")
+        self.assertIn("2 days", w["Briefest Life"]["citation"])
+
+    def test_briefest_life_omitted_when_only_same_day_dead(self):
+        same_day = _proj("scaffold", "2025-04-01", "2025-04-01", 2)
+        w = self._winners(self._cem([same_day]))
+        self.assertNotIn("Briefest Life", w)
+        self.assertIn("Longest Life", w)
+
+    def test_lifes_work_goes_to_most_commits(self):
+        busy = _proj("busy", "2024-01-01", "2024-06-01", 412)
+        idle = _proj("idle", "2020-01-01", "2025-01-01", 30)
+        w = self._winners(self._cem([idle, busy]))
+        a = w["The Life's Work"]
+        self.assertEqual(a["project"].name, "busy")
+        self.assertIn("412 commits", a["citation"])
+
+    def test_quietest_passing_uses_premortem_silence(self):
+        quiet = _proj("quiet", "2023-01-01", "2025-01-01", 60,
+                      flatline=140)
+        steady = _proj("steady", "2023-01-01", "2025-06-01", 60,
+                       flatline=45)
+        w = self._winners(self._cem([steady, quiet]))
+        a = w["The Quietest Passing"]
+        self.assertEqual(a["project"].name, "quiet")
+        self.assertIn("140 days", a["citation"])
+
+    def test_quietest_passing_omitted_without_a_flatline(self):
+        a = _proj("a", "2024-01-01", "2025-01-01", 20)
+        b = _proj("b", "2024-01-01", "2025-06-01", 20)
+        w = self._winners(self._cem([a, b]))
+        self.assertNotIn("The Quietest Passing", w)
+
+    def test_most_likely_to_rise_prefers_the_strongest_record(self):
+        hopeful = _proj("hopeful", "2024-01-01", "2025-01-01", 80,
+                        authors=2, resurrections=1, flatline=100,
+                        silence=300)
+        hopeless = _proj("hopeless", "2024-01-01", "2025-01-01", 3,
+                         readme=False, remote=False, silence=900)
+        w = self._winners(self._cem([hopeless, hopeful]))
+        a = w["Most Likely to Rise"]
+        self.assertEqual(a["project"].name, "hopeful")
+        self.assertIn("Worth exhuming.", a["citation"])
+        self.assertIn("it has risen before", a["citation"])
+
+    def test_most_likely_to_rise_omitted_when_all_should_rest(self):
+        gone = _proj("gone", "2024-01-01", "2025-01-01", 3,
+                     readme=False, remote=False, silence=900)
+        w = self._winners(self._cem([gone]))
+        self.assertNotIn("Most Likely to Rise", w)
+
+    def test_elder_is_the_oldest_still_breathing(self):
+        elder = _proj("elder", "2019-05-01", "2025-12-30", 50,
+                      status="alive", silence=2)
+        junior = _proj("junior", "2024-05-01", "2025-12-30", 50,
+                       status="alive", silence=2)
+        dead = _proj("dead", "2018-01-01", "2025-01-01", 90)
+        w = self._winners(self._cem([junior, dead, elder]))
+        a = w["The Elder"]
+        self.assertEqual(a["project"].name, "elder")
+        self.assertIn("May 01, 2019", a["citation"])
+
+    def test_patient_is_the_longest_in_intensive_care(self):
+        long_stay = _proj("long-stay", "2024-01-01", "2025-10-01",
+                          20, status="coma", silence=60)
+        short_stay = _proj("short-stay", "2024-01-01", "2025-11-01",
+                           20, status="coma", silence=45)
+        w = self._winners(self._cem([short_stay, long_stay]))
+        a = w["The Patient"]
+        self.assertEqual(a["project"].name, "long-stay")
+        self.assertIn("60 days", a["citation"])
+
+    def test_comeback_honours_a_resurrection(self):
+        risen = _proj("risen", "2024-01-01", "2025-06-01", 70,
+                      resurrections=2, flatline=120)
+        stayed = _proj("stayed", "2024-01-01", "2025-06-01", 70)
+        w = self._winners(self._cem([stayed, risen]))
+        a = w["The Comeback"]
+        self.assertEqual(a["project"].name, "risen")
+        self.assertIn("120 days", a["citation"])
+        self.assertIn("2 times", a["citation"])
+
+    def test_no_buried_no_buried_categories(self):
+        alive = _proj("alive", "2024-01-01", "2025-12-30", 10,
+                      status="alive", silence=1)
+        w = self._winners(self._cem([alive]))
+        self.assertEqual(set(w), {"The Elder"})
+
+    def test_empty_grounds_hold_no_ceremony(self):
+        self.assertEqual(dps.house_awards(self._cem([])), [])
+        text = dps.render_terminal(self._cem([]),
+                                   with_house_awards=True)
+        self.assertIn("THE HOUSE AWARDS", text)
+        self.assertIn("does not invent honourees", text)
+
+    def test_ties_break_by_name_in_either_order(self):
+        beta = _proj("beta", "2024-01-01", "2025-01-01", 50)
+        alpha = _proj("alpha", "2024-01-01", "2025-01-01", 50)
+        for order in ([alpha, beta], [beta, alpha]):
+            w = self._winners(self._cem(list(order)))
+            self.assertEqual(w["Longest Life"]["project"].name,
+                             "alpha")
+            self.assertEqual(w["The Life's Work"]["project"].name,
+                             "alpha")
+            self.assertEqual(w["Briefest Life"]["project"].name,
+                             "alpha")
+
+    def test_ceremony_is_deterministic(self):
+        cem = self._cem([
+            _proj("one", "2020-01-01", "2025-06-01", 300,
+                  flatline=140),
+            _proj("two", "2024-01-01", "2025-01-01", 80, authors=2,
+                  resurrections=1, flatline=100, silence=300),
+        ])
+        first = [(a["award"], a["project"].name, a["citation"])
+                 for a in dps.house_awards(cem)]
+        second = [(a["award"], a["project"].name, a["citation"])
+                  for a in dps.house_awards(cem)]
+        self.assertEqual(first, second)
+
+    def test_flag_controls_every_surface(self):
+        cem = self._cem([
+            _proj("gone", "2020-01-01", "2025-06-01", 300,
+                  flatline=140),
+            _proj("elder", "2019-05-01", "2025-12-30", 50,
+                  status="alive", silence=2),
+        ])
+        self.assertIn("THE HOUSE AWARDS",
+                      dps.render_terminal(cem, with_house_awards=True))
+        self.assertNotIn("HOUSE AWARDS", dps.render_terminal(cem))
+        self.assertIn("## The House Awards",
+                      dps.render_markdown(cem, with_house_awards=True))
+        self.assertNotIn("House Awards", dps.render_markdown(cem))
+        self.assertIn("THE HOUSE AWARDS",
+                      dps.render_html(cem, with_house_awards=True))
+        self.assertNotIn("HOUSE AWARDS", dps.render_html(cem))
+        on = dps.cemetery_dict(cem, with_house_awards=True)
+        names = {a["award"]: a["project"] for a in on["awards"]}
+        self.assertEqual(names["Longest Life"], "gone")
+        self.assertEqual(names["The Elder"], "elder")
+        for a in on["awards"]:
+            self.assertTrue(a["citation"])
+        self.assertIsNone(dps.cemetery_dict(cem)["awards"])
+        for a in dps.house_awards(cem):
+            self.assertNotIn("—", a["citation"])
+            self.assertNotIn("—", a["award"])
+
+    def test_site_export_carries_house_awards(self):
+        cem = self._cem([
+            _proj("gone", "2020-01-01", "2025-06-01", 300),
+        ])
+        rows = dps.site_house_awards(cem)
+        by_award = {r["award"]: r for r in rows}
+        self.assertEqual(by_award["Longest Life"]["project_name"],
+                         "gone")
+        self.assertEqual(by_award["Longest Life"]["project_id"],
+                         "gone")
+        self.assertIn("300 commits",
+                      by_award["Longest Life"]["citation"])
+
+    def test_cli_house_awards_end_to_end(self):
+        grounds = os.path.join(self.tmp, "grounds")
+        make_repo(os.path.join(grounds, "gone"), [
+            ("2024-02-01T09:00:00", "a"),
+            ("2024-02-03T09:00:00", "b"),
+            ("2025-02-05T09:00:00", "c"),
+        ])
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([grounds, "--house-awards"])
+        self.assertEqual(rc, 0)
+        self.assertIn("THE HOUSE AWARDS", buf.getvalue())
+        self.assertIn("gone", buf.getvalue())
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([grounds, "--house-awards", "--json"])
+        self.assertEqual(rc, 0)
+        data = json.loads(buf.getvalue())
+        self.assertTrue(data["awards"])
+        self.assertEqual(data["awards"][0]["project"], "gone")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([grounds, "--json"])
+        self.assertEqual(rc, 0)
+        self.assertIsNone(json.loads(buf.getvalue())["awards"])
+        site = os.path.join(self.tmp, "site-data")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([grounds, "--site", site])
+        self.assertEqual(rc, 0)
+        with open(os.path.join(site, "house_awards.json")) as fh:
+            rows = json.load(fh)
+        self.assertTrue(rows)
+        self.assertEqual(rows[0]["project_name"], "gone")
