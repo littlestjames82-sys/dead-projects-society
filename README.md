@@ -156,6 +156,16 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
   HTML obituaries, the JSON (`full_eulogy`), and the `--site`
   export, and only when the flag is given: a eulogy is read aloud
   on request, not by default.
+- `--wrapped [YEAR]` appends **the Society's Year in Review**:
+  for the year you name (or this year), it counts the projects
+  born, buried, and resurrected, every commit that landed across
+  the grounds, the busiest month, the longest and shortest lives
+  that ended, and the cause the coroner wrote most often, then
+  closes with the oldest still-breathing survivor. A quiet year
+  is reported as a quiet year. The review appears in the
+  terminal, Markdown, and HTML reports and the JSON (`wrapped`),
+  and writes a shareable SVG card, `wrapped-<year>.svg`, beside
+  the other outputs.
 - Several folders can be named at once; they are merged into one
   cemetery, and succession is judged across all of them. If the
   replacement was started in a different folder, the Society will

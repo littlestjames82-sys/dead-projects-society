@@ -30,6 +30,7 @@ _dead_projects_society() {
     '--square[file to write the square card to]:file:_files' \
     '--state[groundskeeper state file]:file:_files' \
     '--version[print the version]' \
+    '--wrapped[year in review, optionally for a year]:year:' \
     '--wrapped-kit[directory for the Wrapped kit]:directory:_files -/' \
     '--year[year for the Wrapped kit]:year:' \
     '*:grounds directory:_files -/'

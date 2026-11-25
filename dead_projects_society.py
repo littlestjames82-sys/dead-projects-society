@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.26.0"
+VERSION = "0.27.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -55,6 +55,8 @@ class Project:
     has_remote: bool
     silence_days: int       # days from last commit to "now"
     gaps: list = field(default_factory=list)  # silences > 30 days, in days
+    gap_events: list = field(default_factory=list)
+    # (gap_days, datetime the silence ended) for each recorded gap
     status: str = ""        # alive | coma | deceased
     cause: str = ""
     factors: list = field(default_factory=list)
@@ -194,6 +196,7 @@ def read_project(path, now):
     # Mid-life silences: gaps between consecutive commits (log is
     # newest-first). Only gaps past the coma line are worth recording.
     gaps = []
+    gap_events = []
     months = {}
     prev = None
     for line in lines:
@@ -206,6 +209,7 @@ def read_project(path, now):
             gap = (prev - when).days
             if gap > COMA_DAYS:
                 gaps.append(gap)
+                gap_events.append((gap, prev))
         prev = when
     activity = []
     if months:
@@ -250,6 +254,7 @@ def read_project(path, now):
         has_remote=has_remote,
         silence_days=max(0, (now - died).days),
         gaps=gaps,
+        gap_events=gap_events,
         activity=activity,
         language=language,
         dep_commits=dep_commits,
@@ -1020,6 +1025,220 @@ def compose_full_eulogy(p):
 
 
 # ---------------------------------------------------------------------------
+# The Year in Review: the Society's Wrapped
+# ---------------------------------------------------------------------------
+
+_MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November",
+                "December"]
+
+
+def _monthly_counts(p):
+    """Yield ((year, month), commits) for each month of a life, from
+    the activity record the scan already keeps."""
+    y, m = p.born.year, p.born.month
+    for count in p.activity:
+        yield (y, m), count
+        m += 1
+        if m > 12:
+            y, m = y + 1, 1
+
+
+def compute_wrapped(cem, year):
+    """The Society's Year in Review for one calendar year, computed
+    from the record alone: who was born, who was buried, who rose,
+    and how the year was spent. Deterministic; a quiet year is
+    reported as a quiet year."""
+    born = sorted((p for p in cem.projects if p.born.year == year),
+                  key=lambda p: p.born)
+    ended = [p for p in cem.deceased + cem.resting if p.died.year == year]
+    buried = sorted((p for p in ended if p.status == "deceased"),
+                    key=lambda p: p.died)
+    resting = sorted((p for p in ended if p.status == "resting"),
+                     key=lambda p: p.died)
+    risen = []
+    for p in cem.projects:
+        events = [end for gap, end in p.gap_events
+                  if gap >= cem.dead_days and end.year == year]
+        if events:
+            risen.append(p)
+    risen.sort(key=lambda p: p.name)
+    commits_in_year = 0
+    month_totals = {}
+    for p in cem.projects:
+        for (y, m), count in _monthly_counts(p):
+            if y == year and count:
+                commits_in_year += count
+                month_totals[(y, m)] = month_totals.get((y, m), 0) + count
+    busiest = None
+    if month_totals:
+        (by, bm), bc = sorted(month_totals.items(),
+                              key=lambda kv: (-kv[1], kv[0]))[0]
+        busiest = {"month": "%s %d" % (_MONTH_NAMES[bm - 1], by),
+                   "commits": bc}
+    longest = shortest = None
+    if ended:
+        lp = max(ended, key=lambda p: (p.lifespan_days, p.name))
+        sp = min(ended, key=lambda p: (p.lifespan_days, p.name))
+        longest = {"project": lp.name,
+                   "lifespan_days": lp.lifespan_days,
+                   "lifespan": _lifespan_text(lp)}
+        shortest = {"project": sp.name,
+                    "lifespan_days": sp.lifespan_days,
+                    "lifespan": _lifespan_text(sp)}
+    common_cause = None
+    if buried:
+        counts = {}
+        for p in buried:
+            counts[p.cause] = counts.get(p.cause, 0) + 1
+        cause, n = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[0]
+        common_cause = {"cause": cause, "count": n}
+    survivor = None
+    if cem.alive:
+        sp = min(cem.alive, key=lambda p: (p.born, p.name))
+        survivor = {"project": sp.name,
+                    "born": sp.born.date().isoformat(),
+                    "age_days": max(0, (cem.generated - sp.born).days)}
+    return {
+        "year": year,
+        "born": {"count": len(born),
+                 "projects": [p.name for p in born]},
+        "buried": {"count": len(buried),
+                   "projects": [p.name for p in buried]},
+        "at_rest": {"count": len(resting),
+                    "projects": [p.name for p in resting]},
+        "resurrected": {"count": len(risen),
+                        "projects": [p.name for p in risen]},
+        "commits_in_year": commits_in_year,
+        "busiest_month": busiest,
+        "longest_life_ended": longest,
+        "shortest_life_ended": shortest,
+        "most_common_cause": common_cause,
+        "oldest_survivor": survivor,
+        "intensive_care_now": len(cem.coma),
+        "still_breathing_now": len(cem.alive),
+        "has_activity": bool(born or ended or risen or commits_in_year),
+    }
+
+
+def _wrapped_lines(w):
+    """The Year in Review as plain lines, shared by the terminal
+    report and the Markdown report."""
+    lines = []
+    if not w["has_activity"]:
+        lines.append("Nothing was born, nothing was buried, and "
+                     "nothing rose in %d. The Society records the "
+                     "silence, and invents nothing to fill it."
+                     % w["year"])
+    else:
+        lines.append("Born: %d (%s)"
+                     % (w["born"]["count"],
+                        ", ".join(w["born"]["projects"]) or "none"))
+        lines.append("Buried: %d (%s)"
+                     % (w["buried"]["count"],
+                        ", ".join(w["buried"]["projects"]) or "none"))
+        if w["at_rest"]["count"]:
+            lines.append("Finished, and at rest: %d (%s)"
+                         % (w["at_rest"]["count"],
+                            ", ".join(w["at_rest"]["projects"])))
+        lines.append("Back from the dead: %d (%s)"
+                     % (w["resurrected"]["count"],
+                        ", ".join(w["resurrected"]["projects"]) or "none"))
+        lines.append("Commits landed across the grounds: %d"
+                     % w["commits_in_year"])
+        if w["busiest_month"]:
+            lines.append("Busiest month: %s, with %d commits"
+                         % (w["busiest_month"]["month"],
+                            w["busiest_month"]["commits"]))
+        if w["longest_life_ended"]:
+            lines.append("Longest life that ended: %s, %s"
+                         % (w["longest_life_ended"]["project"],
+                            w["longest_life_ended"]["lifespan"]))
+        if w["shortest_life_ended"]:
+            lines.append("Shortest life that ended: %s, %s"
+                         % (w["shortest_life_ended"]["project"],
+                            w["shortest_life_ended"]["lifespan"]))
+        if w["most_common_cause"]:
+            lines.append("The coroner wrote it most often (%d): %s"
+                         % (w["most_common_cause"]["count"],
+                            w["most_common_cause"]["cause"]))
+    if w["oldest_survivor"]:
+        lines.append("Oldest still breathing: %s, born %s and not "
+                     "done yet."
+                     % (w["oldest_survivor"]["project"],
+                        w["oldest_survivor"]["born"]))
+    lines.append("As the year closes: %d in intensive care, %d still "
+                 "breathing."
+                 % (w["intensive_care_now"], w["still_breathing_now"]))
+    return lines
+
+
+def render_wrapped_card(cem, year):
+    """The Wrapped card: the year's headline numbers, in the square
+    card's language at link-preview size. Dark grounds, gold
+    numerals, the Society's name."""
+    def esc(s):
+        return xml_escape(str(s), {'"': "&quot;"})
+
+    w = compute_wrapped(cem, year)
+    parts = []
+    parts.append(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" '
+        'height="630" viewBox="0 0 1200 630">')
+    parts.append('<rect width="1200" height="630" fill="#101418"/>')
+    parts.append('<rect x="24" y="24" width="1152" height="582" rx="18" '
+                 'fill="none" stroke="#333d46" stroke-width="2"/>')
+    parts.append('<rect x="38" y="38" width="1124" height="554" rx="12" '
+                 'fill="none" stroke="#232a31" stroke-width="1"/>')
+    parts.append('<text x="600" y="112" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="28" '
+                 'fill="#8b96a0" letter-spacing="8">DEAD PROJECTS '
+                 'SOCIETY</text>')
+    parts.append('<text x="600" y="172" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="46" '
+                 'fill="#e8e2d2">%d IN REVIEW</text>' % year)
+    stats = [
+        ("BORN", str(w["born"]["count"])),
+        ("BURIED", str(w["buried"]["count"])),
+        ("RESURRECTED", str(w["resurrected"]["count"])),
+        ("COMMITS", str(w["commits_in_year"])),
+    ]
+    for i, (label, val) in enumerate(stats):
+        cx = 210 + i * 260
+        parts.append('<text x="%d" y="330" text-anchor="middle" '
+                     'font-family="Georgia, serif" font-size="92" '
+                     'fill="#dcb968">%s</text>' % (cx, esc(val)))
+        parts.append('<text x="%d" y="378" text-anchor="middle" '
+                     'font-family="Georgia, serif" font-size="21" '
+                     'fill="#b08d57" letter-spacing="3">%s</text>'
+                     % (cx, esc(label)))
+    notes = []
+    if w["busiest_month"]:
+        notes.append("Busiest month: %s, %d commits."
+                     % (w["busiest_month"]["month"],
+                        w["busiest_month"]["commits"]))
+    if w["longest_life_ended"]:
+        notes.append("Longest life that ended: %s, %s."
+                     % (w["longest_life_ended"]["project"],
+                        w["longest_life_ended"]["lifespan"]))
+    if not w["has_activity"]:
+        notes.append("A quiet year. The Society invents nothing.")
+    y = 452
+    for line in notes[:2]:
+        parts.append('<text x="600" y="%d" text-anchor="middle" '
+                     'font-family="Georgia, serif" font-style="italic" '
+                     'font-size="27" fill="#c3ccd4">%s</text>'
+                     % (y, esc(line)))
+        y += 44
+    parts.append('<text x="600" y="562" text-anchor="middle" '
+                 'font-family="Georgia, serif" font-size="20" '
+                 'fill="#5f6a74">The year, formally reviewed. Judged '
+                 'locally from git metadata alone.</text>')
+    parts.append("</svg>")
+    return "".join(parts)
+
+
+# ---------------------------------------------------------------------------
 # Rendering: terminal
 # ---------------------------------------------------------------------------
 
@@ -1092,7 +1311,7 @@ def render_oneline(cem):
 
 
 def render_terminal(cem, with_autopsy=False, with_on_this_day=False,
-                    with_eulogy=False):
+                    with_eulogy=False, wrapped_year=None):
     out = []
     out.append("")
     out.append("=" * 64)
@@ -1223,6 +1442,13 @@ def render_terminal(cem, with_autopsy=False, with_on_this_day=False,
                      else "It rests in these grounds.")
             out.append("  ~ %s was born on this day, %s. %s"
                        % (b["name"], _years_text(b["years_ago"]), state))
+    if wrapped_year is not None:
+        w = compute_wrapped(cem, wrapped_year)
+        out.append("-" * 64)
+        out.append("  %d IN REVIEW (the Society's Wrapped)"
+                   % wrapped_year)
+        for line in _wrapped_lines(w):
+            out.append("  " + line)
     out.append("-" * 64)
     if cem.deceased:
         longest = max(cem.deceased, key=lambda p: p.silence_days)
@@ -1257,7 +1483,7 @@ def _sections(cem):
 # ---------------------------------------------------------------------------
 
 
-def cemetery_dict(cem, with_eulogy=False):
+def cemetery_dict(cem, with_eulogy=False, wrapped_year=None):
     def pd(p):
         return {
             "name": p.name,
@@ -1319,6 +1545,8 @@ def cemetery_dict(cem, with_eulogy=False):
             for h in hall_of_infamy(cem)
         ],
         "projects": [pd(p) for p in cem.projects],
+        "wrapped": (compute_wrapped(cem, wrapped_year)
+                    if wrapped_year is not None else None),
     }
 
 
@@ -1327,7 +1555,7 @@ def cemetery_dict(cem, with_eulogy=False):
 # ---------------------------------------------------------------------------
 
 
-def render_markdown(cem, with_eulogy=False):
+def render_markdown(cem, with_eulogy=False, wrapped_year=None):
     out = ["# Dead Projects Society", ""]
     out.append("Grounds: `%s`" % cem.root)
     out.append("")
@@ -1412,6 +1640,14 @@ def render_markdown(cem, with_eulogy=False):
         for p in cem.alive:
             out.append("- %s: active %d days ago" % (p.name, p.silence_days))
         out.append("")
+    if wrapped_year is not None:
+        w = compute_wrapped(cem, wrapped_year)
+        out.append("## %d in Review: the Society's Wrapped"
+                   % wrapped_year)
+        out.append("")
+        for line in _wrapped_lines(w):
+            out.append("- %s" % line)
+        out.append("")
     return "\n".join(out)
 
 
@@ -1473,7 +1709,7 @@ left this machine. The Society does not bury the living.</footer>
 """
 
 
-def render_html(cem, log=None, with_eulogy=False):
+def render_html(cem, log=None, with_eulogy=False, wrapped_year=None):
     def esc(s):
         return xml_escape(str(s), {'"': "&quot;"})
 
@@ -1574,6 +1810,12 @@ def render_html(cem, log=None, with_eulogy=False):
             for p in cem.alive)
         extra.append('<h3 class="section">STILL BREATHING</h3>'
                      '<div class="living">%s</div>' % rows)
+    if wrapped_year is not None:
+        w = compute_wrapped(cem, wrapped_year)
+        rows = "<br>".join(esc(line) for line in _wrapped_lines(w))
+        extra.append('<h3 class="section">%d IN REVIEW: THE '
+                     'SOCIETY&rsquo;S WRAPPED</h3>'
+                     '<div class="living">%s</div>' % (wrapped_year, rows))
     return _HTML.format(
         buried=len(cem.deceased), coma=len(cem.coma), alive=len(cem.alive),
         resting=len(cem.resting),
@@ -2577,6 +2819,12 @@ def main(argv=None):
                     help="Write a 1080x1080 SVG card for social feeds")
     ap.add_argument("--badge", metavar="FILE",
                     help="Write an SVG status badge for a README")
+    ap.add_argument("--wrapped", type=int, nargs="?", const=0,
+                    default=None, metavar="YEAR",
+                    help="Append the Society's Year in Review "
+                         "(Wrapped) for YEAR (default: this year) to "
+                         "the terminal, Markdown, HTML, and JSON "
+                         "reports, and write the Wrapped SVG card")
     ap.add_argument("--wrapped-kit", metavar="DIR",
                     help="Write the year-in-review kit (HTML page, SVG "
                          "card, post text) into DIR")
@@ -2686,8 +2934,13 @@ def main(argv=None):
                            "projects": _snapshot(cem)}
         _save_state(state_path, state)
 
+    wrapped_year = None
+    if args.wrapped is not None:
+        wrapped_year = args.wrapped or cem.generated.year
+
     if args.json:
-        data = cemetery_dict(cem, with_eulogy=args.eulogy)
+        data = cemetery_dict(cem, with_eulogy=args.eulogy,
+                             wrapped_year=wrapped_year)
         if log is not None:
             data["groundskeeper_log"] = log
         if args.on_this_day:
@@ -2700,7 +2953,8 @@ def main(argv=None):
     else:
         print(render_terminal(cem, with_autopsy=args.autopsy,
                               with_on_this_day=args.on_this_day,
-                              with_eulogy=args.eulogy))
+                              with_eulogy=args.eulogy,
+                              wrapped_year=wrapped_year))
         if log is not None:
             print(render_groundskeeper_log(log))
     if args.certificates:
@@ -2723,7 +2977,8 @@ def main(argv=None):
     if args.html:
         with open(args.html, "w", encoding="utf-8") as fh:
             fh.write(render_html(cem, log if args.diff else None,
-                                 with_eulogy=args.eulogy))
+                                 with_eulogy=args.eulogy,
+                                 wrapped_year=wrapped_year))
         print("Graveyard written to %s" % args.html)
     if args.card:
         with open(args.card, "w", encoding="utf-8") as fh:
@@ -2739,8 +2994,23 @@ def main(argv=None):
         print("Badge written to %s" % args.badge)
     if args.out:
         with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(render_markdown(cem, with_eulogy=args.eulogy))
+            fh.write(render_markdown(cem, with_eulogy=args.eulogy,
+                                     wrapped_year=wrapped_year))
         print("Obituaries written to %s" % args.out)
+    if wrapped_year is not None:
+        out_path = None
+        for candidate in (args.out, args.html, args.card, args.square):
+            if candidate:
+                out_path = candidate
+                break
+        folder = (os.path.dirname(os.path.abspath(out_path))
+                  if out_path else os.getcwd())
+        card_path = os.path.join(folder, "wrapped-%d.svg" % wrapped_year)
+        with open(card_path, "w", encoding="utf-8") as fh:
+            fh.write(render_wrapped_card(cem, wrapped_year))
+        if not args.json:
+            print("Wrapped card for %d written to %s"
+                  % (wrapped_year, card_path))
     if args.adopt:
         with open(args.adopt, "w", encoding="utf-8") as fh:
             fh.write(render_adoption_papers(cem))
@@ -2778,6 +3048,11 @@ def main(argv=None):
         with open(os.path.join(args.site, "infamy.json"), "w",
                   encoding="utf-8") as fh:
             json.dump(site_infamy(cem), fh, indent=2)
+            fh.write("\n")
+        with open(os.path.join(args.site, "wrapped.json"), "w",
+                  encoding="utf-8") as fh:
+            json.dump(compute_wrapped(cem, cem.generated.year),
+                      fh, indent=2)
             fh.write("\n")
         with open(os.path.join(args.site, "survey.json"), "w",
                   encoding="utf-8") as fh:

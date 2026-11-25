@@ -19,6 +19,27 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.27.0] - 2026-11-25
+
+### Added
+- `--wrapped [YEAR]`: the Society's Year in Review for your own
+  grounds. For the chosen year (this year, if none is named) it
+  counts the projects born, the projects buried, and the
+  resurrections, every commit that landed across the grounds,
+  the busiest month, the longest and shortest lives that ended,
+  and the cause the coroner wrote most often, closing with the
+  oldest still-breathing survivor and the current intensive
+  care census, labelled as the present and not the past. A
+  project that rose twice in a year is entered once. A quiet
+  year is reported as a quiet year; the Society invents
+  nothing. The review joins the terminal report, the Markdown
+  and HTML reports, and the JSON as `wrapped`, and writes a
+  shareable SVG card, `wrapped-<year>.svg`, beside the other
+  outputs. The `--site` export now also carries the current
+  year's review as `wrapped.json`, ready for the web
+  graveyard. The older `--wrapped-kit` keeps its narrower
+  brief: the year, formally buried.
+
 ## [0.26.0] - 2026-11-25
 
 ### Added

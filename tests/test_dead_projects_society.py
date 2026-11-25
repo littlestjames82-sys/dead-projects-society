@@ -1476,3 +1476,197 @@ class TestSurveyExport(FixtureBase):
         self.assertEqual(survey["version"], dps.VERSION)
         self.assertEqual(survey["buried"], 1)
         self.assertIn("generated", survey)
+
+
+class TestWrapped(FixtureBase):
+    """v0.27.0: the Society's Year in Review, behind --wrapped."""
+
+    def _grounds(self):
+        make_repo(os.path.join(self.tmp, "mayfly"), [
+            ("2025-02-01T10:00:00", "first breath"),
+            ("2025-02-03T10:00:00", "steady"),
+            ("2025-02-10T10:00:00", "last gasp"),
+        ])
+        make_repo(os.path.join(self.tmp, "longhaul"), [
+            ("2023-01-05T10:00:00", "first breath"),
+            ("2023-06-01T10:00:00", "steady"),
+            ("2024-03-01T10:00:00", "steady"),
+            ("2025-06-01T10:00:00", "last gasp"),
+        ])
+        make_repo(os.path.join(self.tmp, "phoenix"), [
+            ("2024-06-01T10:00:00", "first breath"),
+            ("2024-06-02T10:00:00", "steady"),
+            ("2025-02-01T10:00:00", "back again"),
+            ("2025-02-02T10:00:00", "steady"),
+            ("2025-09-01T10:00:00", "back again, again"),
+            ("2025-09-02T10:00:00", "last gasp"),
+        ])
+        make_repo(os.path.join(self.tmp, "patient"), [
+            ("2025-10-01T10:00:00", "first breath"),
+            ("2025-11-02T10:00:00", "fading"),
+        ])
+        make_repo(os.path.join(self.tmp, "youngster"), [
+            ("2025-11-01T10:00:00", "first breath"),
+            ("2025-12-15T10:00:00", "steady"),
+            ("2025-12-30T10:00:00", "recent work"),
+        ])
+        return dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+
+    def test_year_counts(self):
+        cem = self._grounds()
+        w = dps.compute_wrapped(cem, 2025)
+        self.assertEqual(w["born"]["count"], 3)
+        self.assertEqual(w["born"]["projects"],
+                         ["mayfly", "patient", "youngster"])
+        self.assertEqual(w["buried"]["count"], 3)
+        self.assertEqual(sorted(w["buried"]["projects"]),
+                         ["longhaul", "mayfly", "phoenix"])
+        self.assertEqual(w["commits_in_year"], 13)
+        self.assertEqual(w["busiest_month"],
+                         {"month": "February 2025", "commits": 5})
+        self.assertTrue(w["has_activity"])
+
+    def test_born_and_buried_in_the_same_year(self):
+        cem = self._grounds()
+        w = dps.compute_wrapped(cem, 2025)
+        self.assertIn("mayfly", w["born"]["projects"])
+        self.assertIn("mayfly", w["buried"]["projects"])
+        self.assertEqual(w["shortest_life_ended"]["project"], "mayfly")
+        self.assertEqual(w["shortest_life_ended"]["lifespan_days"], 9)
+        self.assertEqual(w["longest_life_ended"]["project"], "longhaul")
+
+    def test_resurrection_counted_once_per_project_per_year(self):
+        cem = self._grounds()
+        phoenix = {p.name: p for p in cem.projects}["phoenix"]
+        self.assertEqual(phoenix.resurrections, 2)
+        w = dps.compute_wrapped(cem, 2025)
+        # Phoenix rose twice in 2025 and is entered once; Longhaul
+        # rose once, ending its long silence in June.
+        self.assertEqual(w["resurrected"]["projects"],
+                         ["longhaul", "phoenix"])
+        self.assertEqual(w["resurrected"]["count"], 2)
+        self.assertEqual(w["resurrected"]["projects"].count("phoenix"),
+                         1)
+        w2024 = dps.compute_wrapped(cem, 2024)
+        self.assertEqual(w2024["resurrected"]["projects"], ["longhaul"])
+
+    def test_current_state_counts_are_labelled_now(self):
+        cem = self._grounds()
+        w = dps.compute_wrapped(cem, 2025)
+        self.assertEqual(w["intensive_care_now"], 1)
+        self.assertEqual(w["still_breathing_now"], 1)
+        self.assertEqual(w["oldest_survivor"]["project"], "youngster")
+        self.assertEqual(w["oldest_survivor"]["born"], "2025-11-01")
+        causes = [p.cause for p in cem.deceased if p.died.year == 2025]
+        self.assertIn(w["most_common_cause"]["cause"], causes)
+        self.assertGreaterEqual(w["most_common_cause"]["count"], 1)
+
+    def test_empty_year_is_honest(self):
+        cem = self._grounds()
+        for year in (1999, 2026):
+            w = dps.compute_wrapped(cem, year)
+            self.assertEqual(w["born"]["count"], 0)
+            self.assertEqual(w["buried"]["count"], 0)
+            self.assertEqual(w["resurrected"]["count"], 0)
+            self.assertEqual(w["commits_in_year"], 0)
+            self.assertIsNone(w["busiest_month"])
+            self.assertIsNone(w["longest_life_ended"])
+            self.assertIsNone(w["most_common_cause"])
+            self.assertFalse(w["has_activity"])
+        text = dps.render_terminal(cem, wrapped_year=1999)
+        self.assertIn("invents nothing", text)
+        card = dps.render_wrapped_card(cem, 1999)
+        self.assertIn("A quiet year", card)
+
+    def test_wrapped_is_deterministic(self):
+        cem = self._grounds()
+        self.assertEqual(dps.compute_wrapped(cem, 2025),
+                         dps.compute_wrapped(cem, 2025))
+        self.assertEqual(dps.render_wrapped_card(cem, 2025),
+                         dps.render_wrapped_card(cem, 2025))
+        again = dps.build_cemetery(self.tmp, dead_days=90, now=NOW)
+        self.assertEqual(dps.compute_wrapped(again, 2025),
+                         dps.compute_wrapped(cem, 2025))
+
+    def test_flag_controls_every_surface(self):
+        cem = self._grounds()
+        self.assertIn("2025 IN REVIEW",
+                      dps.render_terminal(cem, wrapped_year=2025))
+        self.assertNotIn("IN REVIEW", dps.render_terminal(cem))
+        self.assertIn("2025 in Review",
+                      dps.render_markdown(cem, wrapped_year=2025))
+        self.assertNotIn("in Review", dps.render_markdown(cem))
+        self.assertIn("IN REVIEW",
+                      dps.render_html(cem, wrapped_year=2025))
+        self.assertNotIn("IN REVIEW", dps.render_html(cem))
+        on = dps.cemetery_dict(cem, wrapped_year=2025)
+        self.assertEqual(on["wrapped"]["year"], 2025)
+        self.assertEqual(on["wrapped"]["commits_in_year"], 13)
+        self.assertIsNone(dps.cemetery_dict(cem)["wrapped"])
+
+    def test_wrapped_card_headline_numbers(self):
+        cem = self._grounds()
+        card = dps.render_wrapped_card(cem, 2025)
+        self.assertIn("2025 IN REVIEW", card)
+        self.assertIn("DEAD PROJECTS SOCIETY", card)
+        self.assertIn("RESURRECTED", card)
+        self.assertIn(">13</text>", card)
+        self.assertNotIn("—", card)
+
+    def test_cli_wrapped_writes_card_in_cwd(self):
+        self._grounds()
+        workdir = os.path.join(self.tmp, "elsewhere")
+        os.makedirs(workdir)
+        old = os.getcwd()
+        os.chdir(workdir)
+        try:
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = dps.main([self.tmp, "--wrapped", "2025"])
+        finally:
+            os.chdir(old)
+        self.assertEqual(rc, 0)
+        self.assertIn("2025 IN REVIEW", buf.getvalue())
+        card = os.path.join(workdir, "wrapped-2025.svg")
+        self.assertTrue(os.path.exists(card))
+        with open(card) as fh:
+            self.assertIn("2025 IN REVIEW", fh.read())
+
+    def test_cli_wrapped_card_beside_output_file(self):
+        self._grounds()
+        outdir = os.path.join(self.tmp, "reports")
+        os.makedirs(outdir)
+        md = os.path.join(outdir, "obits.md")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--wrapped", "2025",
+                           "--out", md])
+        self.assertEqual(rc, 0)
+        self.assertTrue(os.path.exists(
+            os.path.join(outdir, "wrapped-2025.svg")))
+        with open(md) as fh:
+            self.assertIn("2025 in Review", fh.read())
+
+    def test_cli_wrapped_default_year_and_json(self):
+        self._grounds()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--wrapped", "--json"])
+        self.assertEqual(rc, 0)
+        data = json.loads(buf.getvalue())
+        from datetime import datetime as _dt, timezone as _tz
+        self.assertEqual(data["wrapped"]["year"],
+                         _dt.now(_tz.utc).year)
+
+    def test_site_export_carries_wrapped(self):
+        self._grounds()
+        out = os.path.join(self.tmp, "site-data")
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = dps.main([self.tmp, "--site", out])
+        self.assertEqual(rc, 0)
+        with open(os.path.join(out, "wrapped.json")) as fh:
+            w = json.load(fh)
+        self.assertIn("year", w)
+        self.assertIn("born", w)
+        self.assertIn("commits_in_year", w)

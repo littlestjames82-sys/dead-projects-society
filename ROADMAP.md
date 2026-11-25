@@ -46,6 +46,11 @@ The CLI, the verdicts, the 3D cemetery.
       paragraph for every buried or at-rest project from its own
       record, in the terminal, Markdown, HTML, JSON, and site
       outputs (v0.26.0)
+- [x] The Year in Review: `--wrapped [YEAR]` counts the year's
+      births, burials, and resurrections, its commits and busiest
+      month, its longest and shortest ended lives, and the
+      coroner's most-written cause, with a shareable SVG card
+      (v0.27.0)
 
 ### II. The Autopsy Department — SHIPPED (metadata edition)
 Why did it die, and what would revival take? Evidence-based, and careful
