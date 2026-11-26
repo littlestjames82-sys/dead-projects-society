@@ -2560,7 +2560,10 @@ class TestReviewFixes0310(FixtureBase):
         with open(os.path.join(repo, "README.blocker"), "w") as fh:
             fh.write("a file, not a folder\n")
         with redirect_stdout(io.StringIO()):
-            with self.assertRaises(NotADirectoryError):
+            # Writing through a file-as-folder raises NotADirectoryError
+            # on POSIX and FileNotFoundError on Windows; both are OSError
+            # and both must abort the run before state is saved.
+            with self.assertRaises(OSError):
                 dps.main([self.tmp, "--diff", "--state", state,
                           "--out", bad_out])
         with open(state, "rb") as fh:
