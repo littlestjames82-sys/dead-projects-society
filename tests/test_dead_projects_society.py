@@ -6,7 +6,7 @@ import sys
 import tempfile
 import types
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -1725,9 +1725,15 @@ class TestDeepAutopsyDepartment(FixtureBase):
         return dps.build_cemetery(self.tmp, now=NOW)
 
     def _args(self, **kw):
-        base = dict(deep_budget=10.0, deep_model="fake-ember",
+        # The transport is fake, but the model id is the real one:
+        # since v0.31.0 an unknown model id is refused outright
+        # (its pricing is not known), and these tests price at the
+        # Ember rates their assertions assume.
+        base = dict(deep_budget=10.0, deep_model="muse-ember-1.0",
                     deep_max_tokens=120000, deep_ledger=None,
-                    deep_dry_run=False, deep_post_fn=None)
+                    deep_dry_run=False, deep_post_fn=None,
+                    deep_exclude=[], deep_input_rate=None,
+                    deep_output_rate=None)
         base.update(kw)
         return types.SimpleNamespace(**base)
 
@@ -2245,3 +2251,394 @@ class TestHouseAwards(FixtureBase):
             rows = json.load(fh)
         self.assertTrue(rows)
         self.assertEqual(rows[0]["project_name"], "gone")
+
+
+class TestReviewFixes0310(FixtureBase):
+    """v0.31.0: the adopted cold-review fix pass. Tier 1 (Deep
+    Autopsy trust) and Tier 2 (the --diff state pass), each test
+    mirroring a probe from the verified evaluation."""
+
+    # -- helpers ---------------------------------------------------
+
+    def _git_file_repo(self, path, files, dates=("2025-03-02T09:00:00",
+                                                 "2025-06-14T09:00:00")):
+        """A repo whose commits carry real file contents.
+        files: {relname: str-or-bytes} written before the first
+        commit."""
+        os.makedirs(path, exist_ok=True)
+        env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1")
+
+        def run(*args, date=None):
+            e = dict(env)
+            if date:
+                e["GIT_AUTHOR_DATE"] = date + "+00:00"
+                e["GIT_COMMITTER_DATE"] = date + "+00:00"
+            subprocess.run(["git", "-C", path, *args], env=e,
+                           check=True, capture_output=True, text=True)
+
+        run("init", "-b", "main")
+        run("config", "user.email", "test@example.com")
+        run("config", "user.name", "Test Author")
+        for rel, content in files.items():
+            full = os.path.join(path, rel)
+            os.makedirs(os.path.dirname(full), exist_ok=True) \
+                if os.path.dirname(rel) else None
+            mode = "wb" if isinstance(content, bytes) else "w"
+            with open(full, mode) as fh:
+                fh.write(content)
+            run("add", rel)
+        run("commit", "-m", "initial commit", date=dates[0])
+        run("commit", "--allow-empty", "-m", "wip: half done",
+            date=dates[1])
+        return path
+
+    def _args(self, **kw):
+        base = dict(deep_budget=10.0, deep_model="muse-ember-1.0",
+                    deep_max_tokens=120000, deep_ledger=None,
+                    deep_dry_run=False, deep_post_fn=None,
+                    deep_exclude=[], deep_input_rate=None,
+                    deep_output_rate=None)
+        base.update(kw)
+        return types.SimpleNamespace(**base)
+
+    def _corpse_cem(self):
+        self._git_file_repo(os.path.join(self.tmp, "corpse"), {
+            "README.md": "# Corpse\nA parser that never parsed.\n",
+            "corpse.py": "def parse():\n    return None  # TODO\n",
+        })
+        return dps.build_cemetery(self.tmp, now=NOW)
+
+    # -- Tier 1: the hard cap --------------------------------------
+
+    def test_post_responses_sends_output_cap(self):
+        import urllib.request
+        from unittest import mock
+
+        class Resp:
+            def read(self):
+                return b'{"output_text": "done"}'
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        seen = {}
+
+        def fake_urlopen(req, timeout=None):
+            seen["payload"] = json.loads(req.data.decode("utf-8"))
+            return Resp()
+
+        with mock.patch.object(urllib.request, "urlopen",
+                               fake_urlopen):
+            dps._post_responses("prompt", "muse-ember-1.0", "key")
+        self.assertEqual(seen["payload"]["max_output_tokens"],
+                         dps.DEEP_MAX_OUTPUT_TOKENS)
+
+    def test_budget_reserve_refuses_when_max_cost_too_big(self):
+        cem = self._corpse_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        calls = []
+        args = self._args(
+            deep_budget=0.0001, deep_ledger=ledger,
+            deep_post_fn=lambda pr, mo: calls.append(1) or {})
+        out = io.StringIO()
+        with redirect_stdout(out):
+            dps.run_deep_autopsies(cem, args)
+        self.assertIn("BUDGET GUARD", out.getvalue())
+        self.assertEqual(calls, [])
+        self.assertEqual(dps.deep_ledger_total(ledger), 0.0)
+
+    def test_huge_reported_usage_is_clamped_to_cap(self):
+        cem = self._corpse_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+
+        def fake(prompt, model):
+            return {"output_text": "It died.",
+                    "usage": {"input_tokens": 1000,
+                              "output_tokens": 100000}}
+
+        args = self._args(deep_ledger=ledger, deep_post_fn=fake)
+        with redirect_stdout(io.StringIO()):
+            dps.run_deep_autopsies(cem, args)
+        p = cem.projects[0]
+        self.assertEqual(p.deep_autopsy["output_tokens"],
+                         dps.DEEP_MAX_OUTPUT_TOKENS)
+        expected = (1000 * 0.10 / 1e6
+                    + dps.DEEP_MAX_OUTPUT_TOKENS * 0.50 / 1e6)
+        self.assertAlmostEqual(dps.deep_ledger_total(ledger),
+                               expected)
+        self.assertLessEqual(dps.deep_ledger_total(ledger),
+                             args.deep_budget)
+
+    def test_missing_usage_is_charged_at_cap(self):
+        cem = self._corpse_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+
+        def fake(prompt, model):
+            return {"output_text": "It died."}  # no usage at all
+
+        args = self._args(deep_ledger=ledger, deep_post_fn=fake)
+        with redirect_stdout(io.StringIO()):
+            dps.run_deep_autopsies(cem, args)
+        with open(ledger) as fh:
+            entry = json.loads(fh.readline())
+        self.assertEqual(entry["output_tokens"],
+                         dps.DEEP_MAX_OUTPUT_TOKENS)
+        expected = (entry["input_tokens"] * 0.10 / 1e6
+                    + dps.DEEP_MAX_OUTPUT_TOKENS * 0.50 / 1e6)
+        self.assertAlmostEqual(entry["cost_usd"], round(expected, 6))
+
+    # -- Tier 1: model pricing --------------------------------------
+
+    def test_unknown_model_refused_without_rates(self):
+        cem = self._corpse_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        calls = []
+        args = self._args(
+            deep_model="mystery-9", deep_ledger=ledger,
+            deep_post_fn=lambda pr, mo: calls.append(1) or {})
+        out = io.StringIO()
+        with redirect_stdout(out):
+            dps.run_deep_autopsies(cem, args)
+        self.assertIn("DEEP AUTOPSY REFUSED", out.getvalue())
+        self.assertEqual(calls, [])
+        self.assertEqual(dps.deep_ledger_total(ledger), 0.0)
+        with self.assertRaises(dps.DeepAutopsyError):
+            dps.deep_estimate("sample", model="mystery-9")
+        self.assertIsNone(dps.deep_pricing("mystery-9",
+                                           input_rate=1.0))
+
+    def test_unknown_model_with_explicit_rates_is_priced(self):
+        cem = self._corpse_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+
+        def fake(prompt, model):
+            return {"output_text": "It died.",
+                    "usage": {"input_tokens": 1000,
+                              "output_tokens": 100}}
+
+        args = self._args(deep_model="mystery-9", deep_ledger=ledger,
+                          deep_post_fn=fake, deep_input_rate=2.0,
+                          deep_output_rate=4.0)
+        with redirect_stdout(io.StringIO()):
+            dps.run_deep_autopsies(cem, args)
+        self.assertAlmostEqual(dps.deep_ledger_total(ledger),
+                               1000 * 2.0 / 1e6 + 100 * 4.0 / 1e6)
+
+    # -- Tier 1: secrets, payload preview, exclude ------------------
+
+    def _secret_cem(self):
+        self._git_file_repo(os.path.join(self.tmp, "leaky"), {
+            "README.md": "# Leaky\nMARKER_README\n",
+            "leaky.py": 'AWS_KEY = "AKIAIOSFODNN7EXAMPLE"\n'
+                        'api_key = "supersecretvalue123"\n'
+                        'TOKEN = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"\n',
+        })
+        return dps.build_cemetery(self.tmp, now=NOW)
+
+    def test_secrets_redacted_in_sample_and_payload(self):
+        cem = self._secret_cem()
+        p = cem.projects[0]
+        text, stats = dps.sample_project(p)
+        self.assertGreaterEqual(stats["redacted"], 3)
+        for secret in ("AKIAIOSFODNN7EXAMPLE",
+                       "supersecretvalue123",
+                       "ghp_abcdefghijklmnopqrstuvwxyz0123456789"):
+            self.assertNotIn(secret, text)
+        self.assertIn("[REDACTED", text)
+
+        seen = {}
+
+        def fake(prompt, model):
+            seen["prompt"] = prompt
+            return {"output_text": "It died.",
+                    "usage": {"input_tokens": 10, "output_tokens": 5}}
+
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        args = self._args(deep_ledger=ledger, deep_post_fn=fake)
+        with redirect_stdout(io.StringIO()):
+            dps.run_deep_autopsies(cem, args)
+        self.assertNotIn("AKIAIOSFODNN7EXAMPLE", seen["prompt"])
+        self.assertNotIn("supersecretvalue123", seen["prompt"])
+
+    def test_dry_run_shows_exact_payload_after_redaction(self):
+        self._secret_cem()
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = dps.main([self.tmp, "--deep-dry-run",
+                           "--deep-ledger", ledger])
+        self.assertEqual(rc, 0)
+        text = out.getvalue()
+        self.assertIn("EXACT SAMPLE FOR leaky", text)
+        self.assertIn("MARKER_README", text)
+        self.assertIn("THE SAMPLE", text)  # the prompt itself
+        self.assertNotIn("AKIAIOSFODNN7EXAMPLE", text)
+        self.assertIn("SECRETS SWEPT", text)
+        self.assertFalse(os.path.exists(ledger))
+
+    def test_deep_exclude_keeps_file_out(self):
+        self._git_file_repo(os.path.join(self.tmp, "proj"), {
+            "README.md": "# Proj\n",
+            "keep.py": "MARKER_KEEP = 1\n",
+            "secretstuff.py": "MARKER_EXCLUDED = 1\n" * 50,
+        })
+        cem = dps.build_cemetery(self.tmp, now=NOW)
+        p = cem.projects[0]
+        text, stats = dps.sample_project(
+            p, exclude=("secretstuff.py",))
+        self.assertNotIn("MARKER_EXCLUDED", text)
+        self.assertNotIn("secretstuff.py", stats["files"])
+        self.assertIn("MARKER_KEEP", text)
+        text2, _ = dps.sample_project(p)
+        self.assertIn("MARKER_EXCLUDED", text2)
+
+    # -- Tier 1: --json purity ---------------------------------------
+
+    def _json_run(self, extra):
+        make_repo(os.path.join(self.tmp, "corpse"), [
+            ("2025-03-02T09:00:00", "initial commit"),
+            ("2025-06-14T09:00:00", "wip"),
+        ])
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            rc = dps.main([self.tmp, "--json"] + extra)
+        self.assertEqual(rc, 0)
+        data = json.loads(out.getvalue())  # exactly one JSON value
+        self.assertIn("projects", data)
+        return err.getvalue()
+
+    def test_json_with_deep_dry_run_parses(self):
+        ledger = os.path.join(self.tmp, "ledger.jsonl")
+        err = self._json_run(["--deep-dry-run",
+                              "--deep-ledger", ledger])
+        self.assertIn("DRY RUN", err)  # status went to stderr
+
+    def test_json_with_site_parses(self):
+        site = os.path.join(self.tmp, "site-data")
+        err = self._json_run(["--site", site])
+        self.assertIn("Web graveyard data written", err)
+        self.assertTrue(os.path.isfile(
+            os.path.join(site, "projects.json")))
+
+    def test_json_with_certificates_parses(self):
+        certs = os.path.join(self.tmp, "certs")
+        err = self._json_run(["--certificates", certs])
+        self.assertIn("Certificates written", err)
+
+    def test_json_with_adoption_papers_parses(self):
+        papers = os.path.join(self.tmp, "papers")
+        err = self._json_run(["--adoption-papers", papers])
+        self.assertIn("Adoption listings written", err)
+
+    # -- Tier 2: --diff state ----------------------------------------
+
+    def test_failed_output_leaves_state_unchanged(self):
+        repo = make_repo(os.path.join(self.tmp, "gone"), [
+            ("2025-02-01T09:00:00", "a"),
+            ("2025-02-03T09:00:00", "b"),
+        ])
+        state_dir = os.path.join(self.tmp, "statedir")
+        state = os.path.join(state_dir, "state.json")
+        with redirect_stdout(io.StringIO()):
+            rc = dps.main([self.tmp, "--diff", "--state", state])
+        self.assertEqual(rc, 0)
+        # atomic save leaves no temp litter behind
+        self.assertEqual(os.listdir(state_dir), ["state.json"])
+        with open(state, "rb") as fh:
+            before = fh.read()
+        # The project rises: a fresh commit today.
+        env = dict(os.environ, GIT_CONFIG_NOSYSTEM="1",
+                   GIT_AUTHOR_DATE="2026-11-25T09:00:00+00:00",
+                   GIT_COMMITTER_DATE="2026-11-25T09:00:00+00:00")
+        subprocess.run(["git", "-C", repo, "commit", "--allow-empty",
+                        "-m", "back from the dead"], env=env,
+                       check=True, capture_output=True, text=True)
+        bad_out = os.path.join(repo, "README.blocker", "obit.md")
+        with open(os.path.join(repo, "README.blocker"), "w") as fh:
+            fh.write("a file, not a folder\n")
+        with redirect_stdout(io.StringIO()):
+            with self.assertRaises(NotADirectoryError):
+                dps.main([self.tmp, "--diff", "--state", state,
+                          "--out", bad_out])
+        with open(state, "rb") as fh:
+            self.assertEqual(fh.read(), before)
+        # The next good run still reports the resurrection.
+        out = io.StringIO()
+        with redirect_stdout(out):
+            rc = dps.main([self.tmp, "--diff", "--state", state])
+        self.assertEqual(rc, 0)
+        self.assertIn("Risen: gone", out.getvalue())
+
+    def test_same_name_projects_get_two_snapshot_entries(self):
+        for parent in ("a", "b"):
+            make_repo(os.path.join(self.tmp, parent, "same"), [
+                ("2025-02-01T09:00:00", "a"),
+                ("2025-02-03T09:00:00", "b"),
+            ])
+        cem = dps.build_cemetery(self.tmp, depth=2, now=NOW)
+        self.assertEqual(len(cem.projects), 2)
+        snap = dps._snapshot(cem)
+        self.assertEqual(len(snap), 2)
+        for key, entry in snap.items():
+            self.assertTrue(os.path.isabs(key))
+            self.assertEqual(entry["name"], "same")
+
+    def test_root_order_swap_reuses_state(self):
+        r1 = os.path.join(self.tmp, "r1")
+        r2 = os.path.join(self.tmp, "r2")
+        make_repo(os.path.join(r1, "one"),
+                  [("2025-02-01T09:00:00", "a")])
+        make_repo(os.path.join(r2, "two"),
+                  [("2025-02-01T09:00:00", "a")])
+        cem_a = dps.build_grounds([r1, r2], now=NOW)
+        cem_b = dps.build_grounds([r2, r1], now=NOW)
+        self.assertNotEqual(cem_a.root, cem_b.root)
+        self.assertEqual(cem_a.state_key, cem_b.state_key)
+        state = os.path.join(self.tmp, "state.json")
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(
+                dps.main([r1, r2, "--diff", "--state", state]), 0)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(
+                dps.main([r2, r1, "--diff", "--state", state]), 0)
+        self.assertIn("Nothing changed", out.getvalue())
+        self.assertNotIn("No previous visit", out.getvalue())
+
+    def test_stirred_when_commit_count_changes_same_date(self):
+        dead = _proj("gone", "2025-01-01", "2025-05-01", 10)
+        cem = dps.Cemetery(root="/x", generated=NOW, dead_days=90,
+                           projects=[dead])
+        prev = dps._snapshot(cem)
+        dead2 = _proj("gone", "2025-01-01", "2025-05-01", 25)
+        cem2 = dps.Cemetery(root="/x", generated=NOW, dead_days=90,
+                            projects=[dead2])
+        log = dps.groundskeeper_log(prev, cem2)
+        self.assertEqual(log["stirred"], ["gone"])
+        self.assertEqual(log["still_buried"], 0)
+
+    def test_legacy_name_keyed_state_is_graceful(self):
+        dead = _proj("gone", "2025-01-01", "2025-05-01", 30)
+        cem = dps.Cemetery(root="/x", generated=NOW, dead_days=90,
+                           projects=[dead])
+        legacy = {"gone": {"status": "deceased",
+                           "died": "2025-05-01", "commits": 30}}
+        log = dps.groundskeeper_log(legacy, cem)
+        self.assertFalse(log["first_visit"])
+        self.assertEqual(log["newly_born"], ["gone"])
+
+    # -- Tier 2: git decoding -----------------------------------------
+
+    def test_latin1_diff_content_does_not_abort_sampling(self):
+        path = self._git_file_repo(os.path.join(self.tmp, "latin"), {
+            "README.md": "# Latin\n",
+            "notes.txt": b"caf\xe9 \xff\xfe notes\n",
+        })
+        raw = dps._git(path, "log", "-p", "-3")
+        self.assertIsNotNone(raw)
+        cem = dps.build_cemetery(self.tmp, now=NOW)
+        text, stats = dps.sample_project(cem.projects[0])
+        self.assertIn("caf", text)

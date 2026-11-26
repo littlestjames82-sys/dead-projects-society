@@ -19,6 +19,77 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.31.0] - 2026-11-26
+
+The cold-review fix pass: an outside review of 0.30.0 found twelve
+issues, ten confirmed outright and two in part; this release fixes
+the Deep Autopsy trust findings and the whole `--diff` cluster.
+No new ceremony — the Department's promises are now kept by
+mechanism instead of by assumption.
+
+### Fixed
+- The Deep Autopsy budget is now a hard cap in fact. Every API
+  request carries an explicit output limit (2,500 tokens); the
+  preflight check reserves that maximum cost and refuses a call
+  that would not fit whole inside the budget; a call whose usage
+  goes unreported is charged at the cap rather than at a smaller
+  assumed figure; and reported output above the cap is clamped to
+  it in the ledger. Previously the request carried no output
+  limit at all, and a single verbose answer could carry recorded
+  spend past the budget the README called hard.
+- Deep Autopsy pricing is per model. `muse-ember-1.0` rates are
+  built in; any other `--deep-model` must supply
+  `--deep-input-rate` and `--deep-output-rate` (USD per million
+  tokens), and without known pricing the department refuses to
+  call instead of silently pricing an unknown model at Ember
+  rates.
+- `--json` output is pure again: combined with `--deep-dry-run`,
+  `--site`, `--certificates`, `--adoption-papers`, or any other
+  output flag, stdout carries the JSON document alone and all
+  status messages go to stderr.
+- `--diff` state is saved only after every requested output has
+  been generated, and saved atomically (temporary file plus
+  replace). A run that failed on an unwritable output path
+  previously recorded the visit anyway, and the changes it never
+  reported were lost from the log for good.
+- `--diff` snapshots are keyed by each project's full path, not
+  its folder name, so two repositories that share a name no
+  longer overwrite each other's record. State written by older
+  versions (name-keyed) is read gracefully: unmatched projects
+  are treated as newly born, never a crash.
+- Reordering the same folders on the command line no longer
+  makes `--diff` treat them as new grounds: the state key is
+  derived from the sorted set of roots, while the display label
+  keeps the order given.
+- The Groundskeeper's Log now reports a grave as stirred when
+  its commit count changes under the same last-commit date
+  (same-day work, rewritten history), not only when the date
+  moves.
+- Git output is decoded with an explicit replacement policy, so
+  non-UTF-8 bytes in a committed file — which reach the sampler
+  through `git log -p` — can no longer abort a scan or a Deep
+  Autopsy sampling with a UnicodeDecodeError.
+
+### Added
+- Every Deep Autopsy sample is swept for credential-looking
+  strings (private key blocks, AWS access keys, GitHub tokens,
+  `sk-` style keys, Bearer tokens, and `api_key` / `password` /
+  `token` assignments) and redacted before it is shown or sent;
+  the run reports how many secrets were swept per project.
+- `--deep-dry-run` now prints the exact payload that would be
+  sent, per project, after redaction — not just counts and a
+  price.
+- `--deep-exclude GLOB` (repeatable) keeps matching files out of
+  the Deep Autopsy sample entirely, including out of the
+  final-commits diff.
+
+### Changed
+- The README's "How it reads a life" now scopes its "your code
+  is never read / no network" claim to the standard scan, with
+  the Deep Autopsy named as the opt-in exception it is; the
+  square share card likewise stops claiming code is never read
+  on runs where a deep autopsy actually ran.
+
 ## [0.30.0] - 2026-11-25
 
 ### Added

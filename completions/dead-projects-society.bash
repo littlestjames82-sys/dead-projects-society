@@ -6,7 +6,7 @@ _dead_projects_society() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    flags="--adopt --adoption-papers --autopsy --badge --card --certificates --days --deep-autopsy --deep-budget --deep-dry-run --deep-ledger --deep-max-tokens --deep-model --depth --diff --eulogy --exclude --fail-if-new-deaths --house-awards --html --json --on-this-day --oneline --out --site --square --state --version --wrapped --wrapped-kit --year --help"
+    flags="--adopt --adoption-papers --autopsy --badge --card --certificates --days --deep-autopsy --deep-budget --deep-dry-run --deep-exclude --deep-input-rate --deep-ledger --deep-max-tokens --deep-model --deep-output-rate --depth --diff --eulogy --exclude --fail-if-new-deaths --house-awards --html --json --on-this-day --oneline --out --site --square --state --version --wrapped --wrapped-kit --year --help"
     file_flags="--html --card --square --badge --out --adopt --state --deep-ledger"
     dir_flags="--adoption-papers --certificates --site --wrapped-kit"
     case " $file_flags " in

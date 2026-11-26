@@ -11,7 +11,10 @@ Projects still showing a pulse are listed separately. The Society does
 not bury the living.
 
 Pure Python standard library. No dependencies, no network, no telemetry.
-Your code never leaves the machine; only git log metadata is read.
+In the standard scan your code never leaves the machine; only git log
+metadata is read. The one exception is the opt-in Deep Autopsy
+(--deep-autopsy), which sends a bounded, secret-swept sample to the
+model API only when you ask for it, in so many flags.
 
 Usage:
     dead-projects-society [PATH] [--days N] [--depth N]
@@ -20,19 +23,22 @@ Usage:
 """
 
 import argparse
+import contextlib
+import fnmatch
 import json
 import math
 import os
 import re
 import subprocess
 import sys
+import tempfile
 import textwrap
 import zlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.30.0"
+VERSION = "0.31.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -83,6 +89,11 @@ class Cemetery:
     generated: datetime
     dead_days: int
     projects: list = field(default_factory=list)
+    # Identity for --diff state: for merged grounds this is derived
+    # from the SORTED set of roots, so the same folders in a
+    # different argument order are the same grounds. `root` stays
+    # the human-facing label, in the order the user gave it.
+    state_key: str = ""
 
     @property
     def deceased(self):
@@ -121,7 +132,8 @@ def _git(path, *args):
     try:
         out = subprocess.run(
             ["git", "-C", path, *args],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True, text=True, errors="replace",
+            timeout=30,
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -498,8 +510,11 @@ def build_grounds(roots, dead_days=DEFAULT_DEAD_DAYS, depth=1,
     assign_succession(projects)
     label = "%d grounds (%s)" % (
         len(roots), ", ".join(os.path.abspath(r) for r in roots))
+    state_key = "%d grounds (%s)" % (
+        len(roots), ", ".join(sorted({os.path.abspath(r)
+                                      for r in roots})))
     return Cemetery(root=label, generated=now, dead_days=dead_days,
-                    projects=projects)
+                    projects=projects, state_key=state_key)
 
 
 def build_cemetery(root, dead_days=DEFAULT_DEAD_DAYS, depth=1, now=None,
@@ -2830,10 +2845,16 @@ def render_square_card(cem):
             'font-family="Georgia, serif" font-size="30" '
             'fill="#c9cfc4">%s</text>' % (y, esc(line)))
         y += 52
+    if any(getattr(p, "deep_autopsy", None) for p in cem.projects):
+        footer = ("Judged locally from git metadata; the deep "
+                  "autopsies above were opt-in, and samples were "
+                  "sent to the model API at the owner's request.")
+    else:
+        footer = ("Judged locally from git metadata. Your code is "
+                  "never read.")
     parts.append(
         '<text x="540" y="985" text-anchor="middle" font-family="Georgia, '
-        'serif" font-size="24" fill="#77828d">Judged locally from git '
-        'metadata. Your code is never read.</text>')
+        'serif" font-size="24" fill="#77828d">%s</text>' % esc(footer))
     parts.append('</svg>')
     return "".join(parts)
 
@@ -2961,8 +2982,13 @@ def wrapped_text(cem, year):
 
 
 def _snapshot(cem):
+    """State snapshot, keyed by normalized absolute project path:
+    two repositories that happen to share a folder name are two
+    different graves. The project name rides along as the display
+    label the Groundskeeper's Log reports."""
     return {
-        p.name: {
+        os.path.normpath(os.path.abspath(p.path)): {
+            "name": p.name,
             "status": p.status,
             "died": p.died.date().isoformat(),
             "commits": p.commits,
@@ -2981,11 +3007,18 @@ def groundskeeper_log(prev, cem):
     if prev is None:
         return {"first_visit": True, "newly_buried": [],
                 "newly_resting": [], "risen": [], "stirred": [],
-                "newly_born": sorted(cur), "still_buried": 0}
+                "newly_born": sorted(s["name"] for s in cur.values()),
+                "still_buried": 0}
     newly_buried, newly_resting, risen, stirred, newly_born = [], [], [], [], []
     still_buried = 0
-    for name, now_s in cur.items():
-        before = prev.get(name)
+    for key, now_s in cur.items():
+        # Snapshots are keyed by absolute path. State written by
+        # older versions was keyed by project name; those entries
+        # simply never match a path key, so the project is treated
+        # as newly born on this visit — a first visit for that
+        # project, never a crash.
+        before = prev.get(key)
+        name = now_s["name"]
         if before is None:
             newly_born.append(name)
             continue
@@ -2998,7 +3031,12 @@ def groundskeeper_log(prev, cem):
                 newly_buried.append(name)
         elif was_dead and not is_dead:
             risen.append(name)
-        elif was_dead and is_dead and now_s["died"] != before.get("died"):
+        elif was_dead and is_dead and (
+                now_s["died"] != before.get("died")
+                or now_s["commits"] != before.get("commits")):
+            # Stirred: the grave moved — a new last-commit date, or
+            # the same date with a different commit count (same-day
+            # work, or history rewritten under the same date).
             stirred.append(name)
         elif was_dead and is_dead:
             still_buried += 1
@@ -3045,11 +3083,24 @@ def _load_state(path):
 
 
 def _save_state(path, state):
+    """Write the state file atomically: a temporary file in the
+    same folder, replaced over the old one, so a crash mid-write
+    can never leave a truncated state behind."""
     folder = os.path.dirname(path)
     if folder:
         os.makedirs(folder, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-        json.dump(state, fh, indent=1, sort_keys=True)
+    fd, tmp = tempfile.mkstemp(dir=folder or ".",
+                               prefix=".dps-state-", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(state, fh, indent=1, sort_keys=True)
+        os.replace(tmp, path)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -3078,11 +3129,25 @@ import urllib.request
 
 DEEP_API_URL = "https://api.meta.ai/v1/responses"
 DEEP_MODEL_DEFAULT = os.environ.get("DPS_DEEP_MODEL", "muse-ember-1.0")
-DEEP_INPUT_USD_PER_TOKEN = 0.10 / 1000000
-DEEP_OUTPUT_USD_PER_TOKEN = 0.50 / 1000000
+# Per-model pricing, in USD per million tokens (input, output).
+# A model that is not in this table has NO known price: the
+# department refuses to call it unless the user supplies explicit
+# rates with --deep-input-rate / --deep-output-rate, because a
+# budget guard priced at the wrong model's rates is not a guard.
+DEEP_MODEL_PRICING = {
+    "muse-ember-1.0": (0.10, 0.50),
+}
+DEEP_INPUT_USD_PER_TOKEN = DEEP_MODEL_PRICING["muse-ember-1.0"][0] / 1000000
+DEEP_OUTPUT_USD_PER_TOKEN = DEEP_MODEL_PRICING["muse-ember-1.0"][1] / 1000000
 DEEP_DEFAULT_BUDGET_USD = 10.00
 DEEP_DEFAULT_MAX_TOKENS = 120000
-DEEP_ASSUMED_OUTPUT_TOKENS = 2500
+# The hard ceiling on one autopsy's output, in tokens. It is sent
+# to the API as the request's output limit, reserved in full by
+# the preflight budget check, and charged in full when the API
+# reports no usage — so recorded spend can never pass the budget
+# on the strength of an assumption.
+DEEP_MAX_OUTPUT_TOKENS = 2500
+DEEP_ASSUMED_OUTPUT_TOKENS = DEEP_MAX_OUTPUT_TOKENS
 _DEEP_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv",
                    "venv", "dist", "build", "target", ".next",
                    "vendor", ".hg", ".svn"}
@@ -3104,12 +3169,86 @@ def _read_bounded(path, cap):
         return ""
 
 
-def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
+# Secret patterns swept from every sample before it is shown or
+# sent. Committed credentials are exactly the thing a bounded
+# sample of READMEs, source files, and final diffs is most likely
+# to carry out of the machine, so the sweep is not optional.
+_DEEP_SECRET_PATTERNS = [
+    (re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?"
+                r"-----END [A-Z0-9 ]*PRIVATE KEY-----", re.S),
+     "[REDACTED PRIVATE KEY]"),
+    (re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+     "[REDACTED AWS ACCESS KEY]"),
+    (re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b"),
+     "[REDACTED GITHUB TOKEN]"),
+    (re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b"),
+     "[REDACTED GITHUB TOKEN]"),
+    (re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}\b"),
+     "[REDACTED API KEY]"),
+    (re.compile(r"\bBearer\s+[A-Za-z0-9._\-]{16,}"),
+     "Bearer [REDACTED]"),
+]
+
+
+def _redact_assignment(match):
+    return "%s%s[REDACTED]" % (match.group(1), match.group(2))
+
+
+_DEEP_SECRET_PATTERNS.append((
+    re.compile(r"(\bapi[_-]?key|\bsecret|\bpassword|\bpasswd"
+               r"|\baccess[_-]?token|\btoken)(\s*[:=]\s*)"
+               r"[\"']?[^\s\"']{8,}[\"']?", re.I),
+    _redact_assignment))
+
+
+def redact_secrets(text):
+    """Replace anything that looks like a credential with a marker.
+    Returns (clean_text, number_of_secrets_redacted)."""
+    count = 0
+    for pattern, repl in _DEEP_SECRET_PATTERNS:
+        text, n = pattern.subn(repl, text)
+        count += n
+    return text, count
+
+
+def _deep_excluded(rel, name, exclude):
+    """True when a --deep-exclude glob keeps this file out of the
+    sample. Globs match the path relative to the project root, or
+    the bare file name."""
+    return any(fnmatch.fnmatch(rel, glob) or fnmatch.fnmatch(name, glob)
+               for glob in exclude)
+
+
+def _filter_diff_excludes(diff, exclude):
+    """Drop the per-file sections of excluded files from a
+    `git log -p` diff. Without this, --deep-exclude would keep a
+    file out of the tree and the source picks while its contents
+    walked in through the final-commits section anyway. Commit
+    headers (metadata) are kept."""
+    chunks = re.split(r"(?m)^(diff --git .*$)", diff)
+    out = [chunks[0]]
+    for i in range(1, len(chunks), 2):
+        header = chunks[i]
+        body = chunks[i + 1] if i + 1 < len(chunks) else ""
+        m = re.match(r"diff --git a/(.*) b/(.*)$", header.strip())
+        path = m.group(2) if m else ""
+        if path and _deep_excluded(path, os.path.basename(path),
+                                   exclude):
+            continue
+        out.append(header)
+        out.append(body)
+    return "".join(out)
+
+
+def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS, exclude=()):
     """Assemble the bounded sample of one project for Ember.
 
     Returns (text, stats). The sample is the ONLY thing that leaves
     the machine, and it is assembled entirely from the owner's own
-    folder at the owner's explicit request.
+    folder at the owner's explicit request. Files matched by a
+    --deep-exclude glob never enter it, and anything that looks
+    like a secret is redacted before the sample exists as text;
+    stats["redacted"] reports how many secrets were swept.
     """
     root = p.path
     parts = []
@@ -3127,17 +3266,19 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
     for name in sorted(os.listdir(root)):
         if name.lower().startswith("readme") and \
                 os.path.isfile(os.path.join(root, name)):
-            text = _read_bounded(os.path.join(root, name), 12000)
-            if text:
-                parts.append("===== %s =====\n%s" % (name, text))
-                files.append(name)
+            if not _deep_excluded(name, name, exclude):
+                text = _read_bounded(os.path.join(root, name), 12000)
+                if text:
+                    parts.append("===== %s =====\n%s" % (name, text))
+                    files.append(name)
             break
 
     for name in ("package.json", "pyproject.toml", "Cargo.toml",
                  "go.mod", "Gemfile", "requirements.txt",
                  "composer.json", "pom.xml"):
         path = os.path.join(root, name)
-        if os.path.isfile(path):
+        if os.path.isfile(path) and not _deep_excluded(name, name,
+                                                       exclude):
             text = _read_bounded(path, 4000)
             if text:
                 parts.append("===== %s =====\n%s" % (name, text))
@@ -3150,6 +3291,8 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
         for name in names:
             full = os.path.join(base, name)
             rel = os.path.relpath(full, root)
+            if _deep_excluded(rel, name, exclude):
+                continue
             tree.append(rel)
             ext = os.path.splitext(name)[1].lower()
             if ext in _LANG_BY_EXT:
@@ -3169,12 +3312,15 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
             files.append(rel)
 
     diff = _git(root, "log", "-p", "-3")
+    if diff and exclude:
+        diff = _filter_diff_excludes(diff, exclude)
     if diff:
         parts.append("===== FINAL COMMITS (git log -p -3) =====\n%s"
                      % diff[:20000])
         files.append("git log -p -3")
 
     text = "\n\n".join(parts)
+    text, redacted = redact_secrets(text)
     truncated = False
     if _est_tokens(text) > max_tokens:
         text = text[: max_tokens * 4]
@@ -3183,7 +3329,8 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS):
             text = text[:cut]
         truncated = True
     stats = {"files": files, "chars": len(text),
-             "est_tokens": _est_tokens(text), "truncated": truncated}
+             "est_tokens": _est_tokens(text), "truncated": truncated,
+             "redacted": redacted}
     return text, stats
 
 
@@ -3217,11 +3364,38 @@ def deep_ledger_append(path, entry):
         fh.write(json.dumps(entry) + "\n")
 
 
-def deep_estimate(sample_text,
-                  out_tokens=DEEP_ASSUMED_OUTPUT_TOKENS):
+def deep_pricing(model, input_rate=None, output_rate=None):
+    """(input, output) price in USD per token for a model, or None
+    when the price is not known. Explicit rates (USD per million
+    tokens, from --deep-input-rate / --deep-output-rate) win over
+    the built-in table; both must be given together."""
+    if input_rate is not None or output_rate is not None:
+        if input_rate is None or output_rate is None:
+            return None
+        return (input_rate / 1000000, output_rate / 1000000)
+    rates = DEEP_MODEL_PRICING.get(model)
+    if rates is None:
+        return None
+    return (rates[0] / 1000000, rates[1] / 1000000)
+
+
+def deep_estimate(sample_text, out_tokens=DEEP_MAX_OUTPUT_TOKENS,
+                  model=DEEP_MODEL_DEFAULT, pricing=None):
+    """Price a sample. By default this prices the MAXIMUM the call
+    can cost: the estimated input plus the full output cap, at the
+    model's rates. Raises DeepAutopsyError when the model's price
+    is not known and no explicit rates were supplied."""
+    if pricing is None:
+        pricing = deep_pricing(model)
+    if pricing is None:
+        raise DeepAutopsyError(
+            "No pricing is known for model %r, so no honest budget "
+            "estimate can be made. Supply --deep-input-rate and "
+            "--deep-output-rate (USD per million tokens), or use a "
+            "model with known pricing (%s)."
+            % (model, ", ".join(sorted(DEEP_MODEL_PRICING))))
     in_tokens = _est_tokens(sample_text)
-    cost = (in_tokens * DEEP_INPUT_USD_PER_TOKEN
-            + out_tokens * DEEP_OUTPUT_USD_PER_TOKEN)
+    cost = in_tokens * pricing[0] + out_tokens * pricing[1]
     return in_tokens, cost
 
 
@@ -3255,8 +3429,11 @@ def build_deep_prompt(p, sample_text):
     return _DEEP_PROMPT + sample_text
 
 
-def _post_responses(prompt, model, api_key, timeout=180):
-    payload = json.dumps({"model": model, "input": prompt}).encode()
+def _post_responses(prompt, model, api_key, timeout=180,
+                    max_output_tokens=DEEP_MAX_OUTPUT_TOKENS):
+    payload = json.dumps({
+        "model": model, "input": prompt,
+        "max_output_tokens": max_output_tokens}).encode()
     req = urllib.request.Request(
         DEEP_API_URL, data=payload,
         headers={"Content-Type": "application/json",
@@ -3284,9 +3461,13 @@ def _extract_usage(parsed):
     return in_t, out_t
 
 
-def call_ember(prompt, model, api_key=None, post_fn=None):
+def call_ember(prompt, model, api_key=None, post_fn=None,
+               max_output_tokens=DEEP_MAX_OUTPUT_TOKENS):
     """One Ember autopsy call. Returns (text, in_tokens, out_tokens);
-    token counts are None when the API does not report usage."""
+    token counts are None when the API does not report usage. The
+    request carries an explicit output cap (max_output_tokens), so
+    one call's output — and therefore its cost — is bounded by the
+    same figure the budget guard reserved."""
     if post_fn is not None:
         parsed = post_fn(prompt, model)
     else:
@@ -3297,7 +3478,8 @@ def call_ember(prompt, model, api_key=None, post_fn=None):
                 "needs one: set META_API_KEY, or use --deep-dry-run "
                 "to see the sample and the price without calling.")
         try:
-            parsed = _post_responses(prompt, model, key)
+            parsed = _post_responses(prompt, model, key,
+                                     max_output_tokens=max_output_tokens)
         except urllib.error.HTTPError as exc:
             raise DeepAutopsyError(
                 "The model API refused the call (HTTP %d). Check the "
@@ -3322,12 +3504,24 @@ def run_deep_autopsies(cem, args):
     ledger = getattr(args, "deep_ledger", None) or deep_ledger_default()
     dry = getattr(args, "deep_dry_run", False)
     post_fn = getattr(args, "deep_post_fn", None)
+    exclude = getattr(args, "deep_exclude", None) or ()
+    pricing = deep_pricing(model,
+                            getattr(args, "deep_input_rate", None),
+                            getattr(args, "deep_output_rate", None))
     targets = [p for p in cem.projects
                if p.status in ("deceased", "resting")]
     print()
     print("THE DEEP AUTOPSY DEPARTMENT (opt-in, code-aware)")
     print("Samples assembled from your own folders are sent to the "
           "model API. The standard scan never does this.")
+    if pricing is None:
+        print("DEEP AUTOPSY REFUSED: no pricing is known for model "
+              "%r, and a budget guard priced at another model's "
+              "rates is not a guard. Supply --deep-input-rate and "
+              "--deep-output-rate (USD per million tokens) for this "
+              "model, or use a model with known pricing (%s)."
+              % (model, ", ".join(sorted(DEEP_MODEL_PRICING))))
+        return
     if not targets:
         print("No bodies on the table: nothing buried or at rest in "
               "these grounds.")
@@ -3336,18 +3530,36 @@ def run_deep_autopsies(cem, args):
     print("Budget: $%.2f of $%.2f spent (ledger: %s)"
           % (spent, budget, ledger))
     for p in targets:
-        sample, stats = sample_project(p, max_tokens=max_tokens)
-        _in_t, est = deep_estimate(sample)
+        sample, stats = sample_project(p, max_tokens=max_tokens,
+                                       exclude=exclude)
+        # Reserve the MAXIMUM this call can cost: the estimated
+        # input plus the full output cap, at this model's rates.
+        # A call that cannot fit whole inside the budget is refused
+        # before it is made — the cap is hard, not an assumption.
+        _in_t, est = deep_estimate(sample, model=model,
+                                   pricing=pricing)
         if spent + est > budget:
             print("BUDGET GUARD: %s refused. $%.2f spent of $%.2f; "
-                  "this autopsy is estimated at $%.4f."
-                  % (p.name, spent, budget, est))
+                  "this autopsy can cost at most $%.4f (input "
+                  "estimate plus the %d-token output cap)."
+                  % (p.name, spent, budget, est,
+                     DEEP_MAX_OUTPUT_TOKENS))
             break
+        if stats.get("redacted"):
+            print("SECRETS SWEPT: %d credential-looking string(s) "
+                  "redacted from %s's sample before anything was "
+                  "shown or sent."
+                  % (stats["redacted"], p.name))
         if dry:
             print("DRY RUN %s: %d sources sampled, ~%d tokens, "
                   "estimated $%.4f. No call was made."
                   % (p.name, len(stats["files"]), stats["est_tokens"],
                      est))
+            print("----- EXACT SAMPLE FOR %s (the payload below, "
+                  "after redaction, is what would be sent) -----"
+                  % p.name)
+            print(build_deep_prompt(p, sample))
+            print("----- END OF SAMPLE FOR %s -----" % p.name)
             continue
         try:
             text, u_in, u_out = call_ember(
@@ -3358,9 +3570,14 @@ def run_deep_autopsies(cem, args):
         if u_in is None:
             u_in = stats["est_tokens"]
         if u_out is None:
-            u_out = DEEP_ASSUMED_OUTPUT_TOKENS
-        cost = (u_in * DEEP_INPUT_USD_PER_TOKEN
-                + u_out * DEEP_OUTPUT_USD_PER_TOKEN)
+            # No usage reported: charge the cap, never an
+            # assumption smaller than what the call could have used.
+            u_out = DEEP_MAX_OUTPUT_TOKENS
+        # The request capped output at DEEP_MAX_OUTPUT_TOKENS; a
+        # report above the cap is not billable headroom the budget
+        # ever agreed to, so accounting clamps to the cap.
+        u_out = min(u_out, DEEP_MAX_OUTPUT_TOKENS)
+        cost = u_in * pricing[0] + u_out * pricing[1]
         deep_ledger_append(ledger, {
             "time": cem.generated.isoformat(), "project": p.name,
             "model": model, "input_tokens": u_in,
@@ -3368,11 +3585,25 @@ def run_deep_autopsies(cem, args):
         spent += cost
         p.deep_autopsy = {"model": model, "input_tokens": u_in,
                           "output_tokens": u_out,
-                          "cost_usd": round(cost, 4), "report": text}
+                          "cost_usd": round(cost, 4), "report": text,
+                          "redacted": stats.get("redacted", 0)}
         print()
         print("DEEP AUTOPSY: %s (model %s, $%.4f)"
               % (p.name, model, cost))
         print(text)
+
+
+@contextlib.contextmanager
+def _status_channel(json_mode):
+    """In --json mode, stdout is a machine-readable channel and
+    carries the JSON document alone: every status, progress, and
+    confirmation message from the output-producing sections is
+    routed to stderr instead. Outside JSON mode this is a no-op."""
+    if json_mode:
+        with contextlib.redirect_stdout(sys.stderr):
+            yield
+    else:
+        yield
 
 
 def main(argv=None):
@@ -3428,8 +3659,10 @@ def main(argv=None):
                          "is priced first and recorded in a ledger)")
     ap.add_argument("--deep-dry-run", action="store_true",
                     help="With the deep autopsy: assemble the "
-                         "samples and print the estimated prices, "
-                         "but make no API call")
+                         "samples, print the estimated prices and "
+                         "the EXACT sample payload that would be "
+                         "sent (after secret redaction), but make "
+                         "no API call")
     ap.add_argument("--deep-budget", type=float,
                     default=DEEP_DEFAULT_BUDGET_USD, metavar="USD",
                     help="Hard cap on recorded deep-autopsy spend "
@@ -3445,6 +3678,23 @@ def main(argv=None):
     ap.add_argument("--deep-ledger", default=None, metavar="FILE",
                     help="Spend ledger for deep autopsies (default: "
                          "~/.dead-projects-society/deep-ledger.jsonl)")
+    ap.add_argument("--deep-exclude", action="append", default=[],
+                    metavar="GLOB",
+                    help="Keep files matching this glob out of the "
+                         "deep-autopsy sample (repeatable): matched "
+                         "against each file's path within its "
+                         "project, or its bare name")
+    ap.add_argument("--deep-input-rate", type=float, default=None,
+                    metavar="USD",
+                    help="Input price for --deep-model, in USD per "
+                         "million tokens. Required (with "
+                         "--deep-output-rate) for any model whose "
+                         "pricing is not built in; without known "
+                         "pricing the department refuses to call")
+    ap.add_argument("--deep-output-rate", type=float, default=None,
+                    metavar="USD",
+                    help="Output price for --deep-model, in USD "
+                         "per million tokens (see --deep-input-rate)")
     ap.add_argument("--fail-if-new-deaths", action="store_true",
                     help="With --diff: exit with code 3 when the "
                          "Groundskeeper's Log finds a death it has "
@@ -3520,19 +3770,25 @@ def main(argv=None):
         return 2
 
     if args.deep_autopsy or args.deep_dry_run:
-        run_deep_autopsies(cem, args)
+        with _status_channel(args.json):
+            run_deep_autopsies(cem, args)
 
     log = None
+    pending_state = None
     if args.diff:
         state_path = args.state or os.path.join(
             os.path.expanduser("~"), ".dead-projects-society",
             "state.json")
         state = _load_state(state_path)
-        entry = state.get(cem.root) or {}
+        grounds_key = getattr(cem, "state_key", "") or cem.root
+        entry = state.get(grounds_key) or {}
         log = groundskeeper_log(entry.get("projects"), cem)
-        state[cem.root] = {"visited": cem.generated.isoformat(),
-                           "projects": _snapshot(cem)}
-        _save_state(state_path, state)
+        state[grounds_key] = {"visited": cem.generated.isoformat(),
+                              "projects": _snapshot(cem)}
+        # The visit is recorded only AFTER every requested output
+        # has been generated successfully, below: a run that fails
+        # halfway must not consume the changes it never reported.
+        pending_state = (state_path, state)
 
     wrapped_year = None
     if args.wrapped is not None:
@@ -3571,133 +3827,136 @@ def main(argv=None):
                               with_house_awards=args.house_awards))
         if log is not None:
             print(render_groundskeeper_log(log))
-    if args.certificates:
-        os.makedirs(args.certificates, exist_ok=True)
-        subjects = cem.deceased + cem.resting
-        for p in subjects:
-            fname = "%s-certificate.html" % _site_slug(p.name)
-            with open(os.path.join(args.certificates, fname), "w",
-                      encoding="utf-8") as fh:
-                fh.write(render_certificate(p, cem))
-        risen = [p for p in cem.projects if p.resurrections >= 1]
-        for p in risen:
-            fname = "%s-resurrection-certificate.html" % _site_slug(p.name)
-            with open(os.path.join(args.certificates, fname), "w",
-                      encoding="utf-8") as fh:
-                fh.write(render_resurrection_certificate(p, cem))
-        print("Certificates written to %s (%d death or completion, "
-              "%d resurrection); %d formal SVG certificates issued"
-              % (args.certificates, len(subjects), len(risen),
-                 len(certificate_files or {})))
-    if args.html:
-        with open(args.html, "w", encoding="utf-8") as fh:
-            fh.write(render_html(cem, log if args.diff else None,
-                                 with_eulogy=args.eulogy,
-                                 wrapped_year=wrapped_year,
-                                 with_house_awards=args.house_awards))
-        print("Graveyard written to %s" % args.html)
-    if args.card:
-        with open(args.card, "w", encoding="utf-8") as fh:
-            fh.write(render_card(cem))
-        print("Share card written to %s" % args.card)
-    if args.square:
-        with open(args.square, "w", encoding="utf-8") as fh:
-            fh.write(render_square_card(cem))
-        print("Square card written to %s" % args.square)
-    if args.badge:
-        with open(args.badge, "w", encoding="utf-8") as fh:
-            fh.write(render_badge(cem))
-        print("Badge written to %s" % args.badge)
-    if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(render_markdown(cem, with_eulogy=args.eulogy,
+    with _status_channel(args.json):
+        if args.certificates:
+            os.makedirs(args.certificates, exist_ok=True)
+            subjects = cem.deceased + cem.resting
+            for p in subjects:
+                fname = "%s-certificate.html" % _site_slug(p.name)
+                with open(os.path.join(args.certificates, fname), "w",
+                          encoding="utf-8") as fh:
+                    fh.write(render_certificate(p, cem))
+            risen = [p for p in cem.projects if p.resurrections >= 1]
+            for p in risen:
+                fname = "%s-resurrection-certificate.html" % _site_slug(p.name)
+                with open(os.path.join(args.certificates, fname), "w",
+                          encoding="utf-8") as fh:
+                    fh.write(render_resurrection_certificate(p, cem))
+            print("Certificates written to %s (%d death or completion, "
+                  "%d resurrection); %d formal SVG certificates issued"
+                  % (args.certificates, len(subjects), len(risen),
+                     len(certificate_files or {})))
+        if args.html:
+            with open(args.html, "w", encoding="utf-8") as fh:
+                fh.write(render_html(cem, log if args.diff else None,
+                                     with_eulogy=args.eulogy,
                                      wrapped_year=wrapped_year,
                                      with_house_awards=args.house_awards))
-        print("Obituaries written to %s" % args.out)
-    if wrapped_year is not None:
-        out_path = None
-        for candidate in (args.out, args.html, args.card, args.square):
-            if candidate:
-                out_path = candidate
-                break
-        folder = (os.path.dirname(os.path.abspath(out_path))
-                  if out_path else os.getcwd())
-        card_path = os.path.join(folder, "wrapped-%d.svg" % wrapped_year)
-        with open(card_path, "w", encoding="utf-8") as fh:
-            fh.write(render_wrapped_card(cem, wrapped_year))
-        if not args.json:
-            print("Wrapped card for %d written to %s"
-                  % (wrapped_year, card_path))
-    if args.adopt:
-        with open(args.adopt, "w", encoding="utf-8") as fh:
-            fh.write(render_adoption_papers(cem))
-        print("Adoption papers: %s (%d projects listed)"
-              % (args.adopt, len(cem.deceased)))
-    if adoption_files is not None:
-        print("Adoption listings written to %s (%d papers, plus "
-              "index.md)"
-              % (args.adoption_papers, len(adoption_files)))
-    if args.wrapped_kit:
-        year = args.year or cem.generated.year
-        os.makedirs(args.wrapped_kit, exist_ok=True)
-        yc = _year_cemetery(cem, year)
-        with open(os.path.join(args.wrapped_kit, "wrapped.html"), "w",
-                  encoding="utf-8") as fh:
-            fh.write(render_wrapped(cem, year))
-        with open(os.path.join(args.wrapped_kit, "wrapped-card.svg"),
-                  "w", encoding="utf-8") as fh:
-            fh.write(render_card(yc))
-        with open(os.path.join(args.wrapped_kit, "wrapped.txt"), "w",
-                  encoding="utf-8") as fh:
-            fh.write(wrapped_text(cem, year))
-        print("Wrapped kit for %d written to %s" % (year, args.wrapped_kit))
-    if args.site:
-        os.makedirs(args.site, exist_ok=True)
-        with open(os.path.join(args.site, "projects.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(site_projects(cem, with_eulogy=args.eulogy),
-                      fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "wards.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(site_wards(cem), fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "honors.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(site_honors(cem), fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "infamy.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(site_infamy(cem), fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "wrapped.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(compute_wrapped(cem, cem.generated.year),
-                      fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "house_awards.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump(site_house_awards(cem), fh, indent=2)
-            fh.write("\n")
-        with open(os.path.join(args.site, "survey.json"), "w",
-                  encoding="utf-8") as fh:
-            json.dump({
-                "generated": cem.generated.date().isoformat(),
-                "tool": "dead-projects-society",
-                "version": VERSION,
-                "buried": len(cem.deceased),
-                "at_rest": len(cem.resting),
-                "coma": len(cem.coma),
-                "alive": len(cem.alive),
-            }, fh, indent=2)
-            fh.write("\n")
+            print("Graveyard written to %s" % args.html)
+        if args.card:
+            with open(args.card, "w", encoding="utf-8") as fh:
+                fh.write(render_card(cem))
+            print("Share card written to %s" % args.card)
+        if args.square:
+            with open(args.square, "w", encoding="utf-8") as fh:
+                fh.write(render_square_card(cem))
+            print("Square card written to %s" % args.square)
+        if args.badge:
+            with open(args.badge, "w", encoding="utf-8") as fh:
+                fh.write(render_badge(cem))
+            print("Badge written to %s" % args.badge)
+        if args.out:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(render_markdown(cem, with_eulogy=args.eulogy,
+                                         wrapped_year=wrapped_year,
+                                         with_house_awards=args.house_awards))
+            print("Obituaries written to %s" % args.out)
+        if wrapped_year is not None:
+            out_path = None
+            for candidate in (args.out, args.html, args.card, args.square):
+                if candidate:
+                    out_path = candidate
+                    break
+            folder = (os.path.dirname(os.path.abspath(out_path))
+                      if out_path else os.getcwd())
+            card_path = os.path.join(folder, "wrapped-%d.svg" % wrapped_year)
+            with open(card_path, "w", encoding="utf-8") as fh:
+                fh.write(render_wrapped_card(cem, wrapped_year))
+            if not args.json:
+                print("Wrapped card for %d written to %s"
+                      % (wrapped_year, card_path))
+        if args.adopt:
+            with open(args.adopt, "w", encoding="utf-8") as fh:
+                fh.write(render_adoption_papers(cem))
+            print("Adoption papers: %s (%d projects listed)"
+                  % (args.adopt, len(cem.deceased)))
         if adoption_files is not None:
-            write_adoption_papers(
-                cem, os.path.join(args.site, "adoption-papers"))
-        if certificate_files is not None:
-            write_svg_certificates(
-                cem, os.path.join(args.site, "certificates"))
-        print("Web graveyard data written to %s" % args.site)
+            print("Adoption listings written to %s (%d papers, plus "
+                  "index.md)"
+                  % (args.adoption_papers, len(adoption_files)))
+        if args.wrapped_kit:
+            year = args.year or cem.generated.year
+            os.makedirs(args.wrapped_kit, exist_ok=True)
+            yc = _year_cemetery(cem, year)
+            with open(os.path.join(args.wrapped_kit, "wrapped.html"), "w",
+                      encoding="utf-8") as fh:
+                fh.write(render_wrapped(cem, year))
+            with open(os.path.join(args.wrapped_kit, "wrapped-card.svg"),
+                      "w", encoding="utf-8") as fh:
+                fh.write(render_card(yc))
+            with open(os.path.join(args.wrapped_kit, "wrapped.txt"), "w",
+                      encoding="utf-8") as fh:
+                fh.write(wrapped_text(cem, year))
+            print("Wrapped kit for %d written to %s" % (year, args.wrapped_kit))
+        if args.site:
+            os.makedirs(args.site, exist_ok=True)
+            with open(os.path.join(args.site, "projects.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(site_projects(cem, with_eulogy=args.eulogy),
+                          fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "wards.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(site_wards(cem), fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "honors.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(site_honors(cem), fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "infamy.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(site_infamy(cem), fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "wrapped.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(compute_wrapped(cem, cem.generated.year),
+                          fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "house_awards.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump(site_house_awards(cem), fh, indent=2)
+                fh.write("\n")
+            with open(os.path.join(args.site, "survey.json"), "w",
+                      encoding="utf-8") as fh:
+                json.dump({
+                    "generated": cem.generated.date().isoformat(),
+                    "tool": "dead-projects-society",
+                    "version": VERSION,
+                    "buried": len(cem.deceased),
+                    "at_rest": len(cem.resting),
+                    "coma": len(cem.coma),
+                    "alive": len(cem.alive),
+                }, fh, indent=2)
+                fh.write("\n")
+            if adoption_files is not None:
+                write_adoption_papers(
+                    cem, os.path.join(args.site, "adoption-papers"))
+            if certificate_files is not None:
+                write_svg_certificates(
+                    cem, os.path.join(args.site, "certificates"))
+            print("Web graveyard data written to %s" % args.site)
+    if pending_state is not None:
+        _save_state(*pending_state)
     if args.fail_if_new_deaths and log and not log.get("first_visit"):
         dead_now = {p.name for p in cem.deceased}
         new_deaths = set(log.get("newly_buried", []))

@@ -14,9 +14,12 @@ _dead_projects_society() {
     '--deep-autopsy[opt-in code-aware Ember autopsy]' \
     '--deep-budget[hard spend cap in USD]:usd:' \
     '--deep-dry-run[price the deep autopsy without calling]' \
+    '--deep-exclude[glob to keep out of the sample]:glob:' \
+    '--deep-input-rate[input USD per million tokens]:usd:' \
     '--deep-ledger[spend ledger file]:file:_files' \
     '--deep-max-tokens[sample token cap]:tokens:' \
     '--deep-model[model id]:model:' \
+    '--deep-output-rate[output USD per million tokens]:usd:' \
     '--depth[folder depth to scan]:depth:' \
     '--diff[compare with the last recorded visit]' \
     '--eulogy[include the full eulogies in the outputs]' \

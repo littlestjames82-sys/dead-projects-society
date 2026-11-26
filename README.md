@@ -217,11 +217,26 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--deep-autopsy` (opt-in, the one code-aware mode): a bounded
   sample of each buried project (README, manifests, largest source
   files, final diffs) goes to Muse Ember, which writes a structured
-  autopsy cited to files and commits. Every call is priced before
-  it is made, recorded in a spend ledger, and refused past a hard
-  budget cap (`--deep-budget`, default $10). `--deep-dry-run`
-  assembles the samples and prints the prices without calling.
-  The standard scan never opens a file; this mode exists only
+  autopsy cited to files and commits. The budget cap is a hard
+  cap, mechanically: every request carries an explicit output
+  limit (2,500 tokens), the preflight check reserves that maximum
+  cost at the model's rates and refuses any call that would not
+  fit whole inside `--deep-budget` (default $10), and a call whose
+  usage goes unreported is charged at the cap, never at a smaller
+  assumption. Every call is recorded in a spend ledger. Pricing is
+  per model: `muse-ember-1.0` is built in ($0.10 in / $0.50 out
+  per million tokens); any other `--deep-model` must bring its own
+  prices via `--deep-input-rate` and `--deep-output-rate` (USD per
+  million tokens), or the department refuses to call — a guard
+  priced at the wrong model's rates is not a guard. Before a
+  sample is shown or sent it is swept for credential-looking
+  strings (private keys, AWS keys, GitHub tokens, `api_key = ...`
+  assignments, and friends), which are redacted and counted.
+  `--deep-exclude GLOB` (repeatable) keeps matching files out of
+  the sample entirely, diffs included. `--deep-dry-run` assembles
+  the samples, prints the prices, and prints the **exact payload
+  that would be sent**, after redaction, without calling. The
+  standard scan never opens a file; this mode exists only
   because you asked, in so many flags.
 - `--exclude NAME` (repeatable) keeps directories out of the scan:
   vendored checkouts, mirrors, other people's dead.
@@ -244,8 +259,15 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 - `--diff` keeps the **Groundskeeper's Log**: run it against the same
   grounds over time and it reports what changed since your last visit:
   newly buried, newly at rest, risen, stirred in their graves, newly
-  born. Visits are recorded locally in
-  `~/.dead-projects-society/state.json` (or `--state FILE`).
+  born. A grave counts as stirred when its commit count changes, even
+  under the same last-commit date. Visits are recorded locally in
+  `~/.dead-projects-society/state.json` (or `--state FILE`), keyed by
+  each project's full path (two repositories that share a folder name
+  are two different graves) and by the grounds themselves regardless
+  of the order you list the folders in. The visit is written only
+  after every requested report has been generated, and written
+  atomically, so a failed run never consumes changes it did not
+  report.
 - The **HTML graveyard** is a single self-contained page of tombstones
   you can open, host, or send to a friend who also has a folder like yours.
 - The **SVG card** is the shareable summary: buried count, commits buried,
@@ -253,11 +275,15 @@ dead-projects-society ~/projects --site site/   # feed the 3D graveyard
 
 ## How it reads a life
 
-Only git metadata: commit dates, messages, author count, whether a README
-or a remote exists, and file *names* (counted by extension to name a
-project's language, never opened). **Your code is never read.** Everything
-runs locally, read-only, with zero dependencies and no network. Pure
-Python standard library, Python 3.9+.
+The standard scan reads only git metadata: commit dates, messages, author
+count, whether a README or a remote exists, and file *names* (counted by
+extension to name a project's language, never opened). **In the standard
+scan, your code is never read**, everything runs locally, read-only, with
+zero dependencies and no network. The one exception is the opt-in Deep
+Autopsy (`--deep-autopsy`, above): only when you ask for it, in so many
+flags, a bounded sample of a buried project's files is assembled locally,
+swept for secrets, and sent to the model API. Pure Python standard
+library, Python 3.9+.
 
 Causes of death are determined by a small, very judgmental coroner:
 one-commit wonders, weekend flings, projects that died mid-sentence on a
