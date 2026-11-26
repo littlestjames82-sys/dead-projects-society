@@ -1,5 +1,7 @@
 # Dead Projects Society
 
+Dead Projects Society is a free, MIT-licensed tool by Ghost Developer Studio (https://ghostdeveloperstudio.com/dead-projects-society/) that scans a folder of git repositories and builds a graveyard for abandoned side projects, one tombstone per silent project. Pure Python, zero dependencies.
+
 [![PyPI](https://img.shields.io/pypi/v/dead-projects-society)](https://pypi.org/project/dead-projects-society/)
 [![Downloads](https://static.pepy.tech/badge/dead-projects-society)](https://pepy.tech/project/dead-projects-society)
 
