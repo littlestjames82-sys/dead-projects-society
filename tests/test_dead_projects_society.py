@@ -2678,10 +2678,13 @@ class TestReviewFixes0320(FixtureBase):
         })
         text, stats = dps.sample_project(p)
         self.assertFalse(stats["walk_truncated"])
+        # Sample paths use the platform separator (os.path.relpath):
+        # sub/c.py on POSIX, sub\c.py on Windows — same as 0.31.0.
+        sub_c = os.path.join("sub", "c.py")
         self.assertIn("===== FILE TREE (4 files) =====\n"
-                      "a.py\nb.py\nnotes.txt\nsub/c.py", text)
+                      "a.py\nb.py\nnotes.txt\n" + sub_c, text)
         order = [text.index("===== %s =====" % name)
-                 for name in ("b.py", "sub/c.py", "a.py")]
+                 for name in ("b.py", sub_c, "a.py")]
         self.assertEqual(order, sorted(order),
                          "largest source files are sampled first")
 
