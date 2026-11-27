@@ -19,6 +19,41 @@ records its own history with the same care it gives everyone else's.
   Muse Ember Hackathon; the first live call lands when the model
   id is confirmed. The standard scan still never opens a file.
 
+## [0.32.0] - 2026-11-27
+
+Tier 3 of the cold-review fix pass, and the last of it: with this
+release all twelve findings of the 2026-11-26 review of 0.30.0
+have been addressed — ten confirmed outright, two in part (#6's
+cited filenames did not exist; the gap did. #7's stated trigger
+did not reproduce; the defect did, and was fixed in 0.31.0).
+
+### Fixed
+- The web burial no longer stops reading at 300 repositories.
+  `fetchRepos` follows GitHub's pages to the end, so the oldest
+  and deadest repos — the ones sorted last, and the ones the page
+  exists to pronounce on — are examined like all the rest.
+- A repository with no push record (GitHub returns a null
+  `pushed_at`, e.g. for empty repos) is no longer dated 1970 and
+  credited with some twenty thousand days of silence. It is
+  counted and listed under its own "No Push Record" heading, and
+  it takes no part in silence figures or in honours — the Coldest
+  Case is now always a repo with a real last push.
+- The Deep Autopsy sampler's walk is bounded while it walks, not
+  after: at most 20,000 files are examined per project, traversal
+  runs in sorted order, and only what the sample uses is retained
+  (the first 200 tree paths in sorted order, and candidates for
+  the 3 largest source files). The sample is unchanged — byte for
+  byte — for any project under the ceiling, and deterministic
+  above it; `stats` now reports `walk_truncated` when the ceiling
+  was reached.
+
+### Added
+- CI now validates the web graveyard: a `site` job parses every
+  `site/*.json`, syntax-checks `site/main.js` and `site/bury.js`,
+  and runs the standalone node checks in `tests/bury.test.js`
+  (pagination past three pages, null-`pushed_at` handling) on
+  every push and pull request.
+
 ## [0.31.0] - 2026-11-26
 
 The cold-review fix pass: an outside review of 0.30.0 found twelve

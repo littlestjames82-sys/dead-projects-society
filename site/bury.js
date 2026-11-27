@@ -58,6 +58,9 @@ function liFor(repo, kind) {
   } else if (kind === "coma") {
     meta.textContent = "last push " + repo.silence + " days ago · lifespan " +
       fmtSpan((repo.pushed - repo.created) / DAY);
+  } else if (kind === "unrecorded") {
+    meta.textContent = "created " + repo.created.getFullYear() +
+      " · no push record" + (repo.archived ? " · archived" : "");
   } else {
     meta.textContent = "last push " + repo.silence + " days ago";
   }
@@ -66,8 +69,11 @@ function liFor(repo, kind) {
 }
 
 async function fetchRepos(user) {
+  // Every public repo is examined: pages are followed until one
+  // comes back short, so the oldest, deadest repos (last under
+  // sort=pushed) are never silently dropped.
   const repos = [];
-  for (let page = 1; page <= 3; page++) {
+  for (let page = 1; ; page++) {
     const res = await fetch("https://api.github.com/users/" +
       encodeURIComponent(user) + "/repos?per_page=100&sort=pushed&page=" +
       page);
@@ -84,6 +90,36 @@ async function fetchRepos(user) {
   return repos;
 }
 
+function classifyRepos(raw, now) {
+  // A repo whose record carries no pushed_at (GitHub returns null,
+  // e.g. for empty repos) has no push record: it is counted and
+  // listed, but no silence is invented for it. A null date used to
+  // become the 1970 epoch — some twenty thousand days of silence,
+  // and a fake "Coldest Case".
+  const repos = raw.filter((r) => !r.fork).map((r) => {
+    const pushed = r.pushed_at ? new Date(r.pushed_at) : null;
+    return {
+      name: r.name,
+      url: r.html_url,
+      archived: !!r.archived,
+      created: new Date(r.created_at),
+      pushed,
+      silence: pushed
+        ? Math.max(0, Math.floor((now - pushed) / DAY))
+        : null,
+    };
+  });
+  const dead = repos.filter((r) => r.silence !== null && r.silence > 90)
+    .sort((a, b) => b.silence - a.silence);
+  const coma = repos.filter((r) => r.silence !== null &&
+      r.silence > 30 && r.silence <= 90)
+    .sort((a, b) => b.silence - a.silence);
+  const alive = repos.filter((r) => r.silence !== null && r.silence <= 30)
+    .sort((a, b) => a.silence - b.silence);
+  const unrecorded = repos.filter((r) => r.silence === null);
+  return { repos, dead, coma, alive, unrecorded };
+}
+
 form.addEventListener("submit", async (ev) => {
   ev.preventDefault();
   const user = input.value.trim().replace(/^@/, "");
@@ -98,30 +134,20 @@ form.addEventListener("submit", async (ev) => {
     return;
   }
   const now = Date.now();
-  const repos = raw.filter((r) => !r.fork).map((r) => ({
-    name: r.name,
-    url: r.html_url,
-    archived: !!r.archived,
-    created: new Date(r.created_at),
-    pushed: new Date(r.pushed_at),
-    silence: Math.max(0, Math.floor((now - new Date(r.pushed_at)) / DAY)),
-  }));
+  const { repos, dead, coma, alive, unrecorded } = classifyRepos(raw, now);
   if (!repos.length) {
     setStatus(user + " has no public repos of their own to pronounce on.");
     return;
   }
-  const dead = repos.filter((r) => r.silence > 90)
-    .sort((a, b) => b.silence - a.silence);
-  const coma = repos.filter((r) => r.silence > 30 && r.silence <= 90)
-    .sort((a, b) => b.silence - a.silence);
-  const alive = repos.filter((r) => r.silence <= 30)
-    .sort((a, b) => a.silence - b.silence);
 
   document.getElementById("bury-headline").textContent =
     "The Society has reviewed " + user + ".";
   const summary = dead.length + " buried · " + coma.length +
     " in intensive care · " + alive.length + " still breathing, of " +
-    repos.length + " repos examined.";
+    repos.length + " repos examined." +
+    (unrecorded.length ? " " + unrecorded.length +
+      (unrecorded.length === 1 ? " has" : " have") +
+      " no push record." : "");
   const archivedDead = dead.filter((r) => r.archived).length;
   document.getElementById("bury-summary").textContent = summary +
     (archivedDead ? " " + archivedDead + (archivedDead === 1
@@ -176,6 +202,7 @@ form.addEventListener("submit", async (ev) => {
   fill("bury-dead", dead, "dead");
   fill("bury-coma", coma, "coma");
   fill("bury-alive", alive, "alive");
+  fill("bury-unrecorded", unrecorded, "unrecorded");
 
   lastResult = {
     user,

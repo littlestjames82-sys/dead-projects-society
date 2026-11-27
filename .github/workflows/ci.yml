@@ -26,6 +26,28 @@ jobs:
       - name: Test suite
         run: python -m unittest discover -s tests -v
 
+  site:
+    # The web graveyard ships no Python: validate its checked-in
+    # data files parse, its scripts parse, and the bury-a-user
+    # logic passes its standalone node checks.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate site JSON
+        run: python tools/check_site_json.py
+      - name: Syntax-check site scripts
+        run: |
+          node --check site/main.js
+          node --check site/bury.js
+      - name: Bury-a-user logic checks
+        run: node tests/bury.test.js
+
   test-legacy:
     # Python 3.9 is no longer installable on the newest runner images;
     # it gets its own job on an older image so the 3.9 floor stays honest.

@@ -38,7 +38,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from xml.sax.saxutils import escape as xml_escape
 
-VERSION = "0.31.0"
+VERSION = "0.32.0"
 
 DEFAULT_DEAD_DAYS = 90
 COMA_DAYS = 30
@@ -3148,6 +3148,18 @@ DEEP_DEFAULT_MAX_TOKENS = 120000
 # on the strength of an assumption.
 DEEP_MAX_OUTPUT_TOKENS = 2500
 DEEP_ASSUMED_OUTPUT_TOKENS = DEEP_MAX_OUTPUT_TOKENS
+# Bounds on the sampler's own walk, so a monorepo cannot make the
+# (already token-capped) sample expensive to assemble: at most
+# DEEP_SAMPLE_MAX_FILES files are examined per project, the tree
+# shown is the first DEEP_SAMPLE_TREE_LIMIT paths in sorted order,
+# and only the DEEP_SAMPLE_TOP_FILES largest source files are read.
+# Traversal runs in sorted order and the retained lists are pruned
+# to what the sample uses, so the sample stays deterministic and,
+# for any project under the examination ceiling, byte-identical to
+# an unbounded walk.
+DEEP_SAMPLE_MAX_FILES = 20000
+DEEP_SAMPLE_TREE_LIMIT = 200
+DEEP_SAMPLE_TOP_FILES = 3
 _DEEP_SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv",
                    "venv", "dist", "build", "target", ".next",
                    "vendor", ".hg", ".svn"}
@@ -3285,27 +3297,49 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS, exclude=()):
                 files.append(name)
 
     tree, sized = [], []
+    seen = counted = 0
+    walk_truncated = False
     for base, dirs, names in os.walk(root):
-        dirs[:] = [d for d in dirs if d not in _DEEP_SKIP_DIRS
-                   and not d.startswith(".")]
-        for name in names:
+        dirs[:] = sorted(d for d in dirs if d not in _DEEP_SKIP_DIRS
+                         and not d.startswith("."))
+        stop = False
+        for name in sorted(names):
+            if seen >= DEEP_SAMPLE_MAX_FILES:
+                walk_truncated = True
+                stop = True
+                break
+            seen += 1
             full = os.path.join(base, name)
             rel = os.path.relpath(full, root)
             if _deep_excluded(rel, name, exclude):
                 continue
+            counted += 1
             tree.append(rel)
+            if len(tree) > DEEP_SAMPLE_TREE_LIMIT * 4:
+                # Keep only what the sample can show: the first
+                # DEEP_SAMPLE_TREE_LIMIT paths in sorted order.
+                tree.sort()
+                del tree[DEEP_SAMPLE_TREE_LIMIT:]
             ext = os.path.splitext(name)[1].lower()
             if ext in _LANG_BY_EXT:
                 try:
                     sized.append((os.path.getsize(full), rel, full))
                 except OSError:
                     pass
+                if len(sized) > DEEP_SAMPLE_TOP_FILES * 16:
+                    # Keep only plausible candidates for the top
+                    # DEEP_SAMPLE_TOP_FILES, largest first.
+                    sized.sort(reverse=True)
+                    del sized[DEEP_SAMPLE_TOP_FILES * 4:]
+        if stop:
+            dirs[:] = []
+            break
     tree.sort()
     parts.append("===== FILE TREE (%d files) =====\n%s"
-                 % (len(tree), "\n".join(tree[:200])))
+                 % (counted, "\n".join(tree[:DEEP_SAMPLE_TREE_LIMIT])))
 
     sized.sort(reverse=True)
-    for _size, rel, full in sized[:3]:
+    for _size, rel, full in sized[:DEEP_SAMPLE_TOP_FILES]:
         text = _read_bounded(full, 15000)
         if text:
             parts.append("===== %s =====\n%s" % (rel, text))
@@ -3330,7 +3364,7 @@ def sample_project(p, max_tokens=DEEP_DEFAULT_MAX_TOKENS, exclude=()):
         truncated = True
     stats = {"files": files, "chars": len(text),
              "est_tokens": _est_tokens(text), "truncated": truncated,
-             "redacted": redacted}
+             "redacted": redacted, "walk_truncated": walk_truncated}
     return text, stats
 
 

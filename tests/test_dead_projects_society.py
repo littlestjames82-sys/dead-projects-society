@@ -2645,3 +2645,80 @@ class TestReviewFixes0310(FixtureBase):
         cem = dps.build_cemetery(self.tmp, now=NOW)
         text, stats = dps.sample_project(cem.projects[0])
         self.assertIn("caf", text)
+
+
+class TestReviewFixes0320(FixtureBase):
+    """v0.32.0: Tier 3 of the adopted cold-review fix pass — the
+    Deep Autopsy sampler's walk is bounded during traversal (#5).
+    The web halves of Tier 3 (#4 pagination and null pushed_at,
+    #6 CI validation) are covered by tests/bury.test.js and
+    tools/check_site_json.py, wired into CI's site job."""
+
+    def _repo_with_files(self, files):
+        """One committed repo, with files {relname: text} left in
+        its working tree (the sampler walks the tree as it lies)."""
+        path = os.path.join(self.tmp, "proj")
+        make_repo(path, [("2025-03-02T09:00:00", "initial commit")])
+        for rel, text in files.items():
+            full = os.path.join(path, rel)
+            folder = os.path.dirname(full)
+            if folder:
+                os.makedirs(folder, exist_ok=True)
+            with open(full, "w") as fh:
+                fh.write(text)
+        cem = dps.build_cemetery(self.tmp, now=NOW)
+        return cem.projects[0]
+
+    def test_small_repo_sample_unchanged(self):
+        p = self._repo_with_files({
+            "a.py": "x = 1\n",
+            "b.py": "y = 2\n" * 40,
+            "sub/c.py": "z = 3\n" * 10,
+            "notes.txt": "not source\n",
+        })
+        text, stats = dps.sample_project(p)
+        self.assertFalse(stats["walk_truncated"])
+        self.assertIn("===== FILE TREE (4 files) =====\n"
+                      "a.py\nb.py\nnotes.txt\nsub/c.py", text)
+        order = [text.index("===== %s =====" % name)
+                 for name in ("b.py", "sub/c.py", "a.py")]
+        self.assertEqual(order, sorted(order),
+                         "largest source files are sampled first")
+
+    def test_walk_is_bounded_and_deterministic(self):
+        files = {}
+        for i in range(120):
+            files["f%03d.py" % i] = ("v%d = %d\n" % (i, i)) * (i + 1)
+        p = self._repo_with_files(files)
+        old = dps.DEEP_SAMPLE_MAX_FILES
+        dps.DEEP_SAMPLE_MAX_FILES = 50
+        try:
+            text1, stats1 = dps.sample_project(p)
+            text2, _ = dps.sample_project(p)
+        finally:
+            dps.DEEP_SAMPLE_MAX_FILES = old
+        self.assertTrue(stats1["walk_truncated"])
+        self.assertEqual(text1, text2,
+                         "the bounded sample is deterministic")
+        # Sorted traversal admits f000.py..f049.py and no more.
+        self.assertIn("===== FILE TREE (50 files) =====", text1)
+        self.assertIn("f049.py", stats1["files"])
+        self.assertNotIn("f050.py", text1)
+        # Under the real ceiling the same repo is walked in full.
+        text3, stats3 = dps.sample_project(p)
+        self.assertFalse(stats3["walk_truncated"])
+        self.assertIn("f119.py", stats3["files"])
+
+    def test_pruning_keeps_global_top_picks(self):
+        files = {"m%03d.py" % i: "s = 1\n" for i in range(900)}
+        files["zz_big.py"] = "b = 1\n" * 20
+        files["zz_huge.py"] = "h = 1\n" * 100
+        p = self._repo_with_files(files)
+        text1, stats1 = dps.sample_project(p)
+        text2, _ = dps.sample_project(p)
+        self.assertEqual(text1, text2)
+        self.assertFalse(stats1["walk_truncated"])
+        self.assertIn("===== FILE TREE (902 files) =====", text1)
+        for name in ("zz_huge.py", "zz_big.py", "m899.py"):
+            self.assertIn(name, stats1["files"],
+                          "pruning kept a true top-3 pick: " + name)
